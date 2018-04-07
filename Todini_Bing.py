@@ -1,4 +1,6 @@
 #fixed topology, variable unknown 
+#TODO: take out the known heads, pass parameters to the function in stead of refering to the global value
+#TODO: generalize the numbers based on the numbers of unknows
 
 import numpy as np
 from scipy.optimize import fsolve
@@ -82,7 +84,7 @@ def myF(z):                        #function that will be given to the solver wi
         #     v_A11.append(r[i]*pow(Q[i],a-1))
     
     for i in range(0, len(uH)):
-        v_H.append(z[i+7]) ## Change to generalize
+        v_H.append(z[i+7]) ## Change to generalize, after taking out knows, change to uQ
         #w +=1
         #print '2nd', w
     #print 'v_A11', v_A11
@@ -121,12 +123,12 @@ def myF(z):                        #function that will be given to the solver wi
     #print 'F', F
     #sys.exit(0)
     
-    return t_F.reshape(8)
+    return t_F.reshape(8) # Change to generalize
 
 #zGuess = ([79,19,11,39,19,11,10,97])
-zGuess = ([100,100,100,100,100,100,100,100])
+zGuess = ([100,100,100,100,100,100,100,100]) # Change to generalize
 #print zGuess.shape
 print zGuess
-z = fsolve(myF,zGuess)
+z = fsolve(myF, zGuess)
 
 print z 
