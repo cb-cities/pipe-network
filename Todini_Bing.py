@@ -84,7 +84,7 @@ def myF(z):                        #function that will be given to the solver wi
         #     v_A11.append(r[i]*pow(Q[i],a-1))
     
     for i in range(0, len(uH)):
-        v_H.append(z[i+7]) ## Change to generalize, after taking out knows, change to uQ
+        v_H.append(z[i+len(Q)]) ## Change to generalize, after taking out knows, change to uQ
         #w +=1
         #print '2nd', w
     #print 'v_A11', v_A11
@@ -123,10 +123,10 @@ def myF(z):                        #function that will be given to the solver wi
     #print 'F', F
     #sys.exit(0)
     
-    return t_F.reshape(8) # Change to generalize
+    return t_F.reshape(len(z)) # Change to generalize
 
 #zGuess = ([79,19,11,39,19,11,10,97])
-zGuess = ([100,100,100,100,100,100,100,100]) # Change to generalize
+zGuess = ([100]*(len(Q)+len(uH))) # Change to generalize
 #print zGuess.shape
 print zGuess
 z = fsolve(myF, zGuess)
