@@ -88,41 +88,41 @@ def myF(z):                        #function that will be given to the solver wi
         v_H.append(z[i+nuQ]) ## Change to generalize, after taking out knows, change to uQ
         #w +=1
         #print '2nd', w
-    #print 'v_A11', v_A11
-    #print 'v_Q', v_Q
-    #print 'v_H', v_H
+    print 'v_A11', v_A11
+    print 'v_Q', v_Q
+    print 'v_H', v_H
 
     A11 = np.diag(v_A11)
-    #print 'A11', A11
+    print 'A11', A11
     A1112 = np.append(A11,A12[uQ, :],axis=1)
-    #print 'A1112', A1112
-    #A1112 = np.around(A1112,decimals=2)
+    print 'A1112', A1112
+    #A1112 = np.around(A1112,decimals=5)
     dim_AZ = (nuH,nuH)
     AZ = np.zeros(dim_AZ)
-    #print 'AZ', AZ
+    print 'AZ', AZ
     A21Z = np.append(A21[:,uQ],AZ,axis=1)
-    #print 'A21Z', A21Z
+    print 'A21Z', A21Z
     K = np.concatenate((A1112, A21Z), axis=0)
-    #print 'K', K
+    print 'K', K
     #sys.exit(0)
 
     AHq = np.append(AH[uQ],q_of_uH)
     t_AHq = AHq[np.newaxis, :].T
-    #print 'AHq', AHq
-    #print 't_AHq', t_AHq
+    print 'AHq', AHq
+    print 't_AHq', t_AHq
     
     QH = np.append(v_Q,v_H) # should equal to Z
     t_QH = QH[np.newaxis, :].T
-    #print 'QH', QH
-    #print 't_QH', t_QH
+    print 'QH', QH
+    print 't_QH', t_QH
     
     KQH = np.matmul(K,t_QH)
-    #print 'KQH', KQH
+    print 'KQH', KQH
     
     F = np.add(KQH,t_AHq)
     t_F = F.T
-    #print 'F', F
-    #sys.exit(0)
+    print 'F', F
+    sys.exit(0)
     
     return t_F.reshape(len(z)) # Change to generalize
 
