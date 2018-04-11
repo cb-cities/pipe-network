@@ -1,6 +1,6 @@
 # pipe-network
 
-Solve for flows and unknown nodal heas in a water distribution network, based on the Global Algorithm (Eq 16) in [Todini & Rossman, 2013](Todini_2013.pdf).   
+Solve for flows and unknown nodal heas in a water distribution network, based on the Global Algorithm (Eq 16) in [Todini & Rossman, 2013](https://ascelibrary.org/doi/abs/10.1061/%28ASCE%29HY.1943-7900.0000703).   
 
 The current python script is [Todini_fsolve_0410.py](Todini_fsolve_0410.py). It utilizes `scipy.optimize.fsolve` to solve the hydraulic system of equations representing the conservation of mass and the conservation of energy. It works with the case when no pipe flow is observed, while at least one nodal head has to be known.   
 
