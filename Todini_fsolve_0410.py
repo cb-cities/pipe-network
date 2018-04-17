@@ -58,7 +58,7 @@ uQ = [i for i in range(nuQ)]       # the list of pipe index for unknown flows, b
 A21 = A12.transpose()              #A21 is the transpose of A12
 AH = np.dot(A10,H0)                #AH is the A10H0 matrix composition of A10 and H0
 
-def myF(z,l,m):                        #function that will be given to the solver with output an array of equations
+def myF(z,g,h,i,j,k,l,m):                        #function that will be given to the solver with output an array of equations
     
     #print 'z', z
     v_Q = []                       # list of unknown pipe discharges, as the Q in Eq 16 in the Todini paper
@@ -97,6 +97,6 @@ def myF(z,l,m):                        #function that will be given to the solve
 
 zGuess = ([100]*(nuQ+nuH))          # initial guess of the unknowns
 #print 'Initial Guess {}'.format(zGuess)
-z = fsolve(myF, zGuess, args=(a,r))
+z = fsolve(myF, zGuess, args=(nuQ,r,a,nuH,A12,A21,AH,q_of_uH))
 
 print z 
