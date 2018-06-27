@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from scipy.sparse import csr_matrix
+import sys
 
 link_file = 'link_list4graph.json'
 link_data = json.load(open(link_file), strict=False)
@@ -18,7 +19,10 @@ for dictionary in link_data:
     else:
         data = np.append(data, [1,-1])
 
-csr_matrix((data,(row,col)))
- 
+col = col.astype(int)
+row = row.astype(int)
+#csr_matrix((data,(row,col)))
 m = csr_matrix((data,(row,col)))
+
 np.save('sparse_matrix.npy', m)
+#A = scipy.load('sparse_matrix.npy')[()]
