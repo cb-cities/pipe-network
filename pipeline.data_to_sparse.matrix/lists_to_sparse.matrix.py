@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import scipy.sparse
 from scipy.sparse import csr_matrix
 import sys
 
@@ -24,5 +25,6 @@ row = row.astype(int)
 #csr_matrix((data,(row,col)))
 m = csr_matrix((data,(row,col)))
 
-np.save('sparse_matrix.npy', m)
+#np.save('sparse_matrix.npy', m)
+scipy.sparse.save_npz('sparse_matrix.npz', m)
 #A = scipy.load('sparse_matrix.npy')[()]
