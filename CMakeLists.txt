@@ -51,13 +51,13 @@ SET(test_src
   #${pipe_network_SOURCE_DIR}/tests/node_test.cc
    ${pipe_network_SOURCE_DIR}/tests/test.cc
 )   
-add_executable(pipe_networktest
+add_executable(pipe_network_test
   ${test_src}
 )
-add_test(NAME pipe_networktest COMMAND $<TARGET_FILE:pipe_networktest>)
+add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
 enable_testing()
 
 # Coverage
 find_package(codecov)
 add_coverage(pipe_network)
-add_coverage(pipe_networktest)
+add_coverage(pipe_network_test)
