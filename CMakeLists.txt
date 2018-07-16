@@ -1,0 +1,63 @@
+project(pipe_network LANGUAGES CXX)
+
+# Require C++14-compliant compiler; only available for CMake v. 3.1 and up
+set(CMAKE_CXX_STANDARD 14)
+
+cmake_minimum_required(VERSION 3.1)
+
+SET(CMAKE_COLOR_MAKEFILE ON)
+SET(CMAKE_VERBOSE_MAKEFILE OFF)
+
+# General compile settings
+IF (NOT CMAKE_BUILD_TYPE)
+ SET(CMAKE_BUILD_TYPE "Debug")
+ #SET(CMAKE_BUILD_TYPE "Release")
+ENDIF (NOT CMAKE_BUILD_TYPE)
+
+# GNU Specific settings
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+endif()
+
+# CMake Modules
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+# Boost Archive
+#find_package(Boost REQUIRED COMPONENTS system serialization)
+#include_directories(${BOOST_INCLUDE_DIRS})
+#link_libraries(${Boost_SERIALIZATION_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+
+# Eigen
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+
+# Include directories
+include_directories(
+  ${pipe_network_SOURCE_DIR}/include/
+  ${pipe_network_SOURCE_DIR}/external/
+)
+
+# pipe_network executable
+SET(pipe_network_src
+  src/main.cc
+)
+add_executable(pipe_network
+  ${pipe_network_src}
+)
+
+# Unit test
+SET(test_src
+  #${pipe_network_SOURCE_DIR}/tests/node_test.cc
+   ${pipe_network_SOURCE_DIR}/tests/test.cc
+)   
+add_executable(pipe_networktest
+  ${test_src}
+)
+add_test(NAME pipe_networktest COMMAND $<TARGET_FILE:pipe_networktest>)
+enable_testing()
+
+# Coverage
+find_package(codecov)
+add_coverage(pipe_network)
+add_coverage(pipe_networktest)
