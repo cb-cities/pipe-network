@@ -11,8 +11,7 @@ class Node {
   // Constructor with id and coordinates
   //! \param[in] id node id
   //! \param[in] coordinates coordinates of the node
-  Node(unsigned id, const Eigen::Vector3d& coordinates)
-      : id_{id}, coordinates_{coordinates} {}
+  Node(unsigned id, const Eigen::Vector3d& coordinates) : id_{id}, coordinates_{coordinates} {}
 
   //! Destructor
   ~Node() = default;
@@ -27,15 +26,15 @@ class Node {
   Node(Node&&) = delete;
 
   //! Return id
-  //! \retval id_ return id of the node
+  //! \retval id_ id of the node
   unsigned id() const { return id_; }
 
   //! Return coordinates
-  //! \retval coordinates_ return coordinates of the node
+  //! \retval coordinates_ coordinates of the node
   Eigen::Vector3d coordinates() const { return coordinates_; }
 
   //! Return number of connection
-  //! \retval nconnections_ return number of connection to the node
+  //! \retval nconnections_ number of connection to the node
   unsigned nconnections() const { return nconnections_; }
 
   //! Assign hydraulic head at the node
@@ -46,11 +45,11 @@ class Node {
   }
 
   //! Return hydraulic head
-  //! \retval head_ return hydraulic head at the node
+  //! \retval head_ hydraulic head at the node
   double head() const { return head_; }
 
   //! Return head assignment status
-  //! \retval ishead_ return head assignment status at the node
+  //! \retval ishead_ head assignment status at the node
   bool ishead() const { return ishead_; }
 
   //! Assign discharge at the node
@@ -61,11 +60,11 @@ class Node {
   }
 
   //! Return discharge
-  //! \retval discharge_ return discharge at the node
+  //! \retval discharge_ discharge at the node
   double discharge() const { return discharge_; }
 
   //! Return discharge assignment status
-  //! \retval isdischarge return discharge assignment status at the node
+  //! \retval isdischarge_ discharge assignment status at the node
   bool isdischarge() const { return isdischarge_; }
 
  private:
