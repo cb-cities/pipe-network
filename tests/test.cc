@@ -1,29 +1,48 @@
+// Node test
 #include "node.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+//! \brief Ckeck node class
 TEST_CASE("Node is checked", "[Node]") {
-  Node test(123, {11.2, 22.3, 33.4});
+  double tolerance = 1.e-12;
+  unsigned id = 123;
+  double coords0 = 11.2;
+  double coords1 = 22.3;
+  double coords2 = 33.4;
+  std::unique_ptr<Node> node(new Node(id, {coords0, coords1, coords2}));
 
-  REQUIRE(test.id() == 123);
-  REQUIRE(test.coordinates()(2) == Approx(33.4).epsilon(1.e-12));
-  REQUIRE(test.coord_at_dir(1) == Approx(22.3).epsilon(1.e-12));
-  REQUIRE(test.ishead() == false);
-  REQUIRE(test.isdischarge() == false);
+  //! Check function to return node id
+  REQUIRE(node->id() == id);
+  //! Check function to return node coordinates
+  REQUIRE(node->coordinates()(2) == Approx(coords2).epsilon(tolerance));
+  //! Check function to return head assignment status and initialized status
+  REQUIRE(node->ishead() == false);
+  //! Check function to return discharge assignment status and initialized
+  //! status
+  REQUIRE(node->isdischarge() == false);
 
-  SECTION("reading and writting hydraulic head") {
-    test.head(110.1);
+  //! Check functions to assign and return hydraulic head at the node
+  SECTION("check hydraulic head at the node") {
+    double head = 110.1;
+    node->head(head);
 
-    REQUIRE(test.head() == Approx(110.1).epsilon(1.e-12));
-    REQUIRE(test.ishead() == true);
+    //! Check funtion to return hydraulic head at the node
+    REQUIRE(node->head() == Approx(head).epsilon(tolerance));
+    //! Check function to assign hydraulic head at the node
+    REQUIRE(node->ishead() == true);
   }
 
-  SECTION("reading and writting discharge") {
-    test.discharge(-23.4);
+  //! Check functions to assign and return discharge at the node
+  SECTION("Check discharge at the node") {
+    double discharge = -23.4;
+    node->discharge(discharge);
 
-    REQUIRE(test.discharge() == Approx(-23.4).epsilon(1.e-12));
-    REQUIRE(test.isdischarge() == true);
+    //! Check function to return discharge at the node
+    REQUIRE(node->discharge() == Approx(discharge).epsilon(tolerance));
+    //! Check function to assign discharge at the node
+    REQUIRE(node->isdischarge() == true);
   }
 
   // test return nconnections

@@ -9,11 +9,10 @@ class Node {
 
  public:
   // Constructor with id and coordinates
-  //! \param[in] id assign as the id_ of the node
-  //! \param[in] coords coordinates of the node
-  Node(unsigned id, const Eigen::Vector3d& coords) : id_{id} {
-    for (unsigned i = 0; i < coords.size(); i++) coordinates_[i] = coords(i);
-  }
+  //! \param[in] id node id
+  //! \param[in] coordinates coordinates of the node
+  Node(unsigned id, const Eigen::Vector3d& coordinates)
+      : id_{id}, coordinates_{coordinates} {}
 
   //! Destructor
   ~Node() = default;
@@ -34,12 +33,6 @@ class Node {
   //! Return coordinates
   //! \retval coordinates_ return coordinates of the node
   Eigen::Vector3d coordinates() const { return coordinates_; }
-
-  //! Return coordinates in a particular direction
-  //! \param[in] dir direction
-  //! \retval coordinates_[dir] return coordinates of the node in a particular
-  //! direction
-  double coord_at_dir(unsigned dir) const { return coordinates_[dir]; }
 
   //! Return number of connection
   //! \retval nconnections_ return number of connection to the node
