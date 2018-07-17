@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /home/cbcities/research/pipe-network
     docker:
-      - image: quay.io/cbcities/pipenetwork
+      - image: quay.io/cbcities/pipe-network
     steps:
       - checkout
       # GCC 6.3
