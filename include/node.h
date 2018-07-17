@@ -11,7 +11,8 @@ class Node {
   // Constructor with id and coordinates
   //! \param[in] id node id
   //! \param[in] coordinates coordinates of the node
-  Node(unsigned id, const Eigen::Vector3d& coordinates) : id_{id}, coordinates_{coordinates} {}
+  Node(unsigned id, const Eigen::Vector3d& coordinates)
+      : id_{id}, coordinates_{coordinates} {}
 
   //! Destructor
   ~Node() = default;
