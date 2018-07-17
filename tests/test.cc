@@ -14,7 +14,7 @@ TEST_CASE("Node is checked", "[Node]") {
   //! Check function to return node id
   REQUIRE(node->id() == id);
   //! Check function to return node coordinates
-  for (int i = 0; i < coords.size(); i++)
+  for (int i = 0; i < coords.size(); ++i)
     REQUIRE(node->coordinates()(i) == Approx(coords(i)).epsilon(tolerance));
   //! Check function to return head assignment status and initialized status
   REQUIRE(node->ishead() == false);
