@@ -61,8 +61,7 @@ class Pipe {
   void max_velocity(double max_velocity) { max_velocity_ = max_velocity; }
 
   //! calculate maximum allowable discharge based on ridius and maximum
-  //! allowable velocity 
-  //! \retval max_discharge maximun allowable discharge
+  //! allowable velocity \retval max_discharge maximun allowable discharge
   double max_discharge() {
     double max_discharge = max_velocity_ * M_PI * pow(radius_, 2);
     return max_discharge;
