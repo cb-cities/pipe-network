@@ -17,7 +17,7 @@ TEST_CASE("Node is checked", "[Node]") {
 
   // Check node id
   REQUIRE(node->id() == id);
-  
+
   // Check nodal coordinates
   for (int i = 0; i < coords.size(); ++i)
     REQUIRE(node->coordinates()(i) == Approx(coords(i)).epsilon(tolerance));
@@ -52,4 +52,3 @@ TEST_CASE("Node is checked", "[Node]") {
 
   // TODO: test return nconnections
 }
-
