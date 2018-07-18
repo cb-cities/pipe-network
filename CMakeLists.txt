@@ -48,7 +48,7 @@ add_executable(pipe_network
 
 # Unit test
 SET(test_src
-  #${pipe_network_SOURCE_DIR}/tests/node_test.cc
+   ${pipe_network_SOURCE_DIR}/tests/node_test.cc
    ${pipe_network_SOURCE_DIR}/tests/test.cc
 )   
 add_executable(pipe_network_test
