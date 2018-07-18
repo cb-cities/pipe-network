@@ -1,10 +1,12 @@
 #ifndef PIPE_NETWORK_PIPE_H_
 #define PIPE_NETWORK_PIPE_H_
 
-#include "node.h"
+#include <cmath>
+
 #include <array>
-#include <math.h>
 #include <memory>
+
+#include "node.h"
 
 //! Pipe class
 //! \brief Class that stores the information about pipes
@@ -15,10 +17,14 @@ class Pipe {
   //! \param[in] id node id
   //! \param[in] nodes array of node pointers
   Pipe(unsigned id, const std::array<std::shared_ptr<Node>, 2>& nodes)
-      : id_{id}, array_node_ptr_{nodes} {}
+      : id_{id}, nodes_{nodes} {
+    Eigen::Vector3d distance =
+        nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates();
+    length_ = distance.norm();
+  }
 
   //! Destructor
-  ~Pipe() { array_node_ptr_.fill(nullptr); }
+  ~Pipe() { nodes_.fill(nullptr); }
 
   //! Copy constructor
   Pipe(const Pipe&) = delete;
@@ -33,12 +39,6 @@ class Pipe {
   //! \retval id_ id of the pipe
   unsigned id() const { return id_; }
 
-  //! Return array of node pointers
-  //! \retval array_node_ptr_ array of node pointers
-  std::array<std::shared_ptr<Node>, 2> array_node_ptr() const {
-    return array_node_ptr_;
-  }
-
   //! Return discharge in the pipe
   //! \retval discharge_ discharge
   unsigned discharge() const { return discharge_; }
@@ -47,9 +47,9 @@ class Pipe {
   //! \param[in] radius radius of the pipe
   void radius(double radius) { radius_ = radius; }
 
-  //! Assign length of the pipe
-  //! \param[in] length of the pipe
-  // void length(double length) { length_ = length; }
+  //! Return length of the pipe
+  //! retval length_ pipe length
+  double length() { return length_; }
 
   //! Assign friction coefficient
   //! \param[in] friction coefficient of the pipe
@@ -61,7 +61,8 @@ class Pipe {
   void max_velocity(double max_velocity) { max_velocity_ = max_velocity; }
 
   //! calculate maximum allowable discharge based on ridius and maximum
-  //! allowable velocity retval max_discharge maximun allowable discharge
+  //! allowable velocity 
+  //! \retval max_discharge maximun allowable discharge
   double max_discharge() {
     double max_discharge = max_velocity_ * M_PI * pow(radius_, 2);
     return max_discharge;
@@ -75,13 +76,13 @@ class Pipe {
   //! pipe id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! array of node pointers which form the pipe
-  std::array<std::shared_ptr<Node>, 2> array_node_ptr_;
+  std::array<std::shared_ptr<Node>, 2> nodes_;
   //! discharge in the pipe
   double discharge_{std::numeric_limits<double>::max()};
   //! radius of the pipe
   double radius_{std::numeric_limits<double>::max()};
   //! length of the pipe
-  // double length_{std::numeric_limits<double>::max()};
+  double length_;
   //! friction coefficient of the pipe
   // double friction_coef_{std::numeric_limits<double>::max()};
   //! maximum allowable velocity of flow in the pipe
