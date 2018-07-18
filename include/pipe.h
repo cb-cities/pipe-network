@@ -62,10 +62,7 @@ class Pipe {
 
   //! calculate maximum allowable discharge based on ridius and maximum
   //! allowable velocity \retval max_discharge maximun allowable discharge
-  double max_discharge() {
-    double max_discharge = max_velocity_ * M_PI * pow(radius_, 2);
-    return max_discharge;
-  }
+  double max_discharge() { return (max_velocity_ * M_PI * pow(radius_, 2)); }
 
   //! Return pipe broken status
   //! \retval isbroken_ pipe broken status
