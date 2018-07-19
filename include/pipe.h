@@ -49,8 +49,11 @@ class Pipe {
     darcy_friction_ = darcy_friction;
   }
 
-  //! Calculate and return discharge using Darcy-Weisbach equation
-  //! retval discharge_ discharge in the pipe
+  //! Calculate and return discharge using Darcy-Weisbach equation:
+  //! dhead = (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
+  //! That is, discharge =
+  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); \retval
+  //! discharge_ discharge in the pipe
   double discharge();
 
   //! Assign maximum allowable velocity

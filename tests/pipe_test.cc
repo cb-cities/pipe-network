@@ -48,8 +48,8 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     const double radius = 10.0;
     const double max_velocity = 100.0;
     const double max_discharge = M_PI * 1.e4;
-    const double head1 = 100.0;
-    const double head2 = 110.0;
+    const double head1 = 110.0;
+    const double head2 = 100.0;
     const double darcy_friction = 0.1;
     const double discharge =
         sqrt(10 * pow(M_PI, 2) * 9.81 * pow(2 * 10, 5) / (8 * 0.1));
