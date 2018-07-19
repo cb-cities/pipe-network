@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <array>
+#include <exception>
 #include <memory>
 
 #include "node.h"
@@ -16,12 +17,7 @@ class Pipe {
   // Constructor with id and node pointers
   //! \param[in] id node id
   //! \param[in] nodes array of node pointers
-  Pipe(unsigned id, const std::array<std::shared_ptr<Node>, 2>& nodes)
-      : id_{id}, nodes_{nodes} {
-    Eigen::Vector3d distance =
-        nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates();
-    length_ = distance.norm();
-  }
+  Pipe(unsigned id, const std::array<std::shared_ptr<Node>, 2>& nodes);
 
   //! Destructor
   ~Pipe() { nodes_.fill(nullptr); }
@@ -39,10 +35,6 @@ class Pipe {
   //! \retval id_ id of the pipe
   unsigned id() const { return id_; }
 
-  //! Return discharge in the pipe
-  //! \retval discharge_ discharge
-  unsigned discharge() const { return discharge_; }
-
   //! Assign radius of the pipe
   //! \param[in] radius radius of the pipe
   void radius(double radius) { radius_ = radius; }
@@ -51,10 +43,15 @@ class Pipe {
   //! retval length_ pipe length
   double length() { return length_; }
 
-  //! Assign friction coefficient
-  //! \param[in] friction coefficient of the pipe
-  // void friction_coef(double friction_coef) { friction_coef_ = friction_coef;
-  // }
+  //! Assign Dracy friction factor
+  //! \param[in] darcy_friction Darcy friction factor of the pipe
+  void darcy_friction(double darcy_friction) {
+    darcy_friction_ = darcy_friction;
+  }
+
+  //! Calculate and return discharge using Darcy-Weisbach equation
+  //! retval discharge_ discharge in the pipe
+  double discharge();
 
   //! Assign maximum allowable velocity
   //! \param[in] max_flowrate maximum allowable velocity of flow in the pipe
@@ -79,12 +76,14 @@ class Pipe {
   double radius_{std::numeric_limits<double>::max()};
   //! length of the pipe
   double length_;
-  //! friction coefficient of the pipe
-  // double friction_coef_{std::numeric_limits<double>::max()};
+  //! Darcy friction factor of the pipe
+  double darcy_friction_{std::numeric_limits<double>::max()};
   //! maximum allowable velocity of flow in the pipe
   double max_velocity_{std::numeric_limits<double>::max()};
   //! whether the pipe is broken
   bool isbroken_{false};
+  //! gravitational acceleration
+  const double g_{9.81};
 };
 
 #endif  // PIPE_NETWORK_PIPE_H_
