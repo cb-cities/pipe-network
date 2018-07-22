@@ -35,6 +35,12 @@ class Pipe {
   //! \retval id_ id of the pipe
   unsigned id() const { return id_; }
 
+  //! Return coordinates at two ends of the pipe
+  //! \retval end_coordinates_ coordinates at two pipe ends
+  std::array<Eigen::Vector3d, 2> end_coordinates() const {
+    return end_coordinates_;
+  }
+
   //! Assign radius of the pipe
   //! \param[in] radius radius of the pipe
   void radius(double radius) { radius_ = radius; }
@@ -52,7 +58,7 @@ class Pipe {
   //! Calculate and return discharge using Darcy-Weisbach equation:
   //! dhead = (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
   //! That is, discharge =
-  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); \retval
+  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); retval
   //! discharge_ discharge in the pipe
   double discharge();
 
@@ -68,11 +74,18 @@ class Pipe {
   //! \retval isbroken_ pipe broken status
   bool isbroken() const { return isbroken_; }
 
+  //! Check whether the pipe is constructed based on a given node
+  //! \param[in] node given node pointer
+  //! retval bool to indicate whether the pipe is based on input node
+  bool isnode(std::shared_ptr<Node> node);
+
  private:
   //! pipe id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! array of node pointers which form the pipe
   std::array<std::shared_ptr<Node>, 2> nodes_;
+  //! array of coordinates of two pipe ends
+  std::array<Eigen::Vector3d, 2> end_coordinates_;
   //! discharge in the pipe
   double discharge_{std::numeric_limits<double>::max()};
   //! radius of the pipe

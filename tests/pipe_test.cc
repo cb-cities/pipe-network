@@ -40,6 +40,14 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
   // Check pipe broken status and initialized status
   REQUIRE(pipe->isbroken() == false);
 
+  // Ckeck node in pipe
+  REQUIRE(pipe->isnode(nodes[0]) == true);
+  REQUIRE(pipe->isnode(nodes[1]) == true);
+
+  // Check coordinates at pipe ends
+  REQUIRE(pipe->end_coordinates().at(0) == nodes.at(0)->coordinates());
+  REQUIRE(pipe->end_coordinates().at(1) == nodes.at(1)->coordinates());
+
   // Check radius, discharge, max flow velocity and Darcy friction factor of the
   // pipe
   SECTION(
