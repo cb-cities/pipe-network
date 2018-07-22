@@ -1,8 +1,6 @@
 // Constructor with id and node pointers
 Pipe::Pipe(unsigned id, const std::array<std::shared_ptr<Node>, 2>& nodes)
     : id_{id}, nodes_{nodes} {
-  for (unsigned i = 0; i < end_coordinates_.size(); ++i)
-    end_coordinates_.at(i) = nodes_.at(i)->coordinates();
   length_ = (nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates()).norm();
 }
 
@@ -23,11 +21,3 @@ double Pipe::discharge() {
   }
 }
 
-//! Check whether the pipe is constructed based on a given node
-bool Pipe::isnode(std::shared_ptr<Node> node) {
-  if (nodes_[0] == node || nodes_[1] == node) {
-    return true;
-  } else {
-    return false;
-  }
-}
