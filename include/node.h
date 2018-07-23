@@ -3,6 +3,8 @@
 
 #include <Eigen/Dense>
 
+namespace pipenetwork {
+
 //! Node class
 //! \brief Class that stores the information about nodes
 class Node {
@@ -84,5 +86,6 @@ class Node {
   //! whether discharge is assigned
   bool isdischarge_{false};
 };
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_NODE_H_
