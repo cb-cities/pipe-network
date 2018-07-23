@@ -57,6 +57,8 @@ uQ = [i for i in range(nuQ)]       # the list of pipe index for unknown flows, b
 
 A21 = A12.transpose()              #A21 is the transpose of A12
 AH = np.dot(A10,H0)                #AH is the A10H0 matrix composition of A10 and H0
+#print 'AH', AH
+#print 'A21', A21
 
 def myF(z,a,r,nuQ,nuH,A12,A21,AH,q_of_uH):                        #function that will be given to the solver with output an array of equations
     
@@ -91,6 +93,10 @@ def myF(z,a,r,nuQ,nuH,A12,A21,AH,q_of_uH):                        #function that
     
     F = np.add(KQH,t_AHq)          # LHS - RHS, should equal to zeros
     t_F = F.T
+
+    #print(KQH)
+    #print(t_AHq)
+    #sys.exit(0)
     
     return t_F.reshape(len(z)) # Change to generalize
 

@@ -1,8 +1,9 @@
 **/*wPressurizedMain*
-**/link_list4graph.json
-**/node_list4graph.json
-**/node_temp.json
-**/sparse_matrix.npy
+**/link_list4graph*.json
+**/node_list4graph*.json
+**/node_temp*.json
+**/sparse_matrix*.npy
+**/sparse_matrix*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -4,7 +4,7 @@ import scipy.sparse
 from scipy.sparse import csr_matrix
 import sys
 
-link_file = 'link_list4graph.json'
+link_file = 'link_list4graph_bz247.json'
 link_data = json.load(open(link_file), strict=False)
 
 row = []
@@ -26,5 +26,6 @@ row = row.astype(int)
 m = csr_matrix((data,(row,col)))
 
 #np.save('sparse_matrix.npy', m)
-scipy.sparse.save_npz('sparse_matrix.npz', m)
+scipy.sparse.save_npz('sparse_matrix_bz247.npz', m)
+print(m.shape)
 #A = scipy.load('sparse_matrix.npy')[()]

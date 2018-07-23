@@ -7,8 +7,13 @@ p_f = pipe_data['features']
 
 node_list = []
 for feature in p_f:
-    for coord in feature['geometry']['coordinates']:
-        node_list.append((round(coord[0],12), round(coord[1],12)))
+    coord1 = feature['geometry']['coordinates'][0]
+    node_list.append((round(coord1[0],12), round(coord1[1],12)))
+    coord2 = feature['geometry']['coordinates'][-1]
+    node_list.append((round(coord2[0],12), round(coord2[1],12)))
+
+#    for coord in feature['geometry']['coordinates']:
+#        node_list.append((round(coord[0],12), round(coord[1],12)))
 
 node_set = set(node_list)
 
@@ -24,7 +29,7 @@ for node in node_list2:
 node_dict2 = {str(k):v for k, v in node_dict.items()}
 
 
-with open('node_temp.json', 'w') as outfile:
+with open('node_temp_bz247.json', 'w') as outfile:
     json.dump(node_dict2, outfile, indent=2)
 
 node_list4graph = []
@@ -46,8 +51,8 @@ for link in p_f:
     link_id += 1
     link_list4graph.append(temp_link_dict)
 
-with open('node_list4graph.json', 'w') as outfile:
+with open('node_list4graph_bz247.json', 'w') as outfile:
     json.dump(node_list4graph, outfile, indent=2)
 
-with open('link_list4graph.json', 'w') as outfile:
+with open('link_list4graph_bz247.json', 'w') as outfile:
     json.dump(link_list4graph, outfile, indent=2)
