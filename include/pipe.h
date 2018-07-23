@@ -11,16 +11,14 @@
 #include "settings.h"
 
 namespace pipenetwork {
-class Pipe;
-}
 
 //! Pipe class
 //! \brief Class that stores the information about pipes
-class pipenetwork::Pipe {
+class Pipe {
 
  public:
-  // Constructor with id and node pointers
-  //! \param[in] id node id
+  //! Constructor with pipe id and node pointers
+  //! \param[in] id pipe id
   //! \param[in] nodes array of node pointers
   Pipe(unsigned id,
        const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes);
@@ -58,8 +56,8 @@ class pipenetwork::Pipe {
   //! Calculate and return discharge using Darcy-Weisbach equation:
   //! dhead = (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
   //! That is, discharge =
-  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); \retval
-  //! discharge_ discharge in the pipe
+  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction));
+  //! \retval discharge_ discharge in the pipe
   double discharge();
 
   //! Assign maximum allowable velocity
@@ -92,5 +90,6 @@ class pipenetwork::Pipe {
   //! whether the pipe is broken
   bool isbroken_{false};
 };
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_PIPE_H_

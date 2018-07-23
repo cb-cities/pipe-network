@@ -4,12 +4,10 @@
 #include <Eigen/Dense>
 
 namespace pipenetwork {
-class Node;
-}
 
 //! Node class
 //! \brief Class that stores the information about nodes
-class pipenetwork::Node {
+class Node {
 
  public:
   // Constructor with id and coordinates
@@ -88,5 +86,6 @@ class pipenetwork::Node {
   //! whether discharge is assigned
   bool isdischarge_{false};
 };
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_NODE_H_
