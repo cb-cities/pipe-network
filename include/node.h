@@ -3,9 +3,13 @@
 
 #include <Eigen/Dense>
 
+namespace pipenetwork {
+class Node;
+}
+
 //! Node class
 //! \brief Class that stores the information about nodes
-class Node {
+class pipenetwork::Node {
 
  public:
   // Constructor with id and coordinates

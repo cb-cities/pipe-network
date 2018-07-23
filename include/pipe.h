@@ -8,16 +8,22 @@
 #include <memory>
 
 #include "node.h"
+#include "settings.h"
+
+namespace pipenetwork {
+class Pipe;
+}
 
 //! Pipe class
 //! \brief Class that stores the information about pipes
-class Pipe {
+class pipenetwork::Pipe {
 
  public:
   // Constructor with id and node pointers
   //! \param[in] id node id
   //! \param[in] nodes array of node pointers
-  Pipe(unsigned id, const std::array<std::shared_ptr<Node>, 2>& nodes);
+  Pipe(unsigned id,
+       const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes);
 
   //! Destructor
   ~Pipe() { nodes_.fill(nullptr); }
@@ -40,7 +46,7 @@ class Pipe {
   void radius(double radius) { radius_ = radius; }
 
   //! Return length of the pipe
-  //! retval length_ pipe length
+  //! \retval length_ pipe length
   double length() { return length_; }
 
   //! Assign Dracy friction factor
@@ -52,7 +58,7 @@ class Pipe {
   //! Calculate and return discharge using Darcy-Weisbach equation:
   //! dhead = (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
   //! That is, discharge =
-  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); retval
+  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction)); \retval
   //! discharge_ discharge in the pipe
   double discharge();
 
@@ -72,7 +78,7 @@ class Pipe {
   //! pipe id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! array of node pointers which form the pipe
-  std::array<std::shared_ptr<Node>, 2> nodes_;
+  std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes_;
   //! discharge in the pipe
   double discharge_{std::numeric_limits<double>::max()};
   //! radius of the pipe
@@ -85,8 +91,6 @@ class Pipe {
   double max_velocity_{std::numeric_limits<double>::max()};
   //! whether the pipe is broken
   bool isbroken_{false};
-  //! gravitational acceleration
-  const double g_{9.81};
 };
 
 #endif  // PIPE_NETWORK_PIPE_H_

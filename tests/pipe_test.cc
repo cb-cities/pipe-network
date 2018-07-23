@@ -2,6 +2,7 @@
 
 #include "node.h"
 #include "pipe.h"
+#include "settings.h"
 
 // Check pipe class
 TEST_CASE("Pipe is checked", "[Pipe]") {
@@ -18,15 +19,15 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
 
   // Creat an array of two node pointers with previous defined index and
   // coordinates of the nodes
-  std::array<std::shared_ptr<Node>, 2> nodes;
-  nodes[0] = std::make_shared<Node>(nodeid1, coords1);
-  nodes[1] = std::make_shared<Node>(nodeid2, coords2);
+  std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes;
+  nodes[0] = std::make_shared<pipenetwork::Node>(nodeid1, coords1);
+  nodes[1] = std::make_shared<pipenetwork::Node>(nodeid2, coords2);
 
   // Pipe index
   const unsigned pipeid = 200;
 
   // Creat a pipe based on previous created node pointers
-  auto pipe = std::make_unique<Pipe>(pipeid, nodes);
+  auto pipe = std::make_unique<pipenetwork::Pipe>(pipeid, nodes);
 
   // Pipe length
   const double length = sqrt(3 * pow(1.1, 2));
@@ -39,7 +40,7 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
 
   // Check pipe broken status and initialized status
   REQUIRE(pipe->isbroken() == false);
-  
+
   // Check radius, discharge, max flow velocity and Darcy friction factor of the
   // pipe
   SECTION(

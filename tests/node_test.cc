@@ -13,7 +13,7 @@ TEST_CASE("Node is checked", "[Node]") {
   Eigen::Vector3d coords{11.2, 22.3, 33.4};
 
   // Create a node
-  auto node = std::make_unique<Node>(id, coords);
+  auto node = std::make_unique<pipenetwork::Node>(id, coords);
 
   // Check node id
   REQUIRE(node->id() == id);
