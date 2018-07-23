@@ -7,17 +7,18 @@ pipenetwork::Pipe::Pipe(
 
 // Calculate and return discharge using Darcy-Weisbach equation
 double pipenetwork::Pipe::discharge() {
-  if (nodes_[0]->ishead() && nodes_[1]->ishead()) {
-    const double dhead = nodes_[0]->head() - nodes_[1]->head();
+  // The Darcy-Weiabach equation is only applicable when heads at both ends of
+  // the pipe are known, thus check it
+  if (nodes_.at(0)->ishead() && nodes_.at(1)->ishead()) {
+    const double dhead = nodes_.at(0)->head() - nodes_.at(1)->head();
     discharge_ = sqrt(std::abs(dhead) * pow(M_PI, 2) * pipenetwork::Gravity(2) *
                       pow(2 * radius_, 5) / (8 * darcy_friction_));
-    if (dhead < 0) {
-      discharge_ = -1 * discharge_;
-    }
-    return discharge_;
+    // defined flow direction from nodes_.at(0) to nodes.at(1) as positive
+    if (dhead < 0) discharge_ *= -1.;
   } else {
     throw std::runtime_error(
         "Unknown head exists, cannot calculate discharge using Darcy Weisbach "
         "equation");
   }
+  return discharge_;
 }
