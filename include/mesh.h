@@ -110,7 +110,7 @@ class Mesh {
     std::unique_ptr<pipenetwork::Pipe> pipeptr = nullptr;
     for (const auto& pipe : pipes_) {
       if (pipe->id() == id) {
-        pipeptr == pipe;
+        pipeptr = pipe;
         break;
       }
     }
