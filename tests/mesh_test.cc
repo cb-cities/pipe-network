@@ -66,4 +66,13 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   // Check coordinates of nodes
   REQUIRE(mesh->nodal_coordinates().at(1)(0) == Approx(2.0).epsilon(tolerance));
   REQUIRE(mesh->nodal_coordinates().at(2)(0) == Approx(1.0).epsilon(tolerance));
+
+  // Check betweenness centrality of the nodes and pipes
+  mesh->calc_betweenness_centrality();
+  REQUIRE(mesh->betweenness_centrality_node(nodeids.at(3)) ==
+          Approx(0.0).epsilon(tolerance));
+  REQUIRE(mesh->betweenness_centrality_node(nodeids.at(2)) ==
+          Approx(6.0).epsilon(tolerance));
+  REQUIRE(mesh->betweenness_centrality_pipe(pipeids.at(3)) ==
+          Approx(4.0).epsilon(tolerance));
 }
