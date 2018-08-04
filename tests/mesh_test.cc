@@ -15,9 +15,6 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   // Creat a mesh
   auto mesh = std::make_unique<Mesh>(meshid);
 
-  // Node indices
-  std::vector<unsigned> nodeids = {201, 202, 203, 204, 205};
-
   // Nodal coordinates
   const Eigen::Vector3d coords1(0.0, 0.0, 0.0);
   const Eigen::Vector3d coords2(2.0, 0.0, 0.0);
@@ -27,22 +24,19 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   std::vector<Eigen::Vector3d> coords = {coords1, coords2, coords3, coords4,
                                          coords5};
 
-  // Create nodal pointers based on nodal indices and coordinates in the mesh
-  mesh->create_node(nodeids, coords);
-
-  // Pipe indices
-  std::vector<unsigned> pipeids = {301, 302, 303, 304};
+  // Create nodal pointers based on nodal coordinates in the mesh
+  mesh->create_nodes(coords);
 
   // Make pairs of nodes to create pipe
   std::vector<std::pair<unsigned, unsigned>> nodepair;
-  nodepair.emplace_back(std::make_pair(nodeids.at(0), nodeids.at(2)));
-  nodepair.emplace_back(std::make_pair(nodeids.at(1), nodeids.at(2)));
-  nodepair.emplace_back(std::make_pair(nodeids.at(2), nodeids.at(3)));
-  nodepair.emplace_back(std::make_pair(nodeids.at(2), nodeids.at(4)));
+  nodepair.emplace_back(std::make_pair(1, 3));
+  nodepair.emplace_back(std::make_pair(2, 3));
+  nodepair.emplace_back(std::make_pair(3, 4));
+  nodepair.emplace_back(std::make_pair(3, 5));
 
   // Create pipes based on pipe indices and previous created node pointers in
   // the mesh
-  mesh->create_pipe(pipeids, nodepair);
+  mesh->create_pipes(nodepair);
 
   // Check mesh id
   REQUIRE(mesh->id() == meshid);

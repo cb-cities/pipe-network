@@ -30,17 +30,13 @@ class Mesh {
   //! \retval id_ id of the mesh
   unsigned id() const { return id_; }
 
-  //! Create a nodal pointer based on input id and coordinates and check whether
-  //! duplicate nodes exist \param[in] id vector of the node indices \param[in]
-  //! coords vector of the coordinates of the nodes
-  void create_node(std::vector<unsigned> id,
-                   std::vector<Eigen::Vector3d> coords);
+  //! Create nodal pointers and assign indices based on coordinates
+  //! \param[in] coords vector of the coordinates of the nodes
+  void create_nodes(std::vector<Eigen::Vector3d> coords);
 
-  //! Create a pipe pointer based on input idices of the pipe and the nodes at
-  //! its ends and check whether duplicate pipe exist \param[in] pipeid index of
-  //! the pipe \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  void create_pipe(std::vector<unsigned> pipeid,
-                   std::vector<std::pair<unsigned, unsigned>> nodeids);
+  //! Create a pipe pointers and assign indices based on the nodes at its ends
+  //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
+  void create_pipes(std::vector<std::pair<unsigned, unsigned>> nodeids);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
