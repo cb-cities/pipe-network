@@ -21,14 +21,16 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const Eigen::Vector3d coords3(1.0, 1.0, 0.0);
   const Eigen::Vector3d coords4(0.0, 2.0, 0.0);
   const Eigen::Vector3d coords5(2.0, 2.0, 0.0);
+  const Eigen::Vector3d coords6(3.0, 3.0, 0.0);
+  const Eigen::Vector3d coords7(3.0, 4.0, 0.0);
   std::vector<Eigen::Vector3d> coords = {coords1, coords2, coords3, coords4,
-                                         coords5};
+                                         coords5, coords6, coords7};
 
   // Create nodal pointers based on nodal coordinates in the mesh
   mesh->create_nodes(coords);
 
   // Make pairs of nodes to create pipe
-  std::vector<std::pair<unsigned, unsigned>> nodepair;
+  std::vector<std::pair<unsigned long long, unsigned long long>> nodepair;
   nodepair.emplace_back(std::make_pair(1, 3));
   nodepair.emplace_back(std::make_pair(2, 3));
   nodepair.emplace_back(std::make_pair(3, 4));
@@ -38,11 +40,15 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   // the mesh
   mesh->create_pipes(nodepair);
 
+  // Remove isolated nodes from mesh and record them
+  std::vector<std::shared_ptr<pipenetwork::Node>> isolated_nodes =
+      mesh->isolated_nodes();
+
   // Check mesh id
   REQUIRE(mesh->id() == meshid);
 
   // Check isolated node
-  REQUIRE(mesh->isolated_node() == false);
+  // REQUIRE(mesh->isolated_node() == false);
 
   // Check number of nodes
   REQUIRE(mesh->nnodes() == 5);
@@ -50,7 +56,10 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   // Check number of pipes
   REQUIRE(mesh->npipes() == 4);
 
-  // Check coordinates of nodes
-  REQUIRE(mesh->nodal_coordinates().at(1)(0) == Approx(2.0).epsilon(tolerance));
-  REQUIRE(mesh->nodal_coordinates().at(2)(0) == Approx(1.0).epsilon(tolerance));
+  // Check isolated nodes
+  REQUIRE(isolated_nodes.size() == 2);
+  REQUIRE(isolated_nodes.at(0)->coordinates()(1) ==
+          Approx(3.0).epsilon(tolerance));
+  REQUIRE(isolated_nodes.at(1)->coordinates()(1) ==
+          Approx(4.0).epsilon(tolerance));
 }

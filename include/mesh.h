@@ -32,11 +32,13 @@ class Mesh {
 
   //! Create nodal pointers and assign indices based on coordinates
   //! \param[in] coords vector of the coordinates of the nodes
-  void create_nodes(std::vector<Eigen::Vector3d> coords);
+  void create_nodes(const std::vector<Eigen::Vector3d>& coords);
 
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  void create_pipes(std::vector<std::pair<unsigned, unsigned>> nodeids);
+  void create_pipes(
+      const std::vector<std::pair<unsigned long long, unsigned long long>>&
+          nodeids);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
@@ -46,21 +48,17 @@ class Mesh {
   //! \retval pipes_.size() number of pipes
   unsigned npipes() const { return pipes_.size(); }
 
-  //! Check whether isolated node exists
-  //! \retval the status to indicate whether isolated node exists
-  bool isolated_node();
-
-  //! Return coordinates of all the nodes in the mesh
-  //! \retval nodal_coordinates coordinates of all the nodes
-  std::vector<Eigen::Vector3d> nodal_coordinates();
+  //! Record isolated nodes and remove them from the mesh
+  //! \retval isolated_nodes isolated nodes removed from the mesh
+  std::vector<std::shared_ptr<pipenetwork::Node>> isolated_nodes();
 
  private:
   //! mesh id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! nodal id and corresponding nodal pointer
-  std::map<unsigned, std::shared_ptr<pipenetwork::Node>> nodes_;
+  std::map<unsigned long long, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! pipe id and corresponding pipe pointer
-  std::map<unsigned, std::unique_ptr<pipenetwork::Pipe>> pipes_;
+  std::map<unsigned long long, std::unique_ptr<pipenetwork::Pipe>> pipes_;
 };
 
 #endif  // PIPE_NETWORK_MESH_H_

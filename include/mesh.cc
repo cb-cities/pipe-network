@@ -1,29 +1,35 @@
+
 //! Create nodal pointers and assign indices based on input coordinates
-void Mesh::create_nodes(std::vector<Eigen::Vector3d> coords) {
-  unsigned index = 1;
-  for (auto& coord : coords) {
-    nodes_.emplace(std::pair<unsigned, std::shared_ptr<pipenetwork::Node>>(
-        index, std::make_shared<pipenetwork::Node>(index, coord)));
-    index++;
+void Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
+  unsigned long long index = 1;
+  for (const auto& coord : coords) {
+    nodes_.emplace(
+        std::pair<unsigned long long, std::shared_ptr<pipenetwork::Node>>(
+            index, std::make_shared<pipenetwork::Node>(index, coord)));
+    ++index;
   }
 }
 
 //! Create pipe pointers and assign indices based on the nodes at its ends
-void Mesh::create_pipes(std::vector<std::pair<unsigned, unsigned>> nodeids) {
-  unsigned index = 1;
-  for (auto& nodeid : nodeids) {
+void Mesh::create_pipes(
+    const std::vector<std::pair<unsigned long long, unsigned long long>>&
+        nodeids) {
+  unsigned long long index = 1;
+  for (const auto& nodeid : nodeids) {
     std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes;
     nodes.at(0) = nodes_.at(nodeid.first);
     nodes.at(1) = nodes_.at(nodeid.second);
-    pipes_.emplace(std::pair<unsigned, std::unique_ptr<pipenetwork::Pipe>>(
-        index, std::make_unique<pipenetwork::Pipe>(index, nodes)));
-    index++;
+    pipes_.emplace(
+        std::pair<unsigned long long, std::unique_ptr<pipenetwork::Pipe>>(
+            index, std::make_unique<pipenetwork::Pipe>(index, nodes)));
+    ++index;
   }
 }
 
-//! Check whether isolated node exists
-//! \retval the status to indicate whether isolated node exists
-bool Mesh::isolated_node() {
+//! Record isolated nodes and remove them from the mesh
+std::vector<std::shared_ptr<pipenetwork::Node>> Mesh::isolated_nodes() {
+  // Search for and collect all isolated nodes
+  std::vector<std::shared_ptr<pipenetwork::Node>> isolated_nodes;
   for (const auto& node : nodes_) {
     bool connect = false;
     for (const auto& pipe : pipes_) {
@@ -33,16 +39,10 @@ bool Mesh::isolated_node() {
         break;
       }
     }
-    if (connect == false) return true;
+    if (connect == false) isolated_nodes.emplace_back(node.second);
   }
-  return false;
-}
-
-//! Return coordinates of all the nodes in the mesh
-//! \retval nodal_coordinates coordinates of all the nodes
-std::vector<Eigen::Vector3d> Mesh::nodal_coordinates() {
-  std::vector<Eigen::Vector3d> nodal_coordinates;
-  for (const auto& node : nodes_)
-    nodal_coordinates.emplace_back(node.second->coordinates());
-  return nodal_coordinates;
+  // Remove isolated nodes from list of nodal pointers
+  for (const auto& inode : isolated_nodes) nodes_.erase(inode->id());
+  // Return the list of isolated nodes
+  return isolated_nodes;
 }
