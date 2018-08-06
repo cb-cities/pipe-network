@@ -13,6 +13,7 @@
 
 #include "node.h"
 #include "pipe.h"
+#include "settings.h"
 
 //! Mesh class
 //! \brief Class for mesh that contains node and pipe pointers
@@ -36,9 +37,7 @@ class Mesh {
 
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  void create_pipes(
-      const std::vector<std::pair<unsigned long long, unsigned long long>>&
-          nodeids);
+  void create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
@@ -56,9 +55,9 @@ class Mesh {
   //! mesh id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! nodal id and corresponding nodal pointer
-  std::map<unsigned long long, std::shared_ptr<pipenetwork::Node>> nodes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! pipe id and corresponding pipe pointer
-  std::map<unsigned long long, std::unique_ptr<pipenetwork::Pipe>> pipes_;
+  std::map<Index, std::unique_ptr<pipenetwork::Pipe>> pipes_;
 };
 
 #endif  // PIPE_NETWORK_MESH_H_

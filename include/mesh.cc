@@ -1,27 +1,22 @@
-
 //! Create nodal pointers and assign indices based on input coordinates
 void Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
-  unsigned long long index = 1;
+  Index index = 0;
   for (const auto& coord : coords) {
-    nodes_.emplace(
-        std::pair<unsigned long long, std::shared_ptr<pipenetwork::Node>>(
-            index, std::make_shared<pipenetwork::Node>(index, coord)));
+    nodes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Node>>(
+        index, std::make_shared<pipenetwork::Node>(index, coord)));
     ++index;
   }
 }
 
 //! Create pipe pointers and assign indices based on the nodes at its ends
-void Mesh::create_pipes(
-    const std::vector<std::pair<unsigned long long, unsigned long long>>&
-        nodeids) {
-  unsigned long long index = 1;
+void Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids) {
+  Index index = 0;
   for (const auto& nodeid : nodeids) {
     std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes;
     nodes.at(0) = nodes_.at(nodeid.first);
     nodes.at(1) = nodes_.at(nodeid.second);
-    pipes_.emplace(
-        std::pair<unsigned long long, std::unique_ptr<pipenetwork::Pipe>>(
-            index, std::make_unique<pipenetwork::Pipe>(index, nodes)));
+    pipes_.emplace(std::pair<Index, std::unique_ptr<pipenetwork::Pipe>>(
+        index, std::make_unique<pipenetwork::Pipe>(index, nodes)));
     ++index;
   }
 }

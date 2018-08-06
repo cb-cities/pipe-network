@@ -3,6 +3,7 @@
 #include "mesh.h"
 #include "node.h"
 #include "pipe.h"
+#include "settings.h"
 
 // Check mesh class
 TEST_CASE("Mesh is checked", "[Mesh]") {
@@ -30,11 +31,11 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   mesh->create_nodes(coords);
 
   // Make pairs of nodes to create pipe
-  std::vector<std::pair<unsigned long long, unsigned long long>> nodepair;
-  nodepair.emplace_back(std::make_pair(1, 3));
+  std::vector<std::pair<Index, Index>> nodepair;
+  nodepair.emplace_back(std::make_pair(0, 2));
+  nodepair.emplace_back(std::make_pair(1, 2));
   nodepair.emplace_back(std::make_pair(2, 3));
-  nodepair.emplace_back(std::make_pair(3, 4));
-  nodepair.emplace_back(std::make_pair(3, 5));
+  nodepair.emplace_back(std::make_pair(2, 4));
 
   // Create pipes based on pipe indices and previous created node pointers in
   // the mesh
