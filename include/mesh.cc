@@ -10,6 +10,24 @@ void Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
 
 //! Create pipe pointers and assign indices based on the nodes at its ends
 void Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids) {
+  // Check whether input nodal indices exist
+  std::vector<Index> unfound_id;
+  for (const auto& nodeid : nodeids) {
+    if (nodes_.count(nodeid.first) == 0 &&
+        std::count(unfound_id.begin(), unfound_id.end(), nodeid.first) == 0)
+      unfound_id.emplace_back(nodeid.first);
+    if (nodes_.count(nodeid.second) == 0 &&
+        std::count(unfound_id.begin(), unfound_id.end(), nodeid.second) == 0)
+      unfound_id.emplace_back(nodeid.second);
+  }
+  if (unfound_id.size() != 0) {
+    std::cout << "nodal indices can't be found, id: ";
+    for (const auto& id : unfound_id) std::cout << id << "; ";
+    std::cout << '\n';
+    throw std::runtime_error("unfound indices exist, check input");
+  }
+
+  // Create pipe pointers
   Index index = 0;
   for (const auto& nodeid : nodeids) {
     std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes;

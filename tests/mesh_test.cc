@@ -31,15 +31,17 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   mesh->create_nodes(coords);
 
   // Make pairs of nodes to create pipe
-  std::vector<std::pair<Index, Index>> nodepair;
-  nodepair.emplace_back(std::make_pair(0, 2));
-  nodepair.emplace_back(std::make_pair(1, 2));
-  nodepair.emplace_back(std::make_pair(2, 3));
-  nodepair.emplace_back(std::make_pair(2, 4));
+  std::vector<std::pair<Index, Index>> node_pairs;
+  node_pairs.emplace_back(std::make_pair(0, 2));
+  node_pairs.emplace_back(std::make_pair(1, 2));
+  node_pairs.emplace_back(std::make_pair(2, 3));
+  node_pairs.emplace_back(std::make_pair(2, 4));
+  // node_pairs.emplace_back(std::make_pair(2, 8));
+  // node_pairs.emplace_back(std::make_pair(8, 9));
 
   // Create pipes based on pipe indices and previous created node pointers in
   // the mesh
-  mesh->create_pipes(nodepair);
+  mesh->create_pipes(node_pairs);
 
   // Remove isolated nodes from mesh and record them
   std::vector<std::shared_ptr<pipenetwork::Node>> isolated_nodes =
@@ -47,9 +49,6 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
 
   // Check mesh id
   REQUIRE(mesh->id() == meshid);
-
-  // Check isolated node
-  // REQUIRE(mesh->isolated_node() == false);
 
   // Check number of nodes
   REQUIRE(mesh->nnodes() == 5);
