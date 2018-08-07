@@ -6,7 +6,6 @@
 #include <array>
 #include <exception>
 #include <iostream>
-#include <iterator>
 #include <map>
 #include <memory>
 #include <vector>
@@ -37,7 +36,8 @@ class Mesh {
 
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  void create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
+  //! \retval no_exception to check whether all input pipe created successfully
+  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
@@ -47,9 +47,8 @@ class Mesh {
   //! \retval pipes_.size() number of pipes
   unsigned npipes() const { return pipes_.size(); }
 
-  //! Record isolated nodes and remove them from the mesh
-  //! \retval isolated_nodes isolated nodes removed from the mesh
-  std::vector<std::shared_ptr<pipenetwork::Node>> isolated_nodes();
+  //! Remove unconnected nodes from the mesh
+  void remove_unconnected_nodes();
 
  private:
   //! mesh id
