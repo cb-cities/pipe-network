@@ -36,7 +36,7 @@ class Mesh {
 
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  //! \retval no_exception to check whether all input pipe created successfully
+  //! \retval status to check whether all input pipe created successfully
   bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
 
   //! Return the number of nodes in the mesh

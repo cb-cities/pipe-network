@@ -36,25 +36,52 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   node_pairs.emplace_back(std::make_pair(1, 2));
   node_pairs.emplace_back(std::make_pair(2, 3));
   node_pairs.emplace_back(std::make_pair(2, 4));
-  node_pairs.emplace_back(std::make_pair(2, 8));
-  node_pairs.emplace_back(std::make_pair(8, 9));
-
-  // Create pipes based on pipe indices and previous created node pointers in
-  // the mesh
-  bool all_pipe_created = mesh->create_pipes(node_pairs);
-
-  // Remove isolated nodes from mesh and record them
-  mesh->remove_unconnected_nodes();
 
   // Check mesh id
   REQUIRE(mesh->id() == meshid);
 
-  // Check number of nodes
-  REQUIRE(mesh->nnodes() == 5);
+  // Check the case in which exception is not thrown
+  SECTION("Check the case in which exception is not thrown") {
 
-  // Check number of pipes
-  REQUIRE(mesh->npipes() == 4);
+    // Create pipes based on pipe indices and previous created node pointers in
+    // the mesh
+    bool all_pipe_created = mesh->create_pipes(node_pairs);
 
-  // Check whether exception is thrown when creating pipe
-  REQUIRE(all_pipe_created == false);
+    // Check number of nodes before remove
+    REQUIRE(mesh->nnodes() == 7);
+
+    // Remove isolated nodes from mesh
+    mesh->remove_unconnected_nodes();
+
+    // Check number of nodes after remove
+    REQUIRE(mesh->nnodes() == 5);
+    // Check number of pipes
+    REQUIRE(mesh->npipes() == 4);
+    // Check whether exception is thrown when creating pipe
+    REQUIRE(all_pipe_created == true);
+  }
+
+  // Check the case in which exception is thrown
+  SECTION("Check the case in which exception is thrown") {
+
+    // Make pairs of nodes which do not exist to create pipe
+    node_pairs.emplace_back(std::make_pair(2, 8));
+    node_pairs.emplace_back(std::make_pair(8, 9));
+    // Create pipes based on pipe indices and previous created node pointers in
+    // the mesh
+    bool all_pipe_created = mesh->create_pipes(node_pairs);
+
+    // Check number of nodes before remove
+    REQUIRE(mesh->nnodes() == 7);
+
+    // Remove isolated nodes from mesh
+    mesh->remove_unconnected_nodes();
+
+    // Check number of nodes after remove
+    REQUIRE(mesh->nnodes() == 5);
+    // Check number of pipes
+    REQUIRE(mesh->npipes() == 4);
+    // Check whether exception is thrown when creating pipe
+    REQUIRE(all_pipe_created == false);
+  }
 }
