@@ -22,3 +22,12 @@ double pipenetwork::Pipe::discharge() {
   }
   return discharge_;
 }
+
+//! Return an array of pointers point to the nodes at pipe end
+const std::array<std::shared_ptr<const pipenetwork::Node>, 2>
+    pipenetwork::Pipe::nodes() {
+  std::array<std::shared_ptr<const pipenetwork::Node>, 2> nodes;
+  nodes.at(0) = nodes_.at(0);
+  nodes.at(1) = nodes_.at(1);
+  return nodes;
+}

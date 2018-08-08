@@ -72,6 +72,9 @@ class Pipe {
   //! \retval isbroken_ pipe broken status
   bool isbroken() const { return isbroken_; }
 
+  //! Return an array of pointers point to the nodes at pipe end
+  const std::array<std::shared_ptr<const pipenetwork::Node>, 2> nodes();
+
  private:
   //! pipe id
   unsigned id_{std::numeric_limits<unsigned>::max()};

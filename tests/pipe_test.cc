@@ -83,4 +83,15 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Check discharge and Darcy friction factor of the pipe
     REQUIRE(pipe->discharge() == Approx(discharge).epsilon(tolerance));
   }
+
+  // Check return pointer to const Node
+  SECTION("Check return pointer to const Node") {
+
+    // Check return ids of the nodes
+    REQUIRE(pipe->nodes().at(0)->id() == 100);
+    REQUIRE(pipe->nodes().at(1)->id() == 101);
+    // Check return head assignment status
+    REQUIRE(pipe->nodes().at(0)->ishead() == false);
+    REQUIRE(pipe->nodes().at(1)->ishead() == false);
+  }
 }
