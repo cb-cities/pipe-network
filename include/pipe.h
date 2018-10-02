@@ -53,13 +53,41 @@ class Pipe {
     darcy_friction_ = darcy_friction;
   }
 
-  //! Calculate and return discharge using Darcy-Weisbach equation:
-  //! dhead = (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
-  //! That is, discharge =
-  //! sqrt(dhead*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction));
-  //! \retval discharge_ discharge in the pipe
-  double discharge();
+  //! Assign pipe roughness coefficient
+  //! \param[in] pipe_roughness roughness coefficient of the pipe
+  void pipe_roughness(double pipe_roughness) {
+    pipe_roughness_ = pipe_roughness;
+  }
 
+  //! Calculate and return discharge using Darcy-Weisbach equation:
+  //! dhead/length =
+  //! (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5)) That is,
+  //! discharge =
+  //! sqrt(dhead/length*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction));
+  //! \retval discharge_ discharge in the pipe
+  double discharge_dw();
+
+  //! Calculate and return discharge using Hazen-Williams equation:
+  //! dhead/length =
+  //! (10.67*pow(discharge,1.852)/(pow(pipe_roughness,1.852)*pow(2*radius,4.8704))
+  //! That is, discharge =
+  //! pow((dhead*pow(pipe_roughness,1.852)*pow(2*radius,4.8704)/(10.67*length)),1/1.852);
+  //! \retval discharge_ discharge in the pipe
+  double discharge_hw();
+
+  //! Calculate and return head loss over the pipe using Darcy-Weisbach
+  //! equation: dhead =
+  //! length*(8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
+  //! \retval headloss_  headloss over the pipe
+  double headloss_dw();
+
+  //! Calculate and return headloss over the pipe using Hazen-Williams equation:
+  //! dhead/length
+  //! = 10.67*length*pow(discharge,1.852)/(pow(pipe_roughness,1.852)*pow(2*radius,4.8704))
+  //! \retval headloss_ headloss over the pipe
+  double headloss_hw();
+
+  //! Assign maximum allowable velocity
   //! Assign maximum allowable velocity
   //! \param[in] max_flowrate maximum allowable velocity of flow in the pipe
   void max_velocity(double max_velocity) { max_velocity_ = max_velocity; }
@@ -82,12 +110,16 @@ class Pipe {
   std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes_;
   //! discharge in the pipe
   double discharge_{std::numeric_limits<double>::max()};
+  //! headloss over the pipe
+  double headloss_{std::numeric_limits<double>::max()};
   //! radius of the pipe
   double radius_{std::numeric_limits<double>::max()};
   //! length of the pipe
   double length_;
-  //! Darcy friction factor of the pipe
+  //! Darcy friction factor of the pipe used in Darcy-Weisbach equation
   double darcy_friction_{std::numeric_limits<double>::max()};
+  //! pipe roughness coefficient used in Hazen-Williams equation
+  double pipe_roughness_{std::numeric_limits<double>::max()};
   //! maximum allowable velocity of flow in the pipe
   double max_velocity_{std::numeric_limits<double>::max()};
   //! whether the pipe is broken
