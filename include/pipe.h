@@ -17,11 +17,22 @@ namespace pipenetwork {
 class Pipe {
 
  public:
-  //! Constructor with pipe id and node pointers
+  //! Constructor with pipe id, node pointers, diameter and status
   //! \param[in] id pipe id
   //! \param[in] nodes array of node pointers
+  //! \param[in] diameter of the pipe
+  //! \param[in] status of the pipe, true for open, flase for close
   Pipe(unsigned id,
-       const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes);
+       const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
+       const double diameter, bool status);
+
+  //! Constructor with pipe id, node pointers, diameter, status and max
+  //! allowable velocity \param[in] id pipe id \param[in] nodes array of node
+  //! pointers \param[in] diameter of the pipe \param[in] status of the pipe,
+  //! true for open, flase for close \param[in] maximum allowable velocity
+  Pipe(unsigned id,
+       const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
+       const double diameter, bool status, const double max_velocity);
 
   //! Destructor
   ~Pipe() { nodes_.fill(nullptr); }
@@ -39,10 +50,6 @@ class Pipe {
   //! \retval id_ id of the pipe
   unsigned id() const { return id_; }
 
-  //! Assign radius of the pipe
-  //! \param[in] radius radius of the pipe
-  void radius(double radius) { radius_ = radius; }
-
   //! Return length of the pipe
   //! \retval length_ pipe length
   double length() { return length_; }
@@ -59,42 +66,40 @@ class Pipe {
     pipe_roughness_ = pipe_roughness;
   }
 
-  //! Calculate and return discharge using Darcy-Weisbach equation:
-  //! dhead/length =
-  //! (8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5)) That is,
-  //! discharge =
-  //! sqrt(dhead/length*pow(M_PI,2)*g*pow(2*radius,5)/(8*darcy_friction));
+  //! Initialize discharge to a small value
+  void initialize_discharge() { discharge_ = 0.001; }
+
+  //! Initialize discharge with input value
+  //! \param[in] discharge input discharge value of the pipe
+  void initialize_discharge(double discharge) { discharge_ = discharge; }
+
+  //! Calculate discharge using Darcy-Weisbach equation
+  void compute_discharge_darcy_weisbach();
+
+  //! Calculate discharge using Hazen-Williams equation
+  void compute_discharge_hazen_williams();
+
+  //! Return calculated discharge in the pipe
   //! \retval discharge_ discharge in the pipe
-  double discharge_dw();
+  double discharge() const { return discharge_; }
 
-  //! Calculate and return discharge using Hazen-Williams equation:
-  //! dhead/length =
-  //! (10.67*pow(discharge,1.852)/(pow(pipe_roughness,1.852)*pow(2*radius,4.8704))
-  //! That is, discharge =
-  //! pow((dhead*pow(pipe_roughness,1.852)*pow(2*radius,4.8704)/(10.67*length)),1/1.852);
-  //! \retval discharge_ discharge in the pipe
-  double discharge_hw();
+  //! Calculate head loss over the pipe using Darcy-Weisbach equation:
+  void compute_headloss_darcy_weisbach();
 
-  //! Calculate and return head loss over the pipe using Darcy-Weisbach
-  //! equation: dhead =
-  //! length*(8*darcy_factor*pow(discharge,2)/(pow(M_PI,2)*g*pow(2*radius,5))
-  //! \retval headloss_  headloss over the pipe
-  double headloss_dw();
+  //! Calculate headloss over the pipe using Hazen-Williams equation:
+  void compute_headloss_hazen_williams();
 
-  //! Calculate and return headloss over the pipe using Hazen-Williams equation:
-  //! dhead/length
-  //! = 10.67*length*pow(discharge,1.852)/(pow(pipe_roughness,1.852)*pow(2*radius,4.8704))
+  //! Return calculated headloss over the pipe
   //! \retval headloss_ headloss over the pipe
-  double headloss_hw();
-
-  //! Assign maximum allowable velocity
-  //! Assign maximum allowable velocity
-  //! \param[in] max_flowrate maximum allowable velocity of flow in the pipe
-  void max_velocity(double max_velocity) { max_velocity_ = max_velocity; }
+  double headloss() const { return headloss_; }
 
   //! calculate maximum allowable discharge based on ridius and maximum
   //! allowable velocity \retval max_discharge maximun allowable discharge
   double max_discharge() { return (max_velocity_ * M_PI * pow(radius_, 2)); }
+
+  //! Return pipe open status
+  //! \retval isopen_ whether pipe open or close
+  bool isopen() const { return isopen_; }
 
   //! Return pipe broken status
   //! \retval isbroken_ pipe broken status
@@ -124,6 +129,8 @@ class Pipe {
   double max_velocity_{std::numeric_limits<double>::max()};
   //! whether the pipe is broken
   bool isbroken_{false};
+  //! whether the pipe is open
+  bool isopen_{true};
 };
 }  // namespace pipenetwork
 

@@ -24,10 +24,17 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
   nodes.at(1) = std::make_shared<pipenetwork::Node>(nodeid2, coords2);
 
   // Pipe index
-  const unsigned pipeid = 200;
+  const unsigned pipeid = 201;
 
-  // Creat a pipe based on previous created node pointers
-  auto pipe = std::make_unique<pipenetwork::Pipe>(pipeid, nodes);
+  // Dismeter of the pipe in m
+  const double diameter = 20.0;
+
+  // Pipe open status
+  bool status = true;
+
+  // Creat pipes based on previous created node pointers
+  auto pipe1 =
+      std::make_unique<pipenetwork::Pipe>(pipeid, nodes, diameter, status);
 
   // Pipe length
   // To calculate length between two points in 3d space
@@ -35,13 +42,20 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
   const double length = sqrt(3 * pow(1.1, 2));
 
   // Check pipe id
-  REQUIRE(pipe->id() == pipeid);
+  REQUIRE(pipe1->id() == pipeid);
 
   // Check pipe length
-  REQUIRE(pipe->length() == Approx(length).epsilon(tolerance));
+  REQUIRE(pipe1->length() == Approx(length).epsilon(tolerance));
+
+  // Check initialized discharge and return discharge
+  pipe1->initialize_discharge();
+  REQUIRE(pipe1->discharge() == Approx(0.001).epsilon(tolerance));
+
+  // Check pipe open status
+  REQUIRE(pipe1->isopen() == true);
 
   // Check pipe broken status and initialized status
-  REQUIRE(pipe->isbroken() == false);
+  REQUIRE(pipe1->isbroken() == false);
 
   // Check radius, discharge, headloss, max flow velocity, pipe roughness and
   // Darcy friction factor of the pipe
@@ -49,11 +63,17 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
       "Check radius, discharge, max flow velocity and Darcy friction factor of "
       "the pipe") {
 
-    // Radius of the pipe in m
-    const double radius = 10.0;
-
     // Maximum allowable flow velocity of the pipe in m/min
     const double max_velocity = 100.0;
+
+    // Creat pipes based on previous created node pointers
+    auto pipe2 = std::make_unique<pipenetwork::Pipe>(pipeid, nodes, diameter,
+                                                     status, max_velocity);
+
+    // Initialize discharge in the pipe and check
+    const double init_discharge = 10.0;
+    pipe2->initialize_discharge(init_discharge);
+    REQUIRE(pipe2->discharge() == Approx(init_discharge).epsilon(tolerance));
 
     // Maximum allowable discharge of the pipe in m3/min
     // Calculated by max_discharge=M_PI*pow(radius,2)*max_velocity
@@ -63,6 +83,12 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     const double head1 = 110.0;
     const double head2 = 100.0;
 
+    // Pipe length
+    const double length = sqrt(3 * pow(1.1, 2));
+
+    // Gravity
+    const double gravity = 9.81;
+
     // Dimensionless Darcy friction factor (for Darcy-Weisbach equation)
     const double darcy_friction = 0.1;
 
@@ -71,58 +97,65 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
 
     // Calculated discharge in pipe in m3/min using Darcy-Weisbach head loss
     // equation
-    const double discharge_dw = sqrt(10 * pow(M_PI, 2) * 9.81 * pow(2 * 10, 5) /
-                                     (8 * 0.1 * sqrt(3 * pow(1.1, 2))));
+    const double discharge_darcy_weisbach =
+        sqrt((head1 - head2) * pow(M_PI, 2) * gravity * pow(diameter, 5) /
+             (8. * darcy_friction * length));
     // Calculated discharge in pipe in m3/min using Hazen-Williams head loss
     // equation
-    const double discharge_hw =
-        pow((10 * pow(100, 1.852) * pow(2 * 10, 4.8704) /
-             (10.67 * sqrt(3 * pow(1.1, 2)))),
+    const double discharge_hazen_williams =
+        pow(((head1 - head2) * pow(pipe_roughness, 1.852) *
+             pow(diameter, 4.8704) / (10.67 * length)),
             1 / 1.852);
 
     // Assign defined variables to nodes and pipe
     nodes.at(0)->head(head1);
     nodes.at(1)->head(head2);
-    pipe->radius(radius);
-    pipe->max_velocity(max_velocity);
-    pipe->darcy_friction(darcy_friction);
-    pipe->pipe_roughness(pipe_roughness);
+    pipe2->darcy_friction(darcy_friction);
+    pipe2->pipe_roughness(pipe_roughness);
 
     // Check radius and max flow velocity of the pipe
-    REQUIRE(pipe->max_discharge() == Approx(max_discharge).epsilon(tolerance));
+    REQUIRE(pipe2->max_discharge() == Approx(max_discharge).epsilon(tolerance));
 
     // Check discharge and Darcy friction factor of the pipe using
     // Darcy-Weisbach equation
-    REQUIRE(pipe->discharge_dw() == Approx(discharge_dw).epsilon(tolerance));
+    pipe2->compute_discharge_darcy_weisbach();
+    REQUIRE(pipe2->discharge() ==
+            Approx(discharge_darcy_weisbach).epsilon(tolerance));
     // Calculated headloss in pipe in m using Darcy-Weisbach head loss equation
     // from previous calculated discharge
-    const double headloss_dw =
-        (8 * sqrt(3 * pow(1.1, 2)) * 0.1 * pow(discharge_dw, 2)) /
-        (pow(M_PI, 2) * 9.81 * pow(2 * 10, 5));
+    const double headloss_darcy_weisbach =
+        (8. * length * darcy_friction * pow(discharge_darcy_weisbach, 2)) /
+        (pow(M_PI, 2) * gravity * pow(diameter, 5));
     // Check headloss of the pipe using Darcy-Weisbach equation
-    REQUIRE(pipe->headloss_dw() == Approx(headloss_dw).epsilon(tolerance));
+    pipe2->compute_headloss_darcy_weisbach();
+    REQUIRE(pipe2->headloss() ==
+            Approx(headloss_darcy_weisbach).epsilon(tolerance));
 
     // Check discharge and pipe roughness coefficient of the pipe using
     // Hazen-Williams equation
-    REQUIRE(pipe->discharge_hw() == Approx(discharge_hw).epsilon(tolerance));
+    pipe2->compute_discharge_hazen_williams();
+    REQUIRE(pipe2->discharge() ==
+            Approx(discharge_hazen_williams).epsilon(tolerance));
     // Calculated headloss in pipe in m using Hazen-Williams head loss equation
     // from previous calculated discharge
-    const double headloss_hw =
-        (10.67 * sqrt(3 * pow(1.1, 2)) * pow(discharge_hw, 1.852)) /
-        (pow(100, 1.852) * pow(2 * 10, 4.8704));
+    const double headloss_hazen_williams =
+        (10.67 * length * pow(discharge_hazen_williams, 1.852)) /
+        (pow(pipe_roughness, 1.852) * pow(diameter, 4.8704));
     // Check discharge and pipe roughness coefficient of the pipe using
     // Hazen-Williams equation
-    REQUIRE(pipe->headloss_hw() == Approx(headloss_hw).epsilon(tolerance));
+    pipe2->compute_headloss_hazen_williams();
+    REQUIRE(pipe2->headloss() ==
+            Approx(headloss_hazen_williams).epsilon(tolerance));
   }
 
   // Check return pointer to const Node
   SECTION("Check return pointer to const Node") {
 
     // Check return ids of the nodes
-    REQUIRE(pipe->nodes().at(0)->id() == 100);
-    REQUIRE(pipe->nodes().at(1)->id() == 101);
+    REQUIRE(pipe1->nodes().at(0)->id() == 100);
+    REQUIRE(pipe1->nodes().at(1)->id() == 101);
     // Check return head assignment status
-    REQUIRE(pipe->nodes().at(0)->ishead() == false);
-    REQUIRE(pipe->nodes().at(1)->ishead() == false);
+    REQUIRE(pipe1->nodes().at(0)->ishead() == false);
+    REQUIRE(pipe1->nodes().at(1)->ishead() == false);
   }
 }
