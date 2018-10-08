@@ -17,24 +17,14 @@ namespace pipenetwork {
 class Pipe {
 
  public:
-  //! Constructor with pipe id, node pointers, diameter and status
-  //! \param[in] id pipe id
-  //! \param[in] nodes array of node pointers
-  //! \param[in] diameter of the pipe
-  //! \param[in] status of the pipe, true for open, flase for close
-  Pipe(unsigned id,
-       const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-       const double diameter, bool status);
-
   //! Constructor with pipe id, node pointers, diameter, status and max
-  //! allowable velocity \param[in] id pipe id 
-  //! \param[in] nodes array of nodepointers 
-  //! \param[in] diameter of the pipe 
-  //! \param[in] status of the pipe, true for open, flase for close 
-  //! \param[in] maximum allowable velocity
+  //! allowable velocity \param[in] id pipe id \param[in] nodes array of node
+  //! pointers \param[in] diameter of the pipe \param[in] status of the pipe,
+  //! true for open, flase for close \param[in] maximum allowable velocity
   Pipe(unsigned id,
        const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-       const double diameter, bool status, const double max_velocity);
+       double diameter, bool status,
+       double max_velocity = std::numeric_limits<double>::max());
 
   //! Destructor
   ~Pipe() { nodes_.fill(nullptr); }
@@ -68,12 +58,11 @@ class Pipe {
     pipe_roughness_ = pipe_roughness;
   }
 
-  //! Initialize discharge to a small value
-  void initialize_discharge() { discharge_ = 0.001; }
-
   //! Initialize discharge with input value
   //! \param[in] discharge input discharge value of the pipe
-  void initialize_discharge(double discharge) { discharge_ = discharge; }
+  void initialize_discharge(double discharge = 0.001) {
+    discharge_ = discharge;
+  }
 
   //! Calculate discharge using Darcy-Weisbach equation
   void compute_discharge_darcy_weisbach();
