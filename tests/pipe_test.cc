@@ -63,7 +63,7 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
       "Check radius, discharge, max flow velocity and Darcy friction factor of "
       "the pipe") {
 
-    // Maximum allowable flow velocity of the pipe in m/min
+    // Maximum allowable flow velocity of the pipe in m/s
     const double max_velocity = 100.0;
 
     // Creat pipes based on previous created node pointers
@@ -75,7 +75,7 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     pipe2->initialize_discharge(init_discharge);
     REQUIRE(pipe2->discharge() == Approx(init_discharge).epsilon(tolerance));
 
-    // Maximum allowable discharge of the pipe in m3/min
+    // Maximum allowable discharge of the pipe in m3/s
     // Calculated by max_discharge=M_PI*pow(radius,2)*max_velocity
     const double max_discharge = M_PI * 1.e4;
 
@@ -95,12 +95,12 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Pipe roughness coefficient (for Hazen-Williams equation)
     const double pipe_roughness = 100;
 
-    // Calculated discharge in pipe in m3/min using Darcy-Weisbach head loss
+    // Calculated discharge in pipe in m3/s using Darcy-Weisbach head loss
     // equation
     const double discharge_darcy_weisbach =
         sqrt((head1 - head2) * pow(M_PI, 2) * gravity * pow(diameter, 5) /
              (8. * darcy_friction * length));
-    // Calculated discharge in pipe in m3/min using Hazen-Williams head loss
+    // Calculated discharge in pipe in m3/s using Hazen-Williams head loss
     // equation
     const double discharge_hazen_williams =
         pow(((head1 - head2) * pow(pipe_roughness, 1.852) *

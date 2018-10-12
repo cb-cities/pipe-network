@@ -65,9 +65,13 @@ class Pipe {
   }
 
   //! Calculate discharge using Darcy-Weisbach equation
+  //! Calculate discharge in m^3/s from head difference in m
+  //! SI unit meter and second are used in the whole equation
   void compute_discharge_darcy_weisbach();
 
   //! Calculate discharge using Hazen-Williams equation
+  //! Calculate discharge in m^3/s from head difference in m
+  //! SI unit meter and second are used in the whole equation
   void compute_discharge_hazen_williams();
 
   //! Return calculated discharge in the pipe
@@ -75,9 +79,13 @@ class Pipe {
   double discharge() const { return discharge_; }
 
   //! Calculate head loss over the pipe using Darcy-Weisbach equation:
+  //! Calculate head loss in m from discharge in m^3/s
+  //! SI unit meter and second are used in the whole equation
   void compute_headloss_darcy_weisbach();
 
   //! Calculate headloss over the pipe using Hazen-Williams equation:
+  //! Calculate head loss in m from discharge in m^3/s
+  //! SI unit meter and second are used in the whole equation
   void compute_headloss_hazen_williams();
 
   //! Return calculated headloss over the pipe
