@@ -18,9 +18,12 @@ class Pipe {
 
  public:
   //! Constructor with pipe id, node pointers, diameter, status and max
-  //! allowable velocity \param[in] id pipe id \param[in] nodes array of node
-  //! pointers \param[in] diameter of the pipe \param[in] status of the pipe,
-  //! true for open, flase for close \param[in] maximum allowable velocity
+  //! allowable velocity
+  //! \param[in] id pipe id
+  //! \param[in] nodes array of node pointers
+  //! \param[in] diameter of the pipe
+  //! \param[in] status of the pipe, true for open, flase for close
+  //! \param[in] maximum allowable velocity
   Pipe(unsigned id,
        const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
        double diameter, bool status,

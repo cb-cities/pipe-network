@@ -96,12 +96,18 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     const double pipe_roughness = 100;
 
     // Calculated discharge in pipe in m3/s using Darcy-Weisbach head loss
-    // equation
+    // equation 
+    // Hand calculation: discharge = \frac{(110.0-100.0) \times \pi^2
+    // \times 9.81 \times 20.0^5}{8.0 \times 0.1 \times 3 \times 1.1^2} =
+    // 1066896079
     const double discharge_darcy_weisbach =
         sqrt((head1 - head2) * pow(M_PI, 2) * gravity * pow(diameter, 5) /
              (8. * darcy_friction * length));
     // Calculated discharge in pipe in m3/s using Hazen-Williams head loss
-    // equation
+    // equation 
+    // Hand calculation: discharge = (\frac{(110.0-100) \times
+    // 100^1.852 \times 20.0^4.8704}{10.67 \times 3
+    // \times 1.1^2})^{\frac{1}{1.852}} = 127034.8933
     const double discharge_hazen_williams =
         pow(((head1 - head2) * pow(pipe_roughness, 1.852) *
              pow(diameter, 4.8704) / (10.67 * length)),
@@ -122,7 +128,9 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     REQUIRE(pipe2->discharge() ==
             Approx(discharge_darcy_weisbach).epsilon(tolerance));
     // Calculated headloss in pipe in m using Darcy-Weisbach head loss equation
-    // from previous calculated discharge
+    // from previous calculated discharge 
+    // Hand calculation: headloss = \frac{8 \times 3 \times 1.1^2 \times 0.1
+    // \times 1066896079^2}{pi^2 \times 9.81 \times 20.0^5} = 10.0
     const double headloss_darcy_weisbach =
         (8. * length * darcy_friction * pow(discharge_darcy_weisbach, 2)) /
         (pow(M_PI, 2) * gravity * pow(diameter, 5));
@@ -137,7 +145,9 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     REQUIRE(pipe2->discharge() ==
             Approx(discharge_hazen_williams).epsilon(tolerance));
     // Calculated headloss in pipe in m using Hazen-Williams head loss equation
-    // from previous calculated discharge
+    // from previous calculated discharge 
+    // Hand calculation: headloss = \frac{10.67 \times 3 \times 1.1^2
+    // \times 127034.8933^1.852}{100^1.852 \times 20.0^4.8704} = 10.0
     const double headloss_hazen_williams =
         (10.67 * length * pow(discharge_hazen_williams, 1.852)) /
         (pow(pipe_roughness, 1.852) * pow(diameter, 4.8704));

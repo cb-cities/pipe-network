@@ -13,7 +13,7 @@ pipenetwork::Pipe::Pipe(
 
 // Calculate discharge using Darcy-Weisbach equation
 // $discharge = (\frac{dhead \times \pi^2 \times g \times (2radius)^5}{8 \times
-// length \times darcy_friction})^0.5$ 
+// length \times darcy_friction})^0.5$
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_discharge_darcy_weisbach() {
   // The Darcy-Weiabach equation is only applicable when heads at both ends of
@@ -33,7 +33,7 @@ void pipenetwork::Pipe::compute_discharge_darcy_weisbach() {
 
 // Calculate discharge using Hazen-Williams equation
 // discharge = (\frac{dhead \times pipe_roughness^1.852 \times
-// (2radius)^4.8704}{10.67 \times length})^(\frac{1}{1.852}) 
+// (2radius)^4.8704}{10.67 \times length})^(\frac{1}{1.852})
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_discharge_hazen_williams() {
   // To calculate discharge using Hazen-Williams equation, heads at both ends of
@@ -54,7 +54,7 @@ void pipenetwork::Pipe::compute_discharge_hazen_williams() {
 
 // Calculate head loss over the pipe using Darcy-Weisbach equation:
 // dhead = \frac{8 \times length \times darcy_factor \times discharge^2}{\pi^2
-// \times g \times (2radius)^5} 
+// \times g \times (2radius)^5}
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_headloss_darcy_weisbach() {
   headloss_ = 8. * length_ * darcy_friction_ * pow(discharge_, 2) /
@@ -64,7 +64,7 @@ void pipenetwork::Pipe::compute_headloss_darcy_weisbach() {
 
 // Calculate headloss over the pipe using Hazen-Williams equation:
 // dhead = \frac{10.67 \times length \times
-// discharge^1.852}{pipe_roughness^1.852 \times (2radius)^4.8704} 
+// discharge^1.852}{pipe_roughness^1.852 \times (2radius)^4.8704}
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_headloss_hazen_williams() {
   headloss_ = (10.67 * length_ * pow(discharge_, 1.852)) /
