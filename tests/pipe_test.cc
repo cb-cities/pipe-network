@@ -95,24 +95,6 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Pipe roughness coefficient (for Hazen-Williams equation)
     const double pipe_roughness = 100;
 
-    // Calculated discharge in pipe in m3/s using Darcy-Weisbach head loss
-    // equation 
-    // Hand calculation: discharge = \frac{(110.0-100.0) \times \pi^2
-    // \times 9.81 \times 20.0^5}{8.0 \times 0.1 \times 3 \times 1.1^2} =
-    // 1066896079
-    const double discharge_darcy_weisbach =
-        sqrt((head1 - head2) * pow(M_PI, 2) * gravity * pow(diameter, 5) /
-             (8. * darcy_friction * length));
-    // Calculated discharge in pipe in m3/s using Hazen-Williams head loss
-    // equation 
-    // Hand calculation: discharge = (\frac{(110.0-100) \times
-    // 100^1.852 \times 20.0^4.8704}{10.67 \times 3
-    // \times 1.1^2})^{\frac{1}{1.852}} = 127034.8933
-    const double discharge_hazen_williams =
-        pow(((head1 - head2) * pow(pipe_roughness, 1.852) *
-             pow(diameter, 4.8704) / (10.67 * length)),
-            1 / 1.852);
-
     // Assign defined variables to nodes and pipe
     nodes.at(0)->head(head1);
     nodes.at(1)->head(head2);
@@ -123,39 +105,32 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     REQUIRE(pipe2->max_discharge() == Approx(max_discharge).epsilon(tolerance));
 
     // Check discharge and Darcy friction factor of the pipe using
-    // Darcy-Weisbach equation
+    // Darcy-Weisbach equation. Compared with hand calculation:
+    // discharge = sqrt{\frac{(110.0-100.0) \times \pi^2 \times 9.81
+    // \times 20.0^5}{8.0 \times 0.1 \times squt{3 \times 1.1^2}}}
+    // = 45085.585688339
     pipe2->compute_discharge_darcy_weisbach();
-    REQUIRE(pipe2->discharge() ==
-            Approx(discharge_darcy_weisbach).epsilon(tolerance));
-    // Calculated headloss in pipe in m using Darcy-Weisbach head loss equation
-    // from previous calculated discharge 
-    // Hand calculation: headloss = \frac{8 \times 3 \times 1.1^2 \times 0.1
-    // \times 1066896079^2}{pi^2 \times 9.81 \times 20.0^5} = 10.0
-    const double headloss_darcy_weisbach =
-        (8. * length * darcy_friction * pow(discharge_darcy_weisbach, 2)) /
-        (pow(M_PI, 2) * gravity * pow(diameter, 5));
-    // Check headloss of the pipe using Darcy-Weisbach equation
+    REQUIRE(pipe2->discharge() == Approx(45085.585688339).epsilon(tolerance));
+    // Check headloss of the pipe using Darcy-Weisbach equation.
+    // Compared with hand calculation:
+    // headloss = \frac{8 \times sqrt{3 \times 1.1^2} \times 0.1 \times
+    // 45085.585688339^2}{pi^2 \times 9.81 \times 20.0^5} = 10.0
     pipe2->compute_headloss_darcy_weisbach();
-    REQUIRE(pipe2->headloss() ==
-            Approx(headloss_darcy_weisbach).epsilon(tolerance));
+    REQUIRE(pipe2->headloss() == Approx(10.0).epsilon(tolerance));
 
     // Check discharge and pipe roughness coefficient of the pipe using
-    // Hazen-Williams equation
+    // Hazen-Williams equation. Compared with hand calculation:
+    // discharge = (\frac{(110.0-100) \times 100^1.852 \times  20.0^4.8704}
+    // {10.67 \times sqrt{3 \times 1.1^2}})^{\frac{1}{1.852}}
+    // = 179922.60192865
     pipe2->compute_discharge_hazen_williams();
-    REQUIRE(pipe2->discharge() ==
-            Approx(discharge_hazen_williams).epsilon(tolerance));
-    // Calculated headloss in pipe in m using Hazen-Williams head loss equation
-    // from previous calculated discharge 
-    // Hand calculation: headloss = \frac{10.67 \times 3 \times 1.1^2
-    // \times 127034.8933^1.852}{100^1.852 \times 20.0^4.8704} = 10.0
-    const double headloss_hazen_williams =
-        (10.67 * length * pow(discharge_hazen_williams, 1.852)) /
-        (pow(pipe_roughness, 1.852) * pow(diameter, 4.8704));
-    // Check discharge and pipe roughness coefficient of the pipe using
-    // Hazen-Williams equation
+    REQUIRE(pipe2->discharge() == Approx(179922.60192865).epsilon(tolerance));
+    // Check headloss of the pipe using Hazen-Williams equation.
+    // Compared with hand calculation:
+    // Hand calculation: headloss = \frac{10.67 \times sqrt{3 \times 1.1^2}
+    // \times 179922.60192865^1.852}{100^1.852 \times 20.0^4.8704} = 10.0
     pipe2->compute_headloss_hazen_williams();
-    REQUIRE(pipe2->headloss() ==
-            Approx(headloss_hazen_williams).epsilon(tolerance));
+    REQUIRE(pipe2->headloss() == Approx(10.0).epsilon(tolerance));
   }
 
   // Check return pointer to const Node
