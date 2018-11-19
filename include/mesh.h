@@ -37,7 +37,9 @@ class Mesh {
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
   //! \retval status to check whether all input pipe created successfully
-  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
+  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
+                    const std::vector<double>& diameter,
+                    const std::vector<bool>& pipe_status);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
@@ -50,13 +52,21 @@ class Mesh {
   //! Remove unconnected nodes from the mesh
   void remove_unconnected_nodes();
 
+  //! Return vector of nodal pointers
+  //! \retval nodeptr vector of nodal pointers in the mesh
+  std::vector<std::shared_ptr<pipenetwork::Node>> nodeptr();
+
+  //! Return vector of pipe pointers
+  //! \retval pipeptr vector of pipe pointers in the mesh
+  std::vector<std::shared_ptr<pipenetwork::Pipe>> pipeptr();
+
  private:
   //! mesh id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! nodal id and corresponding nodal pointer
   std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! pipe id and corresponding pipe pointer
-  std::map<Index, std::unique_ptr<pipenetwork::Pipe>> pipes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Pipe>> pipes_;
 };
 
 #endif  // PIPE_NETWORK_MESH_H_

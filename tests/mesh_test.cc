@@ -14,7 +14,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_unique<Mesh>(meshid);
+  auto mesh = std::make_shared<Mesh>(meshid);
 
   // Nodal coordinates
   const Eigen::Vector3d coords1(0.0, 0.0, 0.0);
@@ -37,6 +37,10 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   node_pairs.emplace_back(std::make_pair(2, 3));
   node_pairs.emplace_back(std::make_pair(2, 4));
 
+  // Input vector of pipe diameter and status
+  std::vector<double> diameter{1, 1, 1, 1};
+  std::vector<bool> status{true, true, true, true};
+
   // Check mesh id
   REQUIRE(mesh->id() == meshid);
 
@@ -45,7 +49,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
 
     // Create pipes based on pipe indices and previous created node pointers in
     // the mesh
-    bool all_pipe_created = mesh->create_pipes(node_pairs);
+    bool all_pipe_created = mesh->create_pipes(node_pairs, diameter, status);
 
     // Check number of nodes before remove
     REQUIRE(mesh->nnodes() == 7);
@@ -67,9 +71,11 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     // Make pairs of nodes which do not exist to create pipe
     node_pairs.emplace_back(std::make_pair(2, 8));
     node_pairs.emplace_back(std::make_pair(8, 9));
+    std::vector<double> diameter{1, 1, 1, 1, 1, 1};
+    std::vector<bool> status{true, true, true, true, true, true};
     // Create pipes based on pipe indices and previous created node pointers in
     // the mesh
-    bool all_pipe_created = mesh->create_pipes(node_pairs);
+    bool all_pipe_created = mesh->create_pipes(node_pairs, diameter, status);
 
     // Check number of nodes before remove
     REQUIRE(mesh->nnodes() == 7);
