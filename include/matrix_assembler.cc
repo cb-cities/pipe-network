@@ -97,8 +97,7 @@ void MatrixAssembler::assemble_pipe_discharge_vector() {
 // Assemble Jacobian matrix
 //                 nodal_head    nodal_discharge    pipe_discharge
 // nadal_balance   sub_jac_A        sub_jac_B         sub_jac_C
-// D/H             sub_jac_D        sub_jac_E         sub_jac_F
-// headloss        sub_jac_G        sub_jac_H         sub_jac_I
+// headloss        sub_jac_D        sub_jac_E         sub_jac_F
 void MatrixAssembler::assemble_jacobian() {
   // Check network
   if (nnode_ <= 0 || npipe_ <= 0) {
@@ -140,8 +139,19 @@ void MatrixAssembler::assemble_jacobian() {
       update.emplace_back(index_node1, 2 * nnode_ + index_pipe, -1);
       update.emplace_back(index_node2, 2 * nnode_ + index_pipe, 1);
     }
+    // construct jacD part
+    update.emplace_back(nnode_ + index_pipe, index_node1, 1);
+    update.emplace_back(nnode_ + index_pipe, index_node2, -1);
+    // construct jacF part (Hazen-Williams)
+    double discharge = pipe.first->discharge();
+    double coeff = 10.67 * pipe.first->length() /
+                   (pow(pipe.first->pipe_roughness(), 1.852) *
+                    pow(pipe.first->diameter(), 4.8704));
+    double residual_deriv = -1.852 * coeff * pow(discharge, 0.852);
+    update.emplace_back(nnode_ + index_pipe, 2 * nnode_ + index_pipe,
+                        -1.852 * coeff * pow(discharge, 0.852));
   }
 
-  jac_->resize(2 * nnode_ + npipe_, 2 * nnode_ + npipe_);
+  jac_->resize(nnode_ + npipe_, 2 * nnode_ + npipe_);
   jac_->setFromTriplets(update.begin(), update.end());
 }

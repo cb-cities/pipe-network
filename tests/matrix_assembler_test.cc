@@ -52,6 +52,15 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   std::vector<std::shared_ptr<pipenetwork::Node>> nodeptr = mesh->nodeptr();
   std::vector<std::shared_ptr<pipenetwork::Pipe>> pipeptr = mesh->pipeptr();
 
+  // Assign pipe roughness coefficient and initialize discharge
+  std::vector<double> pipe_roughness{
+      0.00029886657, 0.00778973070, 0.01406047524, 0.00215781840,
+      0.01168459605, 0.02812095048, 0.01406047524};
+  for (int i = 0; i < pipeptr.size(); i++) {
+    pipeptr.at(i)->pipe_roughness(pipe_roughness.at(i));
+    pipeptr.at(i)->initialize_discharge();
+  }
+
   // Assign initial nodal head and discharge
   double default_init_node_head = 0.0;
   double default_init_node_discharge = 0.0;
@@ -118,6 +127,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       }
     }
   }
+
   // Check jacC (pipe discharge in nodal balance equation)
   REQUIRE(jac.coeff(0, 10) == -1);
   REQUIRE(jac.coeff(0, 11) == -1);
@@ -133,4 +143,29 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   REQUIRE(jac.coeff(4, 14) == 1);
   REQUIRE(jac.coeff(4, 15) == 1);
   REQUIRE(jac.coeff(4, 16) == 1);
+
+  // Check jacD (nodal head in headloss equation)
+  REQUIRE(jac.coeff(5, 0) == 1);
+  REQUIRE(jac.coeff(5, 1) == -1);
+  REQUIRE(jac.coeff(6, 0) == 1);
+  REQUIRE(jac.coeff(6, 2) == -1);
+  REQUIRE(jac.coeff(7, 1) == 1);
+  REQUIRE(jac.coeff(7, 2) == -1);
+  REQUIRE(jac.coeff(8, 1) == 1);
+  REQUIRE(jac.coeff(8, 3) == -1);
+  REQUIRE(jac.coeff(9, 1) == 1);
+  REQUIRE(jac.coeff(9, 4) == -1);
+  REQUIRE(jac.coeff(10, 2) == 1);
+  REQUIRE(jac.coeff(10, 4) == -1);
+  REQUIRE(jac.coeff(11, 3) == 1);
+  REQUIRE(jac.coeff(11, 4) == -1);
+
+  // Check jacF (pipe discharge in headloss equation)
+  REQUIRE(jac.coeff(5, 10) == Approx(-261659.41563376).epsilon(tolerance));
+  REQUIRE(jac.coeff(6, 11) == Approx(-624.05207784531).epsilon(tolerance));
+  REQUIRE(jac.coeff(7, 12) == Approx(-295.62380157722).epsilon(tolerance));
+  REQUIRE(jac.coeff(8, 13) == Approx(-9511.2986240786).epsilon(tolerance));
+  REQUIRE(jac.coeff(9, 14) == Approx(-589.01969629169).epsilon(tolerance));
+  REQUIRE(jac.coeff(10, 15) == Approx(-81.890183736592).epsilon(tolerance));
+  REQUIRE(jac.coeff(11, 16) == Approx(-295.62380157722).epsilon(tolerance));
 }

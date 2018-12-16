@@ -61,6 +61,14 @@ class Pipe {
     pipe_roughness_ = pipe_roughness;
   }
 
+  //! Return pipe roughness coefficient
+  //! \retval pipe_roughness_ pipe roughness coefficient
+  double pipe_roughness() const { return pipe_roughness_; }
+
+  //! Return pipe diameter
+  //! \retval 2*radius_ diameter of the pipe
+  double diameter() const { return 2 * radius_; }
+
   //! Initialize discharge with input value
   //! \param[in] discharge input discharge value of the pipe
   void initialize_discharge(double discharge = 0.001) {
