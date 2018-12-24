@@ -1,3 +1,21 @@
+
+#include <cmath>
+
+#include <array>
+#include <exception>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <vector>
+
+#include <Eigen/Sparse>
+
+#include "matrix_assembler.h"
+#include "mesh.h"
+#include "node.h"
+#include "pipe.h"
+#include "settings.h"
+
 // Constructor
 MatrixAssembler::MatrixAssembler() {
   jac_ = std::make_shared<Eigen::SparseMatrix<double>>();
@@ -129,8 +147,6 @@ void MatrixAssembler::assemble_jacobian() {
         index_node2 = node.second;
       }
     }
-    // Index index_node1 = global_nodes_.at(pipe.first->nodes().at(0));
-    // Index index_node2 = global_nodes_.at(pipe.first->nodes().at(1));
     // construct jacC part
     if (pipe.first->discharge() >= 0) {
       update.emplace_back(index_node1, 2 * nnode_ + index_pipe, -1);
@@ -143,13 +159,9 @@ void MatrixAssembler::assemble_jacobian() {
     update.emplace_back(nnode_ + index_pipe, index_node1, 1);
     update.emplace_back(nnode_ + index_pipe, index_node2, -1);
     // construct jacF part (Hazen-Williams)
-    double discharge = pipe.first->discharge();
-    double coeff = 10.67 * pipe.first->length() /
-                   (pow(pipe.first->pipe_roughness(), 1.852) *
-                    pow(pipe.first->diameter(), 4.8704));
-    double residual_deriv = -1.852 * coeff * pow(discharge, 0.852);
+    double deriv_pipe_discharge = pipe.first->deriv_hazen_williams_discharge();
     update.emplace_back(nnode_ + index_pipe, 2 * nnode_ + index_pipe,
-                        -1.852 * coeff * pow(discharge, 0.852));
+                        deriv_pipe_discharge);
   }
 
   jac_->resize(nnode_ + npipe_, 2 * nnode_ + npipe_);

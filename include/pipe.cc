@@ -52,6 +52,16 @@ void pipenetwork::Pipe::compute_discharge_hazen_williams() {
   }
 }
 
+// Calculate and return derivative of Hazen-Williams equation with respect to
+// pipe discharge 
+// SI unit meter and second are used in the whole equation
+double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
+  double coeff = 10.67 * length_ /
+                 (pow(pipe_roughness_, 1.852) * pow(2 * radius_, 4.8704));
+  double deriv = -1.852 * coeff * pow(discharge_, 0.852);
+  return deriv;
+}
+
 // Calculate head loss over the pipe using Darcy-Weisbach equation:
 // dhead = \frac{8 \times length \times darcy_factor \times discharge^2}{\pi^2
 // \times g \times (2radius)^5}

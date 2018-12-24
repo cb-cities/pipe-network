@@ -61,14 +61,6 @@ class Pipe {
     pipe_roughness_ = pipe_roughness;
   }
 
-  //! Return pipe roughness coefficient
-  //! \retval pipe_roughness_ pipe roughness coefficient
-  double pipe_roughness() const { return pipe_roughness_; }
-
-  //! Return pipe diameter
-  //! \retval 2*radius_ diameter of the pipe
-  double diameter() const { return 2 * radius_; }
-
   //! Initialize discharge with input value
   //! \param[in] discharge input discharge value of the pipe
   void initialize_discharge(double discharge = 0.001) {
@@ -84,6 +76,13 @@ class Pipe {
   //! Calculate discharge in m^3/s from head difference in m
   //! SI unit meter and second are used in the whole equation
   void compute_discharge_hazen_williams();
+
+  //! Calculate and return derivative of Hazen-Williams equation with respect to
+  //! pipe discharge 
+  //! SI unit meter and second are used in the whole equation
+  //! \retval derivative of Hazen-Williams equation with respect to pipe
+  //! discharge
+  double deriv_hazen_williams_discharge();
 
   //! Return calculated discharge in the pipe
   //! \retval discharge_ discharge in the pipe
