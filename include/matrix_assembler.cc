@@ -1,21 +1,3 @@
-
-#include <cmath>
-
-#include <array>
-#include <exception>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include <Eigen/Sparse>
-
-#include "matrix_assembler.h"
-#include "mesh.h"
-#include "node.h"
-#include "pipe.h"
-#include "settings.h"
-
 // Constructor
 MatrixAssembler::MatrixAssembler() {
   jac_ = std::make_shared<Eigen::SparseMatrix<double>>();
