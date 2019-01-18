@@ -7,63 +7,55 @@ MatrixAssembler::MatrixAssembler() {
 };
 
 // Obtain global nodal and pipe indices and pointers from meshes
-void MatrixAssembler::global_nodal_pipe_indices(std::shared_ptr<Mesh> mesh) {
+void MatrixAssembler::global_nodal_pipe_indices(
+    const std::shared_ptr<Mesh> mesh) {
   global_nodes_.clear();
   global_pipes_.clear();
-  for (const auto& node : mesh->nodes_) {
-    global_nodes_.emplace(node);
-  }
-  for (const auto& pipe : mesh->pipes_) {
-    global_pipes_.emplace(pipe);
-  }
+  for (const auto& node : mesh->nodes_) global_nodes_.emplace(node);
+  for (const auto& pipe : mesh->pipes_) global_pipes_.emplace(pipe);
   nnode_ = global_nodes_.size();
   npipe_ = global_pipes_.size();
 }
 
 //! Assign pipe roughness coefficient for Hazen-Williams equation
 void MatrixAssembler::assign_pipe_roughness(
-    std::shared_ptr<Mesh> mesh,
-    std::vector<std::pair<Index, double>> pipe_roughness) {
-  for (auto& roughness : pipe_roughness) {
+    const std::shared_ptr<Mesh> mesh,
+    const std::vector<std::pair<Index, double>> pipe_roughness) {
+  for (auto& roughness : pipe_roughness)
     mesh->pipes_.at(roughness.first)->pipe_roughness(roughness.second);
-  }
 }
 
 //! Initialize discharges in pipes
-void MatrixAssembler::initialize_pipe_discharge(std::shared_ptr<Mesh> mesh) {
-  for (auto& pipe : mesh->pipes_) {
-    pipe.second->initialize_discharge();
-  }
+void MatrixAssembler::initialize_pipe_discharge(
+    const std::shared_ptr<Mesh> mesh) {
+  for (auto& pipe : mesh->pipes_) pipe.second->initialize_discharge();
 }
 
 //! Assign initial heads for nodes that have known head
 void MatrixAssembler::assign_node_head(
-    std::shared_ptr<Mesh> mesh,
-    std::vector<std::pair<Index, double>> node_head) {
-  for (auto& head : node_head) {
-    mesh->nodes_.at(head.first)->head(head.second);
-  }
+    const std::shared_ptr<Mesh> mesh,
+    const std::vector<std::pair<Index, double>> node_head) {
+  for (auto& head : node_head) mesh->nodes_.at(head.first)->head(head.second);
 }
 
 //! Assign initial discharges for nodes that have known discharge
 void MatrixAssembler::assign_node_discharge(
-    std::shared_ptr<Mesh> mesh,
-    std::vector<std::pair<Index, double>> node_discharge) {
-  for (auto& discharge : node_discharge) {
+    const std::shared_ptr<Mesh> mesh,
+    const std::vector<std::pair<Index, double>> node_discharge) {
+  for (auto& discharge : node_discharge)
     mesh->nodes_.at(discharge.first)->discharge(discharge.second);
-  }
 }
 
 // Initialize nodal head vector
 // If head of the ndoe is unknown (hasn't been assigned), initialize to zero
 void MatrixAssembler::assemble_node_head_vector() {
-  (*node_head_vec_).resize(nnode_);
+  node_head_vec_->resize(nnode_);
   for (auto& node : global_nodes_) {
     Index index = node.first;
     if ((node.second)->ishead()) {
-      (*node_head_vec_)(index) = node.second->head();
+      node_head_vec_->coeffRef(index) = node.second->head();
     } else {
-      (*node_head_vec_)(index) = 0.0;
+      node_head_vec_->coeffRef(index) = 0.0;
     }
   }
 }
@@ -72,13 +64,13 @@ void MatrixAssembler::assemble_node_head_vector() {
 // If discharge of the ndoe is unknown (hasn't been assigned), initialize to
 // zero
 void MatrixAssembler::assemble_node_discharge_vector() {
-  (*node_discharge_vec_).resize(nnode_);
+  node_discharge_vec_->resize(nnode_);
   for (auto& node : global_nodes_) {
     Index index = node.first;
     if ((node.second)->isdischarge()) {
-      (*node_discharge_vec_)(index) = node.second->discharge();
+      node_discharge_vec_->coeffRef(index) = node.second->discharge();
     } else {
-      (*node_discharge_vec_)(index) = 0.0;
+      node_discharge_vec_->coeffRef(index) = 0.0;
     }
   }
 }
@@ -90,7 +82,7 @@ void MatrixAssembler::apply_node_head() {
     // Get global index
     Index index = node.first;
     // Assign head
-    node.second->head((*node_head_vec_)(index));
+    node.second->head(node_head_vec_->coeff(index));
   }
 }
 
@@ -101,7 +93,7 @@ void MatrixAssembler::apply_node_discharge() {
     // Get global index
     Index index = node.first;
     // Assign discharge
-    node.second->discharge((*node_discharge_vec_)(index));
+    node.second->discharge(node_discharge_vec_->coeff(index));
   }
 }
 
@@ -109,10 +101,10 @@ void MatrixAssembler::apply_node_discharge() {
 // Calculated according to nodal heads at two end and Hazen-Williams equation
 // If any of the nodal head is unknown, initialize the discharge to 0.001
 void MatrixAssembler::assemble_pipe_discharge_vector() {
-  (*pipe_discharge_vec_).resize(npipe_);
+  pipe_discharge_vec_->resize(npipe_);
   for (auto& pipe : global_pipes_) {
     Index index = pipe.first;
-    (*pipe_discharge_vec_)(index) = 0.001;
+    pipe_discharge_vec_->coeffRef(index) = 0.001;
   }
 }
 
@@ -129,15 +121,15 @@ void MatrixAssembler::assemble_pipe_discharge_vector() {
 //            (2radius)^4.8704}
 //
 // sub_jac_A: Derivative of nodal balance equation with respect to nodal head,
-//            0. 
+//            0.
 // sub_jac_B: Derivative of nodal balance equation with respect to nodal
-//            discharge (demand), -1. 
-// sub_jac_C: Derivative of nodal balance equation with respect to pipe 
+//            discharge (demand), -1.
+// sub_jac_C: Derivative of nodal balance equation with respect to pipe
 //            discharge, 1 for inlink, -1 for out link.
 // sub_jac_D: Derivative of headloss equation with respect to nodal head, 1 for
-//            start node, 0 for end node. 
+//            start node, 0 for end node.
 // sub_jac_E: Derivative of headloss equation with respect to nodal discharge,
-//            0. 
+//            0.
 // sub_jac_F: Derivative of headloss equation with respect to pipe discharge,
 //            for corresponding pipe, \frac{-1.852 \times 10.67 \times
 //            length}{pow(pipe_roughness,1.852) \times pow(2radius,4.8704)}

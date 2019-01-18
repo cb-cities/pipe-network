@@ -96,27 +96,29 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
 
   // Check initialized nodal head vector
   std::shared_ptr<Eigen::VectorXd> node_head_vec = assembler->node_head_vec();
-  REQUIRE((*node_head_vec)(0) == Approx(head1).epsilon(tolerance));
-  REQUIRE((*node_head_vec)(1) == Approx(head2).epsilon(tolerance));
+  REQUIRE(node_head_vec->coeff(0) == Approx(head1).epsilon(tolerance));
+  REQUIRE(node_head_vec->coeff(1) == Approx(head2).epsilon(tolerance));
   for (int i = node_head_vec->size() - 3; i <= node_head_vec->size() - 1; i++)
-    REQUIRE((*node_head_vec)(i) ==
+    REQUIRE(node_head_vec->coeff(i) ==
             Approx(default_init_node_head).epsilon(tolerance));
 
   // Check initialized nodal discharge vector
   std::shared_ptr<Eigen::VectorXd> node_discharge_vec =
       assembler->node_discharge_vec();
-  REQUIRE((*node_discharge_vec)(0) == Approx(discharge1).epsilon(tolerance));
-  REQUIRE((*node_discharge_vec)(1) == Approx(discharge2).epsilon(tolerance));
+  REQUIRE(node_discharge_vec->coeff(0) ==
+          Approx(discharge1).epsilon(tolerance));
+  REQUIRE(node_discharge_vec->coeff(1) ==
+          Approx(discharge2).epsilon(tolerance));
   for (int i = node_discharge_vec->size() - 3;
        i <= node_discharge_vec->size() - 1; i++)
-    REQUIRE((*node_discharge_vec)(i) ==
+    REQUIRE(node_discharge_vec->coeff(i) ==
             Approx(default_init_node_discharge).epsilon(tolerance));
 
   // Check initialized pipe discharge vector
   std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec =
       assembler->pipe_discharge_vec();
   for (int i = 0; i <= pipe_discharge_vec->size() - 1; i++)
-    REQUIRE((*pipe_discharge_vec)(i) ==
+    REQUIRE(pipe_discharge_vec->coeff(i) ==
             Approx(default_init_pipe_discharge).epsilon(tolerance));
 
   // Assemble Jacobian matrix and check initialized Jacobian matrix
