@@ -53,7 +53,13 @@ void pipenetwork::Pipe::compute_discharge_hazen_williams() {
 }
 
 // Calculate and return derivative of Hazen-Williams equation with respect to
-// pipe discharge 
+// pipe discharge Headloss equation (Hazen-Williams): Residual =
+// (Start_node_head - end_node_head) - \frac{10.67 \times length \times
+//            pipe_discharge^1.852}{pipe_roughness^1.852 \times
+//            (2radius)^4.8704}
+// Take derivative with respect to pipe_discharge:
+// \frac{-1.852 \times 10.67 \times length}{pow(pipe_roughness,1.852)
+// \times pow(2radius,4.8704)} \times pow(pipe_discharge,0.852).
 // SI unit meter and second are used in the whole equation
 double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
   double coeff = 10.67 * length_ /

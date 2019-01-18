@@ -54,25 +54,3 @@ void Mesh::remove_unconnected_nodes() {
   for (const auto& unconnected_node : unconnected_nodes)
     nodes_.erase(unconnected_node);
 }
-
-//! Return vector of nodal pointers
-//! \retval nodeptr vector of nodal pointers in the mesh
-std::vector<std::shared_ptr<pipenetwork::Node>> Mesh::nodeptr() {
-  std::vector<std::shared_ptr<pipenetwork::Node>> nodeptr;
-  for (const auto& node : nodes_) {
-    nodeptr.emplace_back(node.second);
-  }
-  return nodeptr;
-}
-
-//! Return vector of pipe pointers
-//! \retval pipeptr vector of pipe pointers in the mesh
-std::vector<std::shared_ptr<pipenetwork::Pipe>> Mesh::pipeptr() {
-  std::vector<std::shared_ptr<pipenetwork::Pipe>> pipeptr;
-  for (const auto& pipe : pipes_) {
-    pipeptr.push_back(pipe.second);
-  }
-  // for (int i = 0; i < pipes_.size(); i++) {
-  // pipeptr.emplace_back(pipes_.at(i));}
-  return pipeptr;
-}

@@ -28,24 +28,9 @@ class MatrixAssembler {
   //! Destructor
   ~MatrixAssembler() = default;
 
-  //! Copy constructor
-  MatrixAssembler(const MatrixAssembler&) = default;
-
-  //! Assignment operator
-  MatrixAssembler& operator=(const MatrixAssembler&) = default;
-
-  //! Move constructor
-  MatrixAssembler(MatrixAssembler&&) = default;
-
-  //! Assign global index to nodes in the whole network
-  //! \param[in] nodes nodal pointers created in mesh class
-  void assign_global_nodal_indices(
-      std::vector<std::shared_ptr<pipenetwork::Node>> nodes);
-
-  //! Assign global index to pipes in the whole network
-  //! \param[in] pipes pipe pointers created in mesh class
-  void assign_global_pipe_indices(
-      std::vector<std::shared_ptr<pipenetwork::Pipe>> pipes);
+  //! Obtain global nodal and pipe indices and pointers from meshes
+  //! \param[in] mesh meshes that form the pipe network
+  void global_nodal_pipe_indices(std::shared_ptr<Mesh> mesh);
 
   //! Return number of nodes in the network
   //! \retval nnode_ number of nodes in the network
@@ -54,6 +39,31 @@ class MatrixAssembler {
   //! Return number of pipes in the network
   //! \retval nnode_ number of pipes in the network
   unsigned npipes() { return npipe_; }
+
+  //! Assign pipe roughness coefficient for Hazen-Williams equation
+  //! \param[in] mesh mesh where the pipes were created
+  //! \param[in] pipe_roughness vector of pair of pipe index and roughness
+  void assign_pipe_roughness(
+      std::shared_ptr<Mesh> mesh,
+      std::vector<std::pair<Index, double>> pipe_roughness);
+
+  //! Initialize discharges in pipes
+  //! \param[in] mesh mesh where the pipes were created
+  void initialize_pipe_discharge(std::shared_ptr<Mesh> mesh);
+
+  //! Assign initial heads for nodes that have known head
+  //! \param[in] mesh mesh where the nodes were created
+  //! \param[in] node_head vector of pair of nodal index and initial nodal head
+  void assign_node_head(std::shared_ptr<Mesh>,
+                        std::vector<std::pair<Index, double>> node_head);
+
+  //! Assign initial discharges for nodes that have known discharge
+  //! \param[in] mesh mesh where the nodes were created
+  //! \param[in] node_discharge vector of pair of nodal index and initial
+  //! discharge
+  void assign_node_discharge(
+      std::shared_ptr<Mesh> mesh,
+      std::vector<std::pair<Index, double>> node_discharge);
 
   //! Initialize nodal head vector
   //! If head of the ndoe is unknown (hasn't been assigned), initialize to zero
@@ -79,26 +89,32 @@ class MatrixAssembler {
   void assemble_jacobian();
 
   //! Return nodal head vector
-  //! \retval *node_head_vec_ nodal head vector
-  Eigen::VectorXd node_head_vec() const { return *node_head_vec_; }
+  //! \retval node_head_vec_ pointer to nodal head vector
+  std::shared_ptr<Eigen::VectorXd> node_head_vec() const {
+    return node_head_vec_;
+  }
 
   //! Return nodal discharge vector
-  //! \retval *node_discharge_vec_ nodal discharge vector
-  Eigen::VectorXd node_discharge_vec() const { return *node_discharge_vec_; }
+  //! \retval node_discharge_vec_ pointer to nodal discharge vector
+  std::shared_ptr<Eigen::VectorXd> node_discharge_vec() const {
+    return node_discharge_vec_;
+  }
 
   //! Return pipe discharge vector
-  //! \retval *pipe_discharge_vec_ pipe discharge vector
-  Eigen::VectorXd pipe_discharge_vec() const { return *pipe_discharge_vec_; }
+  //! \retval pipe_discharge_vec_ pointer to pipe discharge vector
+  std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec() const {
+    return pipe_discharge_vec_;
+  }
 
   //! Return Jacobian matrix
-  //! \retval *jac_ Jacobian matrix
-  Eigen::SparseMatrix<double> jac() const { return *jac_; }
+  //! \retval jac_ pointer to Jacobian matrix
+  std::shared_ptr<Eigen::SparseMatrix<double>> jac() const { return jac_; }
 
  private:
   //! global nodal id and corresponding nodal pointer
-  std::map<std::shared_ptr<pipenetwork::Node>, Index> global_nodes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Node>> global_nodes_;
   //! global pipe id and corresponding pipe pointer
-  std::map<std::shared_ptr<pipenetwork::Pipe>, Index> global_pipes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Pipe>> global_pipes_;
   //! number of nodes in the network
   unsigned nnode_{0};
   //! number of pipes in the network

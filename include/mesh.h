@@ -52,13 +52,8 @@ class Mesh {
   //! Remove unconnected nodes from the mesh
   void remove_unconnected_nodes();
 
-  //! Return vector of nodal pointers
-  //! \retval nodeptr vector of nodal pointers in the mesh
-  std::vector<std::shared_ptr<pipenetwork::Node>> nodeptr();
-
-  //! Return vector of pipe pointers
-  //! \retval pipeptr vector of pipe pointers in the mesh
-  std::vector<std::shared_ptr<pipenetwork::Pipe>> pipeptr();
+  //! Make MatrixAssembler a friend class of mesh
+  friend class MatrixAssembler;
 
  private:
   //! mesh id

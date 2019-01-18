@@ -78,7 +78,7 @@ class Pipe {
   void compute_discharge_hazen_williams();
 
   //! Calculate and return derivative of Hazen-Williams equation with respect to
-  //! pipe discharge 
+  //! pipe discharge
   //! SI unit meter and second are used in the whole equation
   //! \retval derivative of Hazen-Williams equation with respect to pipe
   //! discharge
