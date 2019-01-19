@@ -39,6 +39,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
 
   // Input vector of pipe diameter and status
   std::vector<double> diameter{1, 1, 1, 1};
+  std::vector<double> roughness{0.01, 0.01, 0.01, 0.01};
   std::vector<bool> status{true, true, true, true};
 
   // Check mesh id
@@ -49,7 +50,8 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
 
     // Create pipes based on pipe indices and previous created node pointers in
     // the mesh
-    bool all_pipe_created = mesh->create_pipes(node_pairs, diameter, status);
+    bool all_pipe_created =
+        mesh->create_pipes(node_pairs, diameter, roughness, status);
 
     // Check number of nodes before remove
     REQUIRE(mesh->nnodes() == 7);
@@ -72,10 +74,12 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     node_pairs.emplace_back(std::make_pair(2, 8));
     node_pairs.emplace_back(std::make_pair(8, 9));
     std::vector<double> diameter{1, 1, 1, 1, 1, 1};
+    std::vector<double> roughness{0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
     std::vector<bool> status{true, true, true, true, true, true};
     // Create pipes based on pipe indices and previous created node pointers in
     // the mesh
-    bool all_pipe_created = mesh->create_pipes(node_pairs, diameter, status);
+    bool all_pipe_created =
+        mesh->create_pipes(node_pairs, diameter, roughness, status);
 
     // Check number of nodes before remove
     REQUIRE(mesh->nnodes() == 7);

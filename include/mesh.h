@@ -39,6 +39,7 @@ class Mesh {
   //! \retval status to check whether all input pipe created successfully
   bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
                     const std::vector<double>& diameter,
+                    const std::vector<double>& roughness,
                     const std::vector<bool>& pipe_status);
 
   //! Return the number of nodes in the mesh
@@ -51,6 +52,19 @@ class Mesh {
 
   //! Remove unconnected nodes from the mesh
   void remove_unconnected_nodes();
+
+  //! Initialize discharges in pipes
+  void initialize_pipe_discharge();
+
+  //! Assign initial heads for nodes that have known head
+  //! \param[in] node_head vector of pair of nodal index and initial nodal head
+  void assign_node_head(const std::vector<std::pair<Index, double>>& node_head);
+
+  //! Assign initial discharges for nodes that have known discharge
+  //! \param[in] node_discharge vector of pair of nodal index and initial
+  //! discharge
+  void assign_node_discharge(
+      const std::vector<std::pair<Index, double>>& node_discharge);
 
   //! Make MatrixAssembler a friend class of mesh
   friend class MatrixAssembler;

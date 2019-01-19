@@ -40,37 +40,12 @@ class MatrixAssembler {
   //! \retval nnode_ number of pipes in the network
   unsigned npipes() { return npipe_; }
 
-  //! Assign pipe roughness coefficient for Hazen-Williams equation
-  //! \param[in] mesh mesh where the pipes were created
-  //! \param[in] pipe_roughness vector of pair of pipe index and roughness
-  void assign_pipe_roughness(
-      const std::shared_ptr<Mesh>& mesh,
-      const std::vector<std::pair<Index, double>>& pipe_roughness);
-
-  //! Initialize discharges in pipes
-  //! \param[in] mesh mesh where the pipes were created
-  void initialize_pipe_discharge(const std::shared_ptr<Mesh>& mesh);
-
-  //! Assign initial heads for nodes that have known head
-  //! \param[in] mesh mesh where the nodes were created
-  //! \param[in] node_head vector of pair of nodal index and initial nodal head
-  void assign_node_head(const std::shared_ptr<Mesh>& mesh,
-                        const std::vector<std::pair<Index, double>>& node_head);
-
-  //! Assign initial discharges for nodes that have known discharge
-  //! \param[in] mesh mesh where the nodes were created
-  //! \param[in] node_discharge vector of pair of nodal index and initial
-  //! discharge
-  void assign_node_discharge(
-      const std::shared_ptr<Mesh>& mesh,
-      const std::vector<std::pair<Index, double>>& node_discharge);
-
   //! Initialize nodal head vector
   //! If head of the ndoe is unknown (hasn't been assigned), initialize to zero
   void assemble_node_head_vector();
 
   //! Initialize nodal discharge vector
-  //! If discharge of the ndoe is unknown (hasn't been assigned), initialize to
+  //! If discharge of the node is unknown (hasn't been assigned), initialize to
   //! zero
   void assemble_node_discharge_vector();
 

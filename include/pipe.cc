@@ -2,10 +2,11 @@
 // velocity
 pipenetwork::Pipe::Pipe(
     unsigned id, const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-    double diameter, bool status, double max_velocity)
+    double diameter, double roughness, bool status, double max_velocity)
     : id_{id},
       nodes_{nodes},
       radius_{diameter / 2.},
+      pipe_roughness_{roughness},
       isopen_{status},
       max_velocity_{max_velocity} {
   length_ = (nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates()).norm();

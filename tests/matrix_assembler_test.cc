@@ -40,31 +40,20 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   node_pairs.emplace_back(std::make_pair(2, 4));
   node_pairs.emplace_back(std::make_pair(3, 4));
 
-  // Input vector of pipe diameter and status
+  // Input vector of pipe diameter, roughness and status
   std::vector<double> diameter{1, 1, 1, 1, 1, 1, 1};
+  std::vector<double> roughness{0.00029886657, 0.00778973070, 0.01406047524,
+                                0.00215781840, 0.01168459605, 0.02812095048,
+                                0.01406047524};
   std::vector<bool> status{true, true, true, true, true, true, true};
 
   // Create pipes based on pipe indices and previous created node pointers in
   // the mesh
-  bool all_pipe_created = mesh->create_pipes(node_pairs, diameter, status);
+  bool all_pipe_created =
+      mesh->create_pipes(node_pairs, diameter, roughness, status);
 
-  // Make pairs of pipe index and roughness
-  std::vector<std::pair<Index, double>> pipe_roughness;
-  pipe_roughness.emplace_back(std::make_pair(0, 0.00029886657));
-  pipe_roughness.emplace_back(std::make_pair(1, 0.00778973070));
-  pipe_roughness.emplace_back(std::make_pair(2, 0.01406047524));
-  pipe_roughness.emplace_back(std::make_pair(3, 0.00215781840));
-  pipe_roughness.emplace_back(std::make_pair(4, 0.01168459605));
-  pipe_roughness.emplace_back(std::make_pair(5, 0.02812095048));
-  pipe_roughness.emplace_back(std::make_pair(6, 0.01406047524));
-
-  // Initialize matrix assembler and obtain global index to nodes and pipes
-  auto assembler = std::make_shared<MatrixAssembler>();
-  assembler->global_nodal_pipe_indices(mesh);
-
-  // Assign pipe roughness coefficient and initialize discharge
-  assembler->assign_pipe_roughness(mesh, pipe_roughness);
-  assembler->initialize_pipe_discharge(mesh);
+  // Initialize pipe discharge
+  mesh->initialize_pipe_discharge();
 
   // Assign initial nodal head and discharge
   double default_init_node_head = 0.0;
@@ -80,8 +69,12 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   std::vector<std::pair<Index, double>> node_discharge;
   node_discharge.emplace_back(std::make_pair(0, discharge1));
   node_discharge.emplace_back(std::make_pair(1, discharge2));
-  assembler->assign_node_head(mesh, node_head);
-  assembler->assign_node_discharge(mesh, node_discharge);
+  mesh->assign_node_head(node_head);
+  mesh->assign_node_discharge(node_discharge);
+
+  // Initialize matrix assembler and obtain global index to nodes and pipes
+  auto assembler = std::make_shared<MatrixAssembler>();
+  assembler->global_nodal_pipe_indices(mesh);
 
   // Check the number of nodes and pipes in the network
   unsigned nnodes = assembler->nnodes();
