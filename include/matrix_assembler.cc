@@ -8,7 +8,7 @@ MatrixAssembler::MatrixAssembler() {
 
 // Obtain global nodal and pipe indices and pointers from meshes
 void MatrixAssembler::global_nodal_pipe_indices(
-    const std::shared_ptr<Mesh> mesh) {
+    const std::shared_ptr<Mesh>& mesh) {
   global_nodes_.clear();
   global_pipes_.clear();
   for (const auto& node : mesh->nodes_) global_nodes_.emplace(node);
@@ -19,29 +19,29 @@ void MatrixAssembler::global_nodal_pipe_indices(
 
 //! Assign pipe roughness coefficient for Hazen-Williams equation
 void MatrixAssembler::assign_pipe_roughness(
-    const std::shared_ptr<Mesh> mesh,
-    const std::vector<std::pair<Index, double>> pipe_roughness) {
+    const std::shared_ptr<Mesh>& mesh,
+    const std::vector<std::pair<Index, double>>& pipe_roughness) {
   for (auto& roughness : pipe_roughness)
     mesh->pipes_.at(roughness.first)->pipe_roughness(roughness.second);
 }
 
 //! Initialize discharges in pipes
 void MatrixAssembler::initialize_pipe_discharge(
-    const std::shared_ptr<Mesh> mesh) {
+    const std::shared_ptr<Mesh>& mesh) {
   for (auto& pipe : mesh->pipes_) pipe.second->initialize_discharge();
 }
 
 //! Assign initial heads for nodes that have known head
 void MatrixAssembler::assign_node_head(
-    const std::shared_ptr<Mesh> mesh,
-    const std::vector<std::pair<Index, double>> node_head) {
+    const std::shared_ptr<Mesh>& mesh,
+    const std::vector<std::pair<Index, double>>& node_head) {
   for (auto& head : node_head) mesh->nodes_.at(head.first)->head(head.second);
 }
 
 //! Assign initial discharges for nodes that have known discharge
 void MatrixAssembler::assign_node_discharge(
-    const std::shared_ptr<Mesh> mesh,
-    const std::vector<std::pair<Index, double>> node_discharge) {
+    const std::shared_ptr<Mesh>& mesh,
+    const std::vector<std::pair<Index, double>>& node_discharge) {
   for (auto& discharge : node_discharge)
     mesh->nodes_.at(discharge.first)->discharge(discharge.second);
 }

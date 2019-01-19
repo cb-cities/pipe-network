@@ -30,7 +30,7 @@ class MatrixAssembler {
 
   //! Obtain global nodal and pipe indices and pointers from meshes
   //! \param[in] mesh meshes that form the pipe network
-  void global_nodal_pipe_indices(const std::shared_ptr<Mesh> mesh);
+  void global_nodal_pipe_indices(const std::shared_ptr<Mesh>& mesh);
 
   //! Return number of nodes in the network
   //! \retval nnode_ number of nodes in the network
@@ -44,26 +44,26 @@ class MatrixAssembler {
   //! \param[in] mesh mesh where the pipes were created
   //! \param[in] pipe_roughness vector of pair of pipe index and roughness
   void assign_pipe_roughness(
-      const std::shared_ptr<Mesh> mesh,
-      const std::vector<std::pair<Index, double>> pipe_roughness);
+      const std::shared_ptr<Mesh>& mesh,
+      const std::vector<std::pair<Index, double>>& pipe_roughness);
 
   //! Initialize discharges in pipes
   //! \param[in] mesh mesh where the pipes were created
-  void initialize_pipe_discharge(const std::shared_ptr<Mesh> mesh);
+  void initialize_pipe_discharge(const std::shared_ptr<Mesh>& mesh);
 
   //! Assign initial heads for nodes that have known head
   //! \param[in] mesh mesh where the nodes were created
   //! \param[in] node_head vector of pair of nodal index and initial nodal head
-  void assign_node_head(const std::shared_ptr<Mesh>,
-                        const std::vector<std::pair<Index, double>> node_head);
+  void assign_node_head(const std::shared_ptr<Mesh>& mesh,
+                        const std::vector<std::pair<Index, double>>& node_head);
 
   //! Assign initial discharges for nodes that have known discharge
   //! \param[in] mesh mesh where the nodes were created
   //! \param[in] node_discharge vector of pair of nodal index and initial
   //! discharge
   void assign_node_discharge(
-      const std::shared_ptr<Mesh> mesh,
-      const std::vector<std::pair<Index, double>> node_discharge);
+      const std::shared_ptr<Mesh>& mesh,
+      const std::vector<std::pair<Index, double>>& node_discharge);
 
   //! Initialize nodal head vector
   //! If head of the ndoe is unknown (hasn't been assigned), initialize to zero
