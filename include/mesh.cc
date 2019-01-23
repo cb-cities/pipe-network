@@ -65,12 +65,12 @@ void Mesh::initialize_pipe_discharge() {
 // Assign initial heads for nodes that have known head
 void Mesh::assign_node_head(
     const std::vector<std::pair<Index, double>>& node_head) {
-  for (auto& head : node_head) nodes_.at(head.first)->head(head.second);
+  for (const auto& head : node_head) nodes_.at(head.first)->head(head.second);
 }
 
 // Assign initial discharges for nodes that have known discharge
 void Mesh::assign_node_discharge(
     const std::vector<std::pair<Index, double>>& node_discharge) {
-  for (auto& discharge : node_discharge)
+  for (const auto& discharge : node_discharge)
     nodes_.at(discharge.first)->discharge(discharge.second);
 }

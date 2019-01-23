@@ -14,7 +14,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_shared<Mesh>(meshid);
+  auto mesh = std::make_unique<Mesh>(meshid);
 
   // Nodal coordinates
   const Eigen::Vector3d coords1(0.0, 0.0, 0.0);
@@ -38,7 +38,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   node_pairs.emplace_back(std::make_pair(2, 4));
 
   // Input vector of pipe diameter and status
-  std::vector<double> diameter{1, 1, 1, 1};
+  std::vector<double> diameter{1.1, 1.2, 1.3, 1.4};
   std::vector<double> roughness{0.01, 0.01, 0.01, 0.01};
   std::vector<bool> status{true, true, true, true};
 
@@ -73,7 +73,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     // Make pairs of nodes which do not exist to create pipe
     node_pairs.emplace_back(std::make_pair(2, 8));
     node_pairs.emplace_back(std::make_pair(8, 9));
-    std::vector<double> diameter{1, 1, 1, 1, 1, 1};
+    std::vector<double> diameter{1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
     std::vector<double> roughness{0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
     std::vector<bool> status{true, true, true, true, true, true};
     // Create pipes based on pipe indices and previous created node pointers in

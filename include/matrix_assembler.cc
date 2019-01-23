@@ -8,7 +8,7 @@ MatrixAssembler::MatrixAssembler() {
 
 // Obtain global nodal and pipe indices and pointers from meshes
 void MatrixAssembler::global_nodal_pipe_indices(
-    const std::shared_ptr<Mesh>& mesh) {
+    const std::unique_ptr<Mesh>& mesh) {
   global_nodes_.clear();
   global_pipes_.clear();
   for (const auto& node : mesh->nodes_) global_nodes_.emplace(node);
@@ -21,13 +21,12 @@ void MatrixAssembler::global_nodal_pipe_indices(
 // If head of the ndoe is unknown (hasn't been assigned), initialize to zero
 void MatrixAssembler::assemble_node_head_vector() {
   node_head_vec_->resize(nnode_);
-  for (auto& node : global_nodes_) {
+  for (const auto& node : global_nodes_) {
     Index index = node.first;
-    if ((node.second)->ishead()) {
+    if ((node.second)->ishead())
       node_head_vec_->coeffRef(index) = node.second->head();
-    } else {
+    else
       node_head_vec_->coeffRef(index) = 0.0;
-    }
   }
 }
 
@@ -36,13 +35,12 @@ void MatrixAssembler::assemble_node_head_vector() {
 // zero
 void MatrixAssembler::assemble_node_discharge_vector() {
   node_discharge_vec_->resize(nnode_);
-  for (auto& node : global_nodes_) {
+  for (const auto& node : global_nodes_) {
     Index index = node.first;
-    if ((node.second)->isdischarge()) {
+    if ((node.second)->isdischarge())
       node_discharge_vec_->coeffRef(index) = node.second->discharge();
-    } else {
+    else
       node_discharge_vec_->coeffRef(index) = 0.0;
-    }
   }
 }
 
@@ -73,9 +71,9 @@ void MatrixAssembler::apply_node_discharge() {
 // If any of the nodal head is unknown, initialize the discharge to 0.001
 void MatrixAssembler::assemble_pipe_discharge_vector() {
   pipe_discharge_vec_->resize(npipe_);
-  for (auto& pipe : global_pipes_) {
+  for (const auto& pipe : global_pipes_) {
     Index index = pipe.first;
-    pipe_discharge_vec_->coeffRef(index) = 0.001;
+    pipe_discharge_vec_->coeffRef(index) = pipe.second->discharge();
   }
 }
 
@@ -111,10 +109,9 @@ void MatrixAssembler::assemble_pipe_discharge_vector() {
 //
 void MatrixAssembler::assemble_jacobian() {
   // Check network
-  if (nnode_ <= 0 || npipe_ <= 0) {
+  if (nnode_ <= 0 || npipe_ <= 0)
     throw std::runtime_error(
         "No node or pipe index pairs created to assemble Jacobian matrix");
-  }
 
   std::vector<Eigen::Triplet<double>> update;
   update.reserve(nnode_ + 2 * npipe_);

@@ -15,7 +15,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_shared<Mesh>(meshid);
+  auto mesh = std::make_unique<Mesh>(meshid);
 
   // Nodal coordinates
   // using example netwrok in Todini(2013)
@@ -41,10 +41,10 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   node_pairs.emplace_back(std::make_pair(3, 4));
 
   // Input vector of pipe diameter, roughness and status
-  std::vector<double> diameter{1, 1, 1, 1, 1, 1, 1};
-  std::vector<double> roughness{0.00029886657, 0.00778973070, 0.01406047524,
-                                0.00215781840, 0.01168459605, 0.02812095048,
-                                0.01406047524};
+  std::vector<double> diameter{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7};
+  std::vector<double> roughness{
+      147683.36372579, 4102.7779645159, 1238.1607371737, 1598.5610759603,
+      430.5609768094,  137.58891975265, 133.37351955511};
   std::vector<bool> status{true, true, true, true, true, true, true};
 
   // Create pipes based on pipe indices and previous created node pointers in
@@ -82,90 +82,109 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   REQUIRE(nnodes == 5);
   REQUIRE(npipes == 7);
 
-  // Initialize nodal head discharge and pipe discharge vector
-  assembler->assemble_node_head_vector();
-  assembler->assemble_node_discharge_vector();
-  assembler->assemble_pipe_discharge_vector();
-
   // Check initialized nodal head vector
-  std::shared_ptr<Eigen::VectorXd> node_head_vec = assembler->node_head_vec();
-  REQUIRE(node_head_vec->coeff(0) == Approx(head1).epsilon(tolerance));
-  REQUIRE(node_head_vec->coeff(1) == Approx(head2).epsilon(tolerance));
-  for (int i = node_head_vec->size() - 3; i <= node_head_vec->size() - 1; i++)
-    REQUIRE(node_head_vec->coeff(i) ==
-            Approx(default_init_node_head).epsilon(tolerance));
-
-  // Check initialized nodal discharge vector
-  std::shared_ptr<Eigen::VectorXd> node_discharge_vec =
-      assembler->node_discharge_vec();
-  REQUIRE(node_discharge_vec->coeff(0) ==
-          Approx(discharge1).epsilon(tolerance));
-  REQUIRE(node_discharge_vec->coeff(1) ==
-          Approx(discharge2).epsilon(tolerance));
-  for (int i = node_discharge_vec->size() - 3;
-       i <= node_discharge_vec->size() - 1; i++)
-    REQUIRE(node_discharge_vec->coeff(i) ==
-            Approx(default_init_node_discharge).epsilon(tolerance));
-
-  // Check initialized pipe discharge vector
-  std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec =
-      assembler->pipe_discharge_vec();
-  for (int i = 0; i <= pipe_discharge_vec->size() - 1; i++)
-    REQUIRE(pipe_discharge_vec->coeff(i) ==
-            Approx(default_init_pipe_discharge).epsilon(tolerance));
-
-  // Assemble Jacobian matrix and check initialized Jacobian matrix
-  assembler->assemble_jacobian();
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
-  // Check jacB (nodal discharge in nodal balance equation)
-  for (int row = 0; row < nnodes; row++) {
-    for (int col = nnodes; col < nnodes + nnodes; col++) {
-      if ((col - nnodes) == row) {
-        REQUIRE(jac->coeff(row, col) == -1);
-      } else {
-        REQUIRE(jac->coeff(row, col) == 0);
-      }
-    }
+  SECTION("Check initialized nodal head vector") {
+    // Initialize nodal head vector
+    assembler->assemble_node_head_vector();
+    std::shared_ptr<Eigen::VectorXd> node_head_vec = assembler->node_head_vec();
+    REQUIRE(node_head_vec->coeff(0) == Approx(head1).epsilon(tolerance));
+    REQUIRE(node_head_vec->coeff(1) == Approx(head2).epsilon(tolerance));
+    for (int i = node_head_vec->size() - 3; i <= node_head_vec->size() - 1; i++)
+      REQUIRE(node_head_vec->coeff(i) ==
+              Approx(default_init_node_head).epsilon(tolerance));
   }
 
-  // Check jacC (pipe discharge in nodal balance equation)
-  REQUIRE(jac->coeff(0, 10) == -1);
-  REQUIRE(jac->coeff(0, 11) == -1);
-  REQUIRE(jac->coeff(1, 10) == 1);
-  REQUIRE(jac->coeff(1, 12) == -1);
-  REQUIRE(jac->coeff(1, 13) == -1);
-  REQUIRE(jac->coeff(1, 14) == -1);
-  REQUIRE(jac->coeff(2, 11) == 1);
-  REQUIRE(jac->coeff(2, 12) == 1);
-  REQUIRE(jac->coeff(2, 15) == -1);
-  REQUIRE(jac->coeff(3, 13) == 1);
-  REQUIRE(jac->coeff(3, 16) == -1);
-  REQUIRE(jac->coeff(4, 14) == 1);
-  REQUIRE(jac->coeff(4, 15) == 1);
-  REQUIRE(jac->coeff(4, 16) == 1);
+  // Check initialized nodal discharge vector
+  SECTION("Check initialized nodal discharge vector") {
+    // Initialize nodal discharge vector
+    assembler->assemble_node_discharge_vector();
+    std::shared_ptr<Eigen::VectorXd> node_discharge_vec =
+        assembler->node_discharge_vec();
+    REQUIRE(node_discharge_vec->coeff(0) ==
+            Approx(discharge1).epsilon(tolerance));
+    REQUIRE(node_discharge_vec->coeff(1) ==
+            Approx(discharge2).epsilon(tolerance));
+    for (int i = node_discharge_vec->size() - 3;
+         i <= node_discharge_vec->size() - 1; i++)
+      REQUIRE(node_discharge_vec->coeff(i) ==
+              Approx(default_init_node_discharge).epsilon(tolerance));
+  }
 
-  // Check jacD (nodal head in headloss equation)
-  REQUIRE(jac->coeff(5, 0) == 1);
-  REQUIRE(jac->coeff(5, 1) == -1);
-  REQUIRE(jac->coeff(6, 0) == 1);
-  REQUIRE(jac->coeff(6, 2) == -1);
-  REQUIRE(jac->coeff(7, 1) == 1);
-  REQUIRE(jac->coeff(7, 2) == -1);
-  REQUIRE(jac->coeff(8, 1) == 1);
-  REQUIRE(jac->coeff(8, 3) == -1);
-  REQUIRE(jac->coeff(9, 1) == 1);
-  REQUIRE(jac->coeff(9, 4) == -1);
-  REQUIRE(jac->coeff(10, 2) == 1);
-  REQUIRE(jac->coeff(10, 4) == -1);
-  REQUIRE(jac->coeff(11, 3) == 1);
-  REQUIRE(jac->coeff(11, 4) == -1);
+  // Check initialized pipe discharge vector
+  SECTION("Check initialized pipe discharge vector") {
+    // Initialize pipe discharge vector
+    assembler->assemble_pipe_discharge_vector();
+    std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec =
+        assembler->pipe_discharge_vec();
+    for (int i = 0; i <= pipe_discharge_vec->size() - 1; i++)
+      REQUIRE(pipe_discharge_vec->coeff(i) ==
+              Approx(default_init_pipe_discharge).epsilon(tolerance));
+  }
 
-  // Check jacF (pipe discharge in headloss equation)
-  REQUIRE(jac->coeff(5, 10) == Approx(-261659.41563376).epsilon(tolerance));
-  REQUIRE(jac->coeff(6, 11) == Approx(-624.05207784531).epsilon(tolerance));
-  REQUIRE(jac->coeff(7, 12) == Approx(-295.62380157722).epsilon(tolerance));
-  REQUIRE(jac->coeff(8, 13) == Approx(-9511.2986240786).epsilon(tolerance));
-  REQUIRE(jac->coeff(9, 14) == Approx(-589.01969629169).epsilon(tolerance));
-  REQUIRE(jac->coeff(10, 15) == Approx(-81.890183736592).epsilon(tolerance));
-  REQUIRE(jac->coeff(11, 16) == Approx(-295.62380157722).epsilon(tolerance));
+  // Check initialized Jacobian matrix
+  SECTION("Check initialized Jacobian matrix") {
+
+    // Assemble Jacobian matrix
+    assembler->assemble_jacobian();
+    std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
+
+    // Check jacB (nodal discharge in nodal balance equation)
+    for (int row = 0; row < nnodes; row++) {
+      for (int col = nnodes; col < nnodes + nnodes; col++) {
+        if ((col - nnodes) == row) {
+          REQUIRE(jac->coeff(row, col) == -1);
+        } else {
+          REQUIRE(jac->coeff(row, col) == 0);
+        }
+      }
+    }
+
+    // Check jacC (pipe discharge in nodal balance equation)
+    REQUIRE(jac->coeff(0, 10) == -1);
+    REQUIRE(jac->coeff(0, 11) == -1);
+    REQUIRE(jac->coeff(1, 10) == 1);
+    REQUIRE(jac->coeff(1, 12) == -1);
+    REQUIRE(jac->coeff(1, 13) == -1);
+    REQUIRE(jac->coeff(1, 14) == -1);
+    REQUIRE(jac->coeff(2, 11) == 1);
+    REQUIRE(jac->coeff(2, 12) == 1);
+    REQUIRE(jac->coeff(2, 15) == -1);
+    REQUIRE(jac->coeff(3, 13) == 1);
+    REQUIRE(jac->coeff(3, 16) == -1);
+    REQUIRE(jac->coeff(4, 14) == 1);
+    REQUIRE(jac->coeff(4, 15) == 1);
+    REQUIRE(jac->coeff(4, 16) == 1);
+
+    // Check jacD (nodal head in headloss equation)
+    REQUIRE(jac->coeff(5, 0) == 1);
+    REQUIRE(jac->coeff(5, 1) == -1);
+    REQUIRE(jac->coeff(6, 0) == 1);
+    REQUIRE(jac->coeff(6, 2) == -1);
+    REQUIRE(jac->coeff(7, 1) == 1);
+    REQUIRE(jac->coeff(7, 2) == -1);
+    REQUIRE(jac->coeff(8, 1) == 1);
+    REQUIRE(jac->coeff(8, 3) == -1);
+    REQUIRE(jac->coeff(9, 1) == 1);
+    REQUIRE(jac->coeff(9, 4) == -1);
+    REQUIRE(jac->coeff(10, 2) == 1);
+    REQUIRE(jac->coeff(10, 4) == -1);
+    REQUIRE(jac->coeff(11, 3) == 1);
+    REQUIRE(jac->coeff(11, 4) == -1);
+
+    // Check jacF (pipe discharge in headloss equation)
+    REQUIRE(jac->coeff(5, 10) ==
+            Approx(-0.000001538573761089).epsilon(tolerance));
+    REQUIRE(jac->coeff(6, 11) ==
+            Approx(-0.00004010175932682).epsilon(tolerance));
+    REQUIRE(jac->coeff(7, 12) ==
+            Approx(-0.00007238373389406).epsilon(tolerance));
+    REQUIRE(jac->coeff(8, 13) ==
+            Approx(-0.00001110851163928).epsilon(tolerance));
+    REQUIRE(jac->coeff(9, 14) ==
+            Approx(-0.00006015263899023).epsilon(tolerance));
+    REQUIRE(jac->coeff(10, 15) ==
+            Approx(-0.0001447674677881).epsilon(tolerance));
+    REQUIRE(jac->coeff(11, 16) ==
+            Approx(-0.00007238373389406).epsilon(tolerance));
+  }
 }
