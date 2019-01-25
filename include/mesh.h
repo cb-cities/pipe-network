@@ -37,7 +37,10 @@ class Mesh {
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
   //! \retval status to check whether all input pipe created successfully
-  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids);
+  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
+                    const std::vector<double>& diameter,
+                    const std::vector<double>& roughness,
+                    const std::vector<bool>& pipe_status);
 
   //! Return the number of nodes in the mesh
   //! \retval nodes_.size() number of nodes
@@ -50,13 +53,29 @@ class Mesh {
   //! Remove unconnected nodes from the mesh
   void remove_unconnected_nodes();
 
+  //! Initialize discharges in pipes
+  void initialize_pipe_discharge();
+
+  //! Assign initial heads for nodes that have known head
+  //! \param[in] node_head vector of pair of nodal index and initial nodal head
+  void assign_node_head(const std::vector<std::pair<Index, double>>& node_head);
+
+  //! Assign initial discharges for nodes that have known discharge
+  //! \param[in] node_discharge vector of pair of nodal index and initial
+  //! discharge
+  void assign_node_discharge(
+      const std::vector<std::pair<Index, double>>& node_discharge);
+
+  //! Make MatrixAssembler a friend class of mesh
+  friend class MatrixAssembler;
+
  private:
   //! mesh id
   unsigned id_{std::numeric_limits<unsigned>::max()};
   //! nodal id and corresponding nodal pointer
   std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! pipe id and corresponding pipe pointer
-  std::map<Index, std::unique_ptr<pipenetwork::Pipe>> pipes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Pipe>> pipes_;
 };
 
 #endif  // PIPE_NETWORK_MESH_H_

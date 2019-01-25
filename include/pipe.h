@@ -22,11 +22,12 @@ class Pipe {
   //! \param[in] id pipe id
   //! \param[in] nodes array of node pointers
   //! \param[in] diameter of the pipe
+  //! \param[in] roughness pipe roughness for Hazen-Williams equation
   //! \param[in] status of the pipe, true for open, flase for close
   //! \param[in] maximum allowable velocity
   Pipe(unsigned id,
        const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-       double diameter, bool status,
+       double diameter, double roughness, bool status,
        double max_velocity = std::numeric_limits<double>::max());
 
   //! Destructor
@@ -55,12 +56,6 @@ class Pipe {
     darcy_friction_ = darcy_friction;
   }
 
-  //! Assign pipe roughness coefficient
-  //! \param[in] pipe_roughness roughness coefficient of the pipe
-  void pipe_roughness(double pipe_roughness) {
-    pipe_roughness_ = pipe_roughness;
-  }
-
   //! Initialize discharge with input value
   //! \param[in] discharge input discharge value of the pipe
   void initialize_discharge(double discharge = 0.001) {
@@ -76,6 +71,12 @@ class Pipe {
   //! Calculate discharge in m^3/s from head difference in m
   //! SI unit meter and second are used in the whole equation
   void compute_discharge_hazen_williams();
+
+  //! Calculate and return derivative of Hazen-Williams equation with respect to
+  //! pipe discharge SI unit meter and second are used in the whole equation
+  //! \retval derivative of Hazen-Williams equation with respect to pipe
+  //! discharge
+  double deriv_hazen_williams_discharge();
 
   //! Return calculated discharge in the pipe
   //! \retval discharge_ discharge in the pipe

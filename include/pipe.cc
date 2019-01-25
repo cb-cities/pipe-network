@@ -2,10 +2,11 @@
 // velocity
 pipenetwork::Pipe::Pipe(
     unsigned id, const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-    double diameter, bool status, double max_velocity)
+    double diameter, double roughness, bool status, double max_velocity)
     : id_{id},
       nodes_{nodes},
       radius_{diameter / 2.},
+      pipe_roughness_{roughness},
       isopen_{status},
       max_velocity_{max_velocity} {
   length_ = (nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates()).norm();
@@ -50,6 +51,22 @@ void pipenetwork::Pipe::compute_discharge_hazen_williams() {
         "Unknown head exists, cannot calculate discharge using Darcy Weisbach "
         "equation");
   }
+}
+
+// Calculate and return derivative of Hazen-Williams equation with respect to
+// pipe discharge Headloss equation (Hazen-Williams): Residual =
+// (Start_node_head - end_node_head) - \frac{10.67 \times length \times
+//            pipe_discharge^1.852}{pipe_roughness^1.852 \times
+//            (2radius)^4.8704}
+// Take derivative with respect to pipe_discharge:
+// \frac{-1.852 \times 10.67 \times length}{pow(pipe_roughness,1.852)
+// \times pow(2radius,4.8704)} \times pow(pipe_discharge,0.852).
+// SI unit meter and second are used in the whole equation
+double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
+  double coeff = 10.67 * length_ /
+                 (pow(pipe_roughness_, 1.852) * pow(2 * radius_, 4.8704));
+  double deriv = -1.852 * coeff * pow(discharge_, 0.852);
+  return deriv;
 }
 
 // Calculate head loss over the pipe using Darcy-Weisbach equation:

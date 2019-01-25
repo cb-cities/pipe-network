@@ -29,12 +29,15 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
   // Dismeter of the pipe in m
   const double diameter = 20.0;
 
+  // Pipe roughness coefficient (for Hazen-Williams equation)
+  const double pipe_roughness = 100;
+
   // Pipe open status
   bool status = true;
 
   // Creat pipes based on previous created node pointers
-  auto pipe1 =
-      std::make_unique<pipenetwork::Pipe>(pipeid, nodes, diameter, status);
+  auto pipe1 = std::make_unique<pipenetwork::Pipe>(pipeid, nodes, diameter,
+                                                   pipe_roughness, status);
 
   // Pipe length
   // To calculate length between two points in 3d space
@@ -67,8 +70,8 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     const double max_velocity = 100.0;
 
     // Creat pipes based on previous created node pointers
-    auto pipe2 = std::make_unique<pipenetwork::Pipe>(pipeid, nodes, diameter,
-                                                     status, max_velocity);
+    auto pipe2 = std::make_unique<pipenetwork::Pipe>(
+        pipeid, nodes, diameter, pipe_roughness, status, max_velocity);
 
     // Initialize discharge in the pipe and check
     const double init_discharge = 10.0;
@@ -92,14 +95,10 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Dimensionless Darcy friction factor (for Darcy-Weisbach equation)
     const double darcy_friction = 0.1;
 
-    // Pipe roughness coefficient (for Hazen-Williams equation)
-    const double pipe_roughness = 100;
-
     // Assign defined variables to nodes and pipe
     nodes.at(0)->head(head1);
     nodes.at(1)->head(head2);
     pipe2->darcy_friction(darcy_friction);
-    pipe2->pipe_roughness(pipe_roughness);
 
     // Check radius and max flow velocity of the pipe
     REQUIRE(pipe2->max_discharge() == Approx(max_discharge).epsilon(tolerance));
