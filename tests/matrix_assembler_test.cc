@@ -15,7 +15,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_unique<Mesh>(meshid);
+  auto mesh = std::make_shared<Mesh>(meshid);
 
   // Nodal coordinates
   // using example netwrok in Todini(2013)

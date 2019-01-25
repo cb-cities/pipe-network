@@ -8,7 +8,7 @@ MatrixAssembler::MatrixAssembler() {
 
 // Obtain global nodal and pipe indices and pointers from meshes
 void MatrixAssembler::global_nodal_pipe_indices(
-    const std::unique_ptr<Mesh>& mesh) {
+    const std::shared_ptr<Mesh>& mesh) {
   global_nodes_.clear();
   global_pipes_.clear();
   for (const auto& node : mesh->nodes_) global_nodes_.emplace(node);

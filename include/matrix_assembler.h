@@ -30,7 +30,7 @@ class MatrixAssembler {
 
   //! Obtain global nodal and pipe indices and pointers from meshes
   //! \param[in] mesh meshes that form the pipe network
-  void global_nodal_pipe_indices(const std::unique_ptr<Mesh>& mesh);
+  void global_nodal_pipe_indices(const std::shared_ptr<Mesh>& mesh);
 
   //! Return number of nodes in the network
   //! \retval nnode_ number of nodes in the network
