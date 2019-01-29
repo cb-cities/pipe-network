@@ -1,5 +1,5 @@
-// GMRES Solver
-bool GMRES::solve() {
+// Eigen GMRES Solver
+bool EigenGMRES::solve() {
   bool convergence = false;
   const size_t n = vec_b_->size();
   Eigen::VectorXd x_diff(n);
@@ -47,9 +47,9 @@ bool GMRES::solve() {
         "The provided data did not satisfy the prerequisites.");
   } else if (gmres.info() == 2) {
     throw std::runtime_error("Iterative procedure did not converge.");
-  } else if (gmres.info() == 3) {
+  } else {
     throw std::runtime_error(
-        "The inputs are invalid, or the algorithmhas been improperly called.");
+        "The inputs are invalid, or the algorithm has been improperly called.");
   }
 
   return convergence;

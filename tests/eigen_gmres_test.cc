@@ -1,12 +1,13 @@
+#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "gmres.h"
+#include "eigen_gmres.h"
 #include "matrix_assembler.h"
 #include "settings.h"
 #include "solver.h"
 
-// Check GMRES class (solve Ax=b)
-TEST_CASE("GMRES solver is checked", "[GMRES]") {
+// Check Eigen GMRES class (solve Ax=b)
+TEST_CASE("Eigen GMRES solver is checked", "[EigenGMRES]") {
   // Tolerance
   const double tolerance = 1.e-10;
 
@@ -14,7 +15,6 @@ TEST_CASE("GMRES solver is checked", "[GMRES]") {
   const unsigned max_iter = 5000;
 
   // Input vector b
-  // Eigen::VectorXd b_vec(3.0, 5.1, 22.2, 13.0, 0.0, 140.4, 50.5, 27.0);
   auto b = std::make_shared<Eigen::VectorXd>();
   b->resize(8);
   b->coeffRef(0) = 3.0;
@@ -58,9 +58,9 @@ TEST_CASE("GMRES solver is checked", "[GMRES]") {
   A->resize(8, 8);
   A->setFromTriplets(update.begin(), update.end());
 
-  // Creat a gmres solver and solve
+  // Creat a eigen gmres solver and solve
   double gmres_tolerance = 1.e-25;
-  auto solver = std::make_shared<GMRES>(max_iter, gmres_tolerance);
+  auto solver = std::make_shared<EigenGMRES>(max_iter, gmres_tolerance);
   solver->assembled_matrices(A, x, b);
 
   // Check the case that there is no known values in x

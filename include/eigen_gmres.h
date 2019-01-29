@@ -1,5 +1,5 @@
-#ifndef PIPE_NETWORK_GMRES_H_
-#define PIPE_NETWORK_GMRES_H_
+#ifndef PIPE_NETWORK_EIGEN_GMRES_H_
+#define PIPE_NETWORK_EIGEN_GMRES_H_
 
 #include <exception>
 #include <iostream>
@@ -12,14 +12,15 @@
 
 #include "solver.h"
 
-//! Pipe network GMRES class
-//! \brief GMRES solver class using Eigen
-class GMRES : public Solver {
+//! Pipe network Eigen GMRES class
+//! \brief Eigen GMRES solver class using Eigen
+class EigenGMRES : public Solver {
  public:
   //! Constructor with tolerance, precision and iterations
   //! \param[in] max_iter Maximum number of iterations
   //! \param[in] tolerance Tolerance for solver to achieve convergence
-  GMRES(unsigned max_iter, double tolerance) : Solver(max_iter, tolerance) {}
+  EigenGMRES(unsigned max_iter, double tolerance)
+      : Solver(max_iter, tolerance) {}
 
   //! Call Conjugate Gradient solver
   //! \retval status Return status of the solver
@@ -45,7 +46,9 @@ class GMRES : public Solver {
 
   //! Return the type of assembler for Factory
   //! \retval assembler_type Eigen assembler
-  std::string assembler_type() const override { return "GMRES"; }
+  std::string assembler_type() const override { return "Eigen_GMRES"; }
 };
 
-#endif  // PIPE_NETWORK_GMRES_H_
+#include "eigen_gmres.cc"
+
+#endif  // PIPE_NETWORK_EIGEN_GMRES_H_
