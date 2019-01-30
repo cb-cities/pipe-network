@@ -51,6 +51,7 @@ add_executable(pipe_network
 
 # Unit test
 SET(test_src
+<<<<<<< HEAD
    ${pipe_network_SOURCE_DIR}/tests/matrix_assembler_test.cc
    ${pipe_network_SOURCE_DIR}/tests/mesh_test.cc
    ${pipe_network_SOURCE_DIR}/tests/node_test.cc
@@ -62,6 +63,16 @@ SET(test_src
 =======
 >>>>>>> 5d60e0ee52f07d4955fb796d87611941b8c564ce
    ${pipe_network_SOURCE_DIR}/tests/test.cc
+=======
+   src/matrix_assembler.cc
+   src/mesh.cc
+   src/pipe.cc
+   tests/matrix_assembler_test.cc
+   tests/mesh_test.cc
+   tests/node_test.cc
+   tests/pipe_test.cc
+   tests/test.cc
+>>>>>>> de8700388eb4f2a43ef66fd3488aa4cfccb7efc7
 )   
 add_executable(pipe_network_test
   ${test_src}
