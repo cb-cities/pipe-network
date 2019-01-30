@@ -41,6 +41,9 @@ include_directories(
 # pipe_network executable
 SET(pipe_network_src
   src/main.cc
+  src/matrix_assembler.cc
+  src/mesh.cc
+  src/pipe.cc
 )
 add_executable(pipe_network
   ${pipe_network_src}
@@ -48,7 +51,10 @@ add_executable(pipe_network
 
 # Unit test
 SET(test_src
+   ${pipe_network_SOURCE_DIR}/tests/matrix_assembler_test.cc
+   ${pipe_network_SOURCE_DIR}/tests/mesh_test.cc
    ${pipe_network_SOURCE_DIR}/tests/node_test.cc
+   ${pipe_network_SOURCE_DIR}/tests/pipe_test.cc
    ${pipe_network_SOURCE_DIR}/tests/test.cc
 )   
 add_executable(pipe_network_test
