@@ -15,7 +15,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_shared<Mesh>(meshid);
+  auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
   // Nodal coordinates
   // using example netwrok in Todini(2013)
@@ -73,7 +73,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   mesh->assign_node_discharge(node_discharge);
 
   // Initialize matrix assembler and obtain global index to nodes and pipes
-  auto assembler = std::make_shared<MatrixAssembler>();
+  auto assembler = std::make_shared<pipenetwork::MatrixAssembler>();
   assembler->global_nodal_pipe_indices(mesh);
 
   // Check the number of nodes and pipes in the network

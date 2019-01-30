@@ -14,6 +14,8 @@
 #include "pipe.h"
 #include "settings.h"
 
+namespace pipenetwork {
+
 //! Mesh class
 //! \brief Class for mesh that contains node and pipe pointers
 class Mesh {
@@ -77,5 +79,7 @@ class Mesh {
   //! pipe id and corresponding pipe pointer
   std::map<Index, std::shared_ptr<pipenetwork::Pipe>> pipes_;
 };
+
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_MESH_H_

@@ -1,5 +1,7 @@
+#include "mesh.h"
+
 // Create nodal pointers and assign indices based on input coordinates
-void Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
+void pipenetwork::Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
   Index index = 0;
   for (const auto& coord : coords) {
     nodes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Node>>(
@@ -9,7 +11,7 @@ void Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
 }
 
 // Create pipe pointers and assign indices based on the nodes at its ends
-bool Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
+bool pipenetwork::Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
                         const std::vector<double>& diameter,
                         const std::vector<double>& roughness,
                         const std::vector<bool>& pipe_status) {
@@ -38,7 +40,7 @@ bool Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
 }
 
 // Remove unconnected nodes from the mesh
-void Mesh::remove_unconnected_nodes() {
+void pipenetwork::Mesh::remove_unconnected_nodes() {
   // Search for and record all unconnected nodes
   std::vector<Index> unconnected_nodes;
   for (const auto& node : nodes_) {
@@ -58,18 +60,18 @@ void Mesh::remove_unconnected_nodes() {
 }
 
 // Initialize discharges in pipes
-void Mesh::initialize_pipe_discharge() {
+void pipenetwork::Mesh::initialize_pipe_discharge() {
   for (auto& pipe : pipes_) pipe.second->initialize_discharge();
 }
 
 // Assign initial heads for nodes that have known head
-void Mesh::assign_node_head(
+void pipenetwork::Mesh::assign_node_head(
     const std::vector<std::pair<Index, double>>& node_head) {
   for (const auto& head : node_head) nodes_.at(head.first)->head(head.second);
 }
 
 // Assign initial discharges for nodes that have known discharge
-void Mesh::assign_node_discharge(
+void pipenetwork::Mesh::assign_node_discharge(
     const std::vector<std::pair<Index, double>>& node_discharge) {
   for (const auto& discharge : node_discharge)
     nodes_.at(discharge.first)->discharge(discharge.second);
