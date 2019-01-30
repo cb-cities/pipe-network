@@ -14,7 +14,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const unsigned meshid = 101;
 
   // Creat a mesh
-  auto mesh = std::make_unique<Mesh>(meshid);
+  auto mesh = std::make_unique<pipenetwork::Mesh>(meshid);
 
   // Nodal coordinates
   const Eigen::Vector3d coords1(0.0, 0.0, 0.0);

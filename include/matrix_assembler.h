@@ -17,6 +17,8 @@
 #include "pipe.h"
 #include "settings.h"
 
+namespace pipenetwork {
+
 //! Mtrix assembler class
 //! \brief Class for assembling matrix for solving
 class MatrixAssembler {
@@ -103,5 +105,6 @@ class MatrixAssembler {
   //! Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac_;
 };
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_MATRIX_ASSEMBLER_H_

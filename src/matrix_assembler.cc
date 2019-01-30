@@ -1,5 +1,7 @@
+#include "matrix_assembler.h"
+
 // Constructor
-MatrixAssembler::MatrixAssembler() {
+pipenetwork::MatrixAssembler::MatrixAssembler() {
   jac_ = std::make_shared<Eigen::SparseMatrix<double>>();
   node_head_vec_ = std::make_shared<Eigen::VectorXd>();
   node_discharge_vec_ = std::make_shared<Eigen::VectorXd>();
@@ -7,8 +9,8 @@ MatrixAssembler::MatrixAssembler() {
 };
 
 // Obtain global nodal and pipe indices and pointers from meshes
-void MatrixAssembler::global_nodal_pipe_indices(
-    const std::shared_ptr<Mesh>& mesh) {
+void pipenetwork::MatrixAssembler::global_nodal_pipe_indices(
+    const std::shared_ptr<pipenetwork::Mesh>& mesh) {
   global_nodes_.clear();
   global_pipes_.clear();
   for (const auto& node : mesh->nodes_) global_nodes_.emplace(node);
@@ -19,7 +21,7 @@ void MatrixAssembler::global_nodal_pipe_indices(
 
 // Initialize nodal head vector
 // If head of the ndoe is unknown (hasn't been assigned), initialize to zero
-void MatrixAssembler::assemble_node_head_vector() {
+void pipenetwork::MatrixAssembler::assemble_node_head_vector() {
   node_head_vec_->resize(nnode_);
   for (const auto& node : global_nodes_) {
     Index index = node.first;
@@ -33,7 +35,7 @@ void MatrixAssembler::assemble_node_head_vector() {
 // Initialize nodal discharge vector
 // If discharge of the node is unknown (hasn't been assigned), initialize to
 // zero
-void MatrixAssembler::assemble_node_discharge_vector() {
+void pipenetwork::MatrixAssembler::assemble_node_discharge_vector() {
   node_discharge_vec_->resize(nnode_);
   for (const auto& node : global_nodes_) {
     Index index = node.first;
@@ -45,7 +47,7 @@ void MatrixAssembler::assemble_node_discharge_vector() {
 }
 
 // Apply head to nodes
-void MatrixAssembler::apply_node_head() {
+void pipenetwork::MatrixAssembler::apply_node_head() {
   // Iterate through solved nodal head vector
   for (auto& node : global_nodes_) {
     // Get global index
@@ -56,7 +58,7 @@ void MatrixAssembler::apply_node_head() {
 }
 
 // Apply discharge to nodes
-void MatrixAssembler::apply_node_discharge() {
+void pipenetwork::MatrixAssembler::apply_node_discharge() {
   // Iterate through solved nodal discharge vector
   for (auto& node : global_nodes_) {
     // Get global index
@@ -69,7 +71,7 @@ void MatrixAssembler::apply_node_discharge() {
 // Initialize pipe discharge vector
 // Calculated according to nodal heads at two end and Hazen-Williams equation
 // If any of the nodal head is unknown, initialize the discharge to 0.001
-void MatrixAssembler::assemble_pipe_discharge_vector() {
+void pipenetwork::MatrixAssembler::assemble_pipe_discharge_vector() {
   pipe_discharge_vec_->resize(npipe_);
   for (const auto& pipe : global_pipes_) {
     Index index = pipe.first;
@@ -107,7 +109,7 @@ void MatrixAssembler::assemble_pipe_discharge_vector() {
 // Each node has one nodal balance equation, each pipe has one headloss
 // equation, Thus the Jacobian has (nnode+npipe) row and (2*nnode+npipe) column
 //
-void MatrixAssembler::assemble_jacobian() {
+void pipenetwork::MatrixAssembler::assemble_jacobian() {
   // Check network
   if (nnode_ <= 0 || npipe_ <= 0)
     throw std::runtime_error(

@@ -1,3 +1,5 @@
+#include "pipe.h"
+
 // Constructor with id, node pointers, diameter, status and max allowable
 // velocity
 pipenetwork::Pipe::Pipe(
