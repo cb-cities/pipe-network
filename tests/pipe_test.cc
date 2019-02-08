@@ -114,6 +114,7 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Compared with hand calculation:
     // headloss = \frac{8 \times sqrt{3 \times 1.1^2} \times 0.1 \times
     // 45085.585688339^2}{pi^2 \times 9.81 \times 20.0^5} = 10.0
+    pipe2->iter_discharge(45085.585688339);
     pipe2->compute_headloss_darcy_weisbach();
     REQUIRE(pipe2->headloss() == Approx(10.0).epsilon(tolerance));
 
@@ -128,6 +129,7 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Compared with hand calculation:
     // Hand calculation: headloss = \frac{10.67 \times sqrt{3 \times 1.1^2}
     // \times 179922.60192865^1.852}{100^1.852 \times 20.0^4.8704} = 10.0
+    pipe2->iter_discharge(179922.60192865);
     pipe2->compute_headloss_hazen_williams();
     REQUIRE(pipe2->headloss() == Approx(10.0).epsilon(tolerance));
   }

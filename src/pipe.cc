@@ -67,7 +67,8 @@ void pipenetwork::Pipe::compute_discharge_hazen_williams() {
 double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
   double coeff = 10.67 * length_ /
                  (pow(pipe_roughness_, 1.852) * pow(2 * radius_, 4.8704));
-  double deriv = -1.852 * coeff * pow(discharge_, 0.852);
+  double deriv = -1.852 * coeff * pow(std::abs(iter_discharge_), 0.852);
+  if (iter_discharge_ < 0) deriv *= -1.;
   return deriv;
 }
 
@@ -76,9 +77,9 @@ double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
 // \times g \times (2radius)^5}
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_headloss_darcy_weisbach() {
-  headloss_ = 8. * length_ * darcy_friction_ * pow(discharge_, 2) /
+  headloss_ = 8. * length_ * darcy_friction_ * pow(iter_discharge_, 2) /
               (pow(M_PI, 2) * pipenetwork::Gravity(2) * pow(2 * radius_, 5));
-  if (discharge_ < 0) headloss_ *= -1.;
+  if (iter_discharge_ < 0) headloss_ *= -1.;
 }
 
 // Calculate headloss over the pipe using Hazen-Williams equation:
@@ -86,9 +87,9 @@ void pipenetwork::Pipe::compute_headloss_darcy_weisbach() {
 // discharge^1.852}{pipe_roughness^1.852 \times (2radius)^4.8704}
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_headloss_hazen_williams() {
-  headloss_ = (10.67 * length_ * pow(discharge_, 1.852)) /
+  headloss_ = (10.67 * length_ * pow(std::abs(iter_discharge_), 1.852)) /
               (pow(pipe_roughness_, 1.852) * pow(2 * radius_, 4.8704));
-  if (discharge_ < 0) headloss_ *= -1.;
+  if (iter_discharge_ < 0) headloss_ *= -1.;
 }
 
 // Return an array of pointers point to the nodes at pipe end

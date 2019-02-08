@@ -56,10 +56,17 @@ class Pipe {
     darcy_friction_ = darcy_friction;
   }
 
+  //! Assign discharge to the pipe
+  //! \param[in] iter_discharge dischargeof the pipe during iteration
+  void iter_discharge(double iter_discharge) {
+    iter_discharge_ = iter_discharge;
+  }
+
   //! Initialize discharge with input value
   //! \param[in] discharge input discharge value of the pipe
   void initialize_discharge(double discharge = 0.001) {
     discharge_ = discharge;
+    iter_discharge_ = discharge_;
   }
 
   //! Calculate discharge using Darcy-Weisbach equation
@@ -96,6 +103,10 @@ class Pipe {
   //! \retval headloss_ headloss over the pipe
   double headloss() const { return headloss_; }
 
+  //! Return assigned discharge during iteration of the pipe
+  //! \retval iter_discharge_ discharge of the pipe during iteration
+  double iter_discharge() const { return iter_discharge_; }
+
   //! calculate maximum allowable discharge based on ridius and maximum
   //! allowable velocity \retval max_discharge maximun allowable discharge
   double max_discharge() { return (max_velocity_ * M_PI * pow(radius_, 2)); }
@@ -118,6 +129,8 @@ class Pipe {
   std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes_;
   //! discharge in the pipe
   double discharge_{std::numeric_limits<double>::max()};
+  //! discharge assigned to the pipe during iteration
+  double iter_discharge_{std::numeric_limits<double>::max()};
   //! headloss over the pipe
   double headloss_{std::numeric_limits<double>::max()};
   //! radius of the pipe

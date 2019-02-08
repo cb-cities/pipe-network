@@ -59,7 +59,8 @@ TEST_CASE("Eigen GMRES solver is checked", "[EigenGMRES]") {
 
   // Creat a eigen gmres solver and solve
   double gmres_tolerance = 1.e-25;
-  auto solver = std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
+  auto solver =
+      std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
   solver->assembled_matrices(A, x, b);
 
   // Check the case that there is no known values in x

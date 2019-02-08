@@ -1,7 +1,8 @@
 #include "mesh.h"
 
 // Create nodal pointers and assign indices based on input coordinates
-void pipenetwork::Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords) {
+void pipenetwork::Mesh::create_nodes(
+    const std::vector<Eigen::Vector3d>& coords) {
   Index index = 0;
   for (const auto& coord : coords) {
     nodes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Node>>(
@@ -11,10 +12,10 @@ void pipenetwork::Mesh::create_nodes(const std::vector<Eigen::Vector3d>& coords)
 }
 
 // Create pipe pointers and assign indices based on the nodes at its ends
-bool pipenetwork::Mesh::create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
-                        const std::vector<double>& diameter,
-                        const std::vector<double>& roughness,
-                        const std::vector<bool>& pipe_status) {
+bool pipenetwork::Mesh::create_pipes(
+    const std::vector<std::pair<Index, Index>>& nodeids,
+    const std::vector<double>& diameter, const std::vector<double>& roughness,
+    const std::vector<bool>& pipe_status) {
   bool status = true;
   Index index = 0;
   try {
@@ -60,8 +61,11 @@ void pipenetwork::Mesh::remove_unconnected_nodes() {
 }
 
 // Initialize discharges in pipes
-void pipenetwork::Mesh::initialize_pipe_discharge() {
+void pipenetwork::Mesh::initialize_pipe_discharge(
+    const std::vector<std::pair<Index, double>>& init_discharge) {
   for (auto& pipe : pipes_) pipe.second->initialize_discharge();
+  for (const auto& discharge : init_discharge)
+    pipes_.at(discharge.first)->initialize_discharge(discharge.second);
 }
 
 // Assign initial heads for nodes that have known head

@@ -82,43 +82,55 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   REQUIRE(nnodes == 5);
   REQUIRE(npipes == 7);
 
-  // Check initialized nodal head vector
-  SECTION("Check initialized nodal head vector") {
-    // Initialize nodal head vector
-    assembler->assemble_node_head_vector();
-    std::shared_ptr<Eigen::VectorXd> node_head_vec = assembler->node_head_vec();
-    REQUIRE(node_head_vec->coeff(0) == Approx(head1).epsilon(tolerance));
-    REQUIRE(node_head_vec->coeff(1) == Approx(head2).epsilon(tolerance));
-    for (int i = node_head_vec->size() - 3; i <= node_head_vec->size() - 1; i++)
-      REQUIRE(node_head_vec->coeff(i) ==
+  // Check initialized variable (head and discharge) vector
+  SECTION("Check initialized variable vector") {
+    // Initialize variable vector
+    assembler->assemble_variable_vector();
+    std::shared_ptr<Eigen::VectorXd> variable_vec = assembler->variable_vec();
+    // Check nodal head
+    REQUIRE(variable_vec->coeff(0) == Approx(head1).epsilon(tolerance));
+    REQUIRE(variable_vec->coeff(1) == Approx(head2).epsilon(tolerance));
+    for (int i = 2; i <= 4; i++)
+      REQUIRE(variable_vec->coeff(i) ==
               Approx(default_init_node_head).epsilon(tolerance));
-  }
-
-  // Check initialized nodal discharge vector
-  SECTION("Check initialized nodal discharge vector") {
-    // Initialize nodal discharge vector
-    assembler->assemble_node_discharge_vector();
-    std::shared_ptr<Eigen::VectorXd> node_discharge_vec =
-        assembler->node_discharge_vec();
-    REQUIRE(node_discharge_vec->coeff(0) ==
-            Approx(discharge1).epsilon(tolerance));
-    REQUIRE(node_discharge_vec->coeff(1) ==
-            Approx(discharge2).epsilon(tolerance));
-    for (int i = node_discharge_vec->size() - 3;
-         i <= node_discharge_vec->size() - 1; i++)
-      REQUIRE(node_discharge_vec->coeff(i) ==
+    // Check nodal discharge
+    REQUIRE(variable_vec->coeff(5) == Approx(discharge1).epsilon(tolerance));
+    REQUIRE(variable_vec->coeff(6) == Approx(discharge2).epsilon(tolerance));
+    for (int i = 7; i <= 9; i++)
+      REQUIRE(variable_vec->coeff(i) ==
               Approx(default_init_node_discharge).epsilon(tolerance));
+    // Check pipe discharge
+    for (int i = 10; i <= 16; i++)
+      REQUIRE(variable_vec->coeff(i) ==
+              Approx(default_init_pipe_discharge).epsilon(tolerance));
   }
 
-  // Check initialized pipe discharge vector
-  SECTION("Check initialized pipe discharge vector") {
-    // Initialize pipe discharge vector
-    assembler->assemble_pipe_discharge_vector();
-    std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec =
-        assembler->pipe_discharge_vec();
-    for (int i = 0; i <= pipe_discharge_vec->size() - 1; i++)
-      REQUIRE(pipe_discharge_vec->coeff(i) ==
-              Approx(default_init_pipe_discharge).epsilon(tolerance));
+  // Check initialized residual vector
+  SECTION("Check initialized residual vector") {
+    // Initialize residual vector
+    assembler->assemble_residual_vector();
+    std::shared_ptr<Eigen::VectorXd> residual_vec = assembler->residual_vec();
+    // Check nodal balance residual
+    REQUIRE(residual_vec->coeff(0) == Approx(100.002).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(1) == Approx(-9.998).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(2) == Approx(-0.001).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(3) == Approx(0.0).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(4) == Approx(-0.003).epsilon(tolerance));
+    // Check headloss residual
+    REQUIRE(residual_vec->coeff(5) ==
+            Approx(-0.99999999916924).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(6) ==
+            Approx(-99.999999978347).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(7) ==
+            Approx(-98.999999960916).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(8) ==
+            Approx(-98.999999994002).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(9) ==
+            Approx(-98.99999996752).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(10) ==
+            Approx(0.000000078168179151258).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(11) ==
+            Approx(0.000000039084089575629).epsilon(tolerance));
   }
 
   // Check initialized Jacobian matrix
