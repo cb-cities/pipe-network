@@ -42,50 +42,46 @@ class MatrixAssembler {
   //! \retval nnode_ number of pipes in the network
   unsigned npipes() { return npipe_; }
 
-  //! Initialize nodal head vector
-  //! If head of the ndoe is unknown (hasn't been assigned), initialize to zero
-  void assemble_node_head_vector();
+  //! Initialize variable vector
+  void assemble_variable_vector();
 
-  //! Initialize nodal discharge vector
-  //! If discharge of the node is unknown (hasn't been assigned), initialize to
-  //! zero
-  void assemble_node_discharge_vector();
+  // Apply variables (head and discharge) back to nodes and pipes
+  void apply_variables();
 
-  //! Apply head to nodes
-  void apply_node_head();
-
-  //! Apply discharge to nodes
-  void apply_node_discharge();
-
-  //! Initialize pipe discharge vector
-  //! Calculated according to nodal heads at two end and Hazen-Williams equation
-  //! If any of the nodal head is unknown, initialize the discharge to 0.001
-  void assemble_pipe_discharge_vector();
+  //! Calculate and assemble residual vector
+  void assemble_residual_vector();
 
   //! Assemble Jacobian matrix
   void assemble_jacobian();
 
-  //! Return nodal head vector
-  //! \retval node_head_vec_ pointer to nodal head vector
-  std::shared_ptr<Eigen::VectorXd> node_head_vec() const {
-    return node_head_vec_;
+  //! Return variable vector
+  //! \retval variable_vec_ pointer to variable vector
+  std::shared_ptr<Eigen::VectorXd> variable_vec() const {
+    return variable_vec_;
   }
 
-  //! Return nodal discharge vector
-  //! \retval node_discharge_vec_ pointer to nodal discharge vector
-  std::shared_ptr<Eigen::VectorXd> node_discharge_vec() const {
-    return node_discharge_vec_;
-  }
-
-  //! Return pipe discharge vector
-  //! \retval pipe_discharge_vec_ pointer to pipe discharge vector
-  std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec() const {
-    return pipe_discharge_vec_;
+  //! Return residual vector
+  //! \retval residual_vec_ pointer to residual vector
+  std::shared_ptr<Eigen::VectorXd> residual_vec() const {
+    return residual_vec_;
   }
 
   //! Return Jacobian matrix
   //! \retval jac_ pointer to Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac() const { return jac_; }
+
+  //**************************************************************
+  //***** Make all nodal discharge known value, test purpose *****
+  //**************************************************************
+
+  //! Assemble Jacobian matrix
+  void sim_assemble_jacobian();
+
+  //! Apply variables (head and discharge) to nodes and pipes
+  void sim_apply_variables();
+
+  //! Initialize variable vector
+  void sim_assemble_variable_vector();
 
  private:
   //! global nodal id and corresponding nodal pointer
@@ -96,12 +92,10 @@ class MatrixAssembler {
   unsigned nnode_{0};
   //! number of pipes in the network
   unsigned npipe_{0};
-  //! nodal head vector
-  std::shared_ptr<Eigen::VectorXd> node_head_vec_;
-  //! nodal discharge vector
-  std::shared_ptr<Eigen::VectorXd> node_discharge_vec_;
-  //! pipe discharge vector
-  std::shared_ptr<Eigen::VectorXd> pipe_discharge_vec_;
+  //! variable vector
+  std::shared_ptr<Eigen::VectorXd> variable_vec_;
+  //! residual vector
+  std::shared_ptr<Eigen::VectorXd> residual_vec_;
   //! Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac_;
 };

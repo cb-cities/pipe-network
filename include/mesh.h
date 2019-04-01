@@ -56,7 +56,9 @@ class Mesh {
   void remove_unconnected_nodes();
 
   //! Initialize discharges in pipes
-  void initialize_pipe_discharge();
+  void initialize_pipe_discharge(
+      const std::vector<std::pair<Index, double>>& init_discharge =
+          std::vector<std::pair<Index, double>>());
 
   //! Assign initial heads for nodes that have known head
   //! \param[in] node_head vector of pair of nodal index and initial nodal head

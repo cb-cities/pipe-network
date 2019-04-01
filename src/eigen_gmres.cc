@@ -7,23 +7,23 @@ bool pipenetwork::EigenGMRES::solve() {
   Eigen::VectorXd x_diff(n);
 
   // Apply restraints (only works when the known values are 0)
-  (*vec_b_) = (*vec_b_).array() * vrestraints_.array();
-/*
-  // Apply Drichlet boundary condition (works for arbitrary known values)
-  Eigen::VectorXd x_fixed(n);
-  x_fixed = (*vec_x_).array() - (*vec_x_).array() * vrestraints_.array();
-  (*vec_b_) -= (*mat_a_) * x_fixed;
-  for (int i = 0; i < n; i++) {
-    if (vrestraints_(i) == 0) {
-      vec_b_->coeffRef(i) = x_fixed(i);
-      for (int j = 0; j < n; j++) {
-        mat_a_->coeffRef(i, j) = 0;
-        mat_a_->coeffRef(j, i) = 0;
+  //(*vec_b_) = (*vec_b_).array() * vrestraints_.array();
+  /*
+    // Apply Drichlet boundary condition (works for arbitrary known values)
+    Eigen::VectorXd x_fixed(n);
+    x_fixed = (*vec_x_).array() - (*vec_x_).array() * vrestraints_.array();
+    (*vec_b_) -= (*mat_a_) * x_fixed;
+    for (int i = 0; i < n; i++) {
+      if (vrestraints_(i) == 0) {
+        vec_b_->coeffRef(i) = x_fixed(i);
+        for (int j = 0; j < n; j++) {
+          mat_a_->coeffRef(i, j) = 0;
+          mat_a_->coeffRef(j, i) = 0;
+        }
+        mat_a_->coeffRef(i, i) = 1;
       }
-      mat_a_->coeffRef(i, i) = 1;
     }
-  }
-*/
+  */
   // Use GMRES solver in Eigen to solve
   Eigen::GMRES<Eigen::SparseMatrix<double>> gmres(*mat_a_);
   gmres.setMaxIterations(max_iter_);
