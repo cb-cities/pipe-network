@@ -12,8 +12,8 @@ TEST_CASE("IO is checked", "[IO]") {
 
   // Read node and pipe information from CSV files
   bool read_network =
-      IO->read_network("benchmarks/todini_network_node_iotest.csv",
-                       "benchmarks/todini_network_pipe_iotest.csv");
+      IO->read_network("../benchmarks/todini_network_node_iotest.csv",
+                       "../benchmarks/todini_network_pipe_iotest.csv");
 
   // Check read nodal information
   SECTION("Check read nodal information") {

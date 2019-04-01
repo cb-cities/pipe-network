@@ -23,8 +23,8 @@ TEST_CASE("Example network is tested", "[NR method]") {
   auto IO = std::make_unique<pipenetwork::IO>();
 
   // Read node and pipe information from CSV files
-  bool read_network = IO->read_network("benchmarks/todini_network_node.csv",
-                                       "benchmarks/todini_network_pipe.csv");
+  bool read_network = IO->read_network("../benchmarks/todini_network_node.csv",
+                                       "../benchmarks/todini_network_pipe.csv");
   std::vector<Eigen::Vector3d> coords = IO->nodal_coordinates();
   std::vector<std::pair<Index, double>> init_nodal_head =
       IO->initial_nodal_head();
