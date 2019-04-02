@@ -19,6 +19,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -pthread")
 endif()
 
+# Clang Specific settings
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -pthread")
+endif()
+
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -31,6 +36,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+# Pthreads
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 # Include directories
 include_directories(
@@ -51,6 +59,8 @@ add_executable(pipe_network
   ${pipe_network_src}
 )
 
+target_link_libraries(pipe_network Threads::Threads)
+
 # Unit test
 SET(test_src
    src/eigen_gmres.cc
@@ -70,6 +80,9 @@ SET(test_src
 add_executable(pipe_network_test
   ${test_src}
 )
+
+target_link_libraries(pipe_network_test Threads::Threads)
+
 add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
 enable_testing()
 
