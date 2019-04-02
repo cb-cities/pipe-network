@@ -16,7 +16,7 @@ ENDIF (NOT CMAKE_BUILD_TYPE)
 
 # GNU Specific settings
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -pthread")
 endif()
 
 # CMake Modules
@@ -45,6 +45,7 @@ SET(pipe_network_src
   src/matrix_assembler.cc
   src/mesh.cc
   src/pipe.cc
+  src/io.cc
 )
 add_executable(pipe_network
   ${pipe_network_src}
@@ -56,11 +57,14 @@ SET(test_src
    src/matrix_assembler.cc
    src/mesh.cc
    src/pipe.cc
+   src/io.cc
    tests/eigen_gmres_test.cc
    tests/matrix_assembler_test.cc
    tests/mesh_test.cc
    tests/node_test.cc
    tests/pipe_test.cc
+   tests/io_test.cc
+   tests/todini_example_test.cc
    tests/test.cc
 )   
 add_executable(pipe_network_test
