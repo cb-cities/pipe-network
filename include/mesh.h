@@ -59,6 +59,7 @@ class Mesh {
   void initialize_pipe_discharge(
       const std::vector<std::pair<Index, double>>& init_discharge =
           std::vector<std::pair<Index, double>>());
+  void initialize_pipe_discharge(const double init_discharge);
 
   //! Assign initial heads for nodes that have known head
   //! \param[in] node_head vector of pair of nodal index and initial nodal head

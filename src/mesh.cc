@@ -1,3 +1,6 @@
+
+#include <mesh.h>
+
 #include "mesh.h"
 
 // Create nodal pointers and assign indices based on input coordinates
@@ -66,6 +69,10 @@ void pipenetwork::Mesh::initialize_pipe_discharge(
   for (auto& pipe : pipes_) pipe.second->initialize_discharge();
   for (const auto& discharge : init_discharge)
     pipes_.at(discharge.first)->initialize_discharge(discharge.second);
+}
+
+void pipenetwork::Mesh::initialize_pipe_discharge(const double init_discharge) {
+  for (auto& pipe : pipes_) pipe.second->initialize_discharge(init_discharge);
 }
 
 // Assign initial heads for nodes that have known head

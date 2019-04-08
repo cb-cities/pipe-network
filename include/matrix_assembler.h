@@ -33,6 +33,8 @@ class MatrixAssembler {
   //! Obtain global nodal and pipe indices and pointers from meshes
   //! \param[in] mesh meshes that form the pipe network
   void global_nodal_pipe_indices(const std::shared_ptr<Mesh>& mesh);
+  void global_nodal_pipe_indices(const std::shared_ptr<pipenetwork::Mesh>& mesh,
+                                 const unsigned nnode_known);
 
   //! Return number of nodes in the network
   //! \retval nnode_ number of nodes in the network
@@ -70,6 +72,8 @@ class MatrixAssembler {
   //! \retval jac_ pointer to Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac() const { return jac_; }
 
+  std::shared_ptr<std::map<Index, Index>> id_map() const { return id_map_; }
+
   //**************************************************************
   //***** Make all nodal discharge known value, test purpose *****
   //**************************************************************
@@ -83,13 +87,27 @@ class MatrixAssembler {
   //! Initialize variable vector
   void sim_assemble_variable_vector();
 
+  //! Assemble Jacobian matrix for unknown variables only
+  void sim_assemble_jacobian_v2();
+
+  //! Apply variables (head and discharge) to nodes and pipes
+  void sim_apply_variables_v2();
+
+  //! Initialize variable vector (unknown variables only)
+  void sim_assemble_variable_vector_v2();
+  void assemble_residual_vector_v2();
+
  private:
+  //! check if node is in variable vector
+  bool check_node_avail(Index node_id);
   //! global nodal id and corresponding nodal pointer
   std::map<Index, std::shared_ptr<pipenetwork::Node>> global_nodes_;
   //! global pipe id and corresponding pipe pointer
   std::map<Index, std::shared_ptr<pipenetwork::Pipe>> global_pipes_;
   //! number of nodes in the network
   unsigned nnode_{0};
+  //! number of known nodes in the network
+  unsigned nnode_known_{0};
   //! number of pipes in the network
   unsigned npipe_{0};
   //! variable vector
@@ -98,6 +116,8 @@ class MatrixAssembler {
   std::shared_ptr<Eigen::VectorXd> residual_vec_;
   //! Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac_;
+  //! id map that maps node id to variable id
+  std::shared_ptr<std::map<Index, Index>> id_map_;
 };
 }  // namespace pipenetwork
 
