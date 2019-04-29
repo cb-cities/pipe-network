@@ -90,12 +90,34 @@ class MatrixAssembler {
   //! Assemble Jacobian matrix for unknown variables only
   void sim_assemble_jacobian_v2();
 
+  //! Assemble Jacobian matrix for nodal head, demand and pipe discharge as variables
+  void sim_assemble_jacobian_v3(bool pdd= false);
+
+  //! Assemble pressure demand part of the jacobian matrix
+  //! \param[in] n the corresponding node pointer
+  //! \param[in] index the position of the corresponding node in variable vector
+  //! \param[in] update the vector that stores the position of element in jacobian matrix
+  //! \param[in] pdd whether the simulation is pressure demand driven or demand driven
+  void pd_jac (const std::shared_ptr<pipenetwork::Node> n,Index index, std::vector<Eigen::Triplet<double>> & update, bool pdd);
+
+
+
+
+    //! Method to get the corresponding value of jacobian for head-pressure equations
+    //! \param[in] node pointer for the desired node
+    //! \retval The value for the corresponding jacobian entry
+    double get_pressure_head_jacob(const std::shared_ptr<pipenetwork::Node> node);
   //! Apply variables (head and discharge) to nodes and pipes
   void sim_apply_variables_v2();
+
+    //! Apply variables (head, demand and discharge) to nodes and pipes
+    void sim_apply_variables_v3();
 
   //! Initialize variable vector (unknown variables only)
   void sim_assemble_variable_vector_v2();
   void assemble_residual_vector_v2();
+  void assemble_residual_vector_v3(bool pdd= false);
+  void assemble_pdd_residual(const std::shared_ptr<pipenetwork::Node> node, Index index);
 
  private:
   //! check if node is in variable vector

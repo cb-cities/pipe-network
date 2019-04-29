@@ -71,6 +71,7 @@ class Mesh {
   void assign_node_discharge(
       const std::vector<std::pair<Index, double>>& node_discharge);
 
+
   //! Make MatrixAssembler a friend class of mesh
   friend class MatrixAssembler;
 

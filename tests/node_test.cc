@@ -1,11 +1,12 @@
 #include "catch.hpp"
 
 #include "node.h"
+#include <iostream>
 
 // Check node class
 TEST_CASE("Node is checked", "[Node]") {
   // Tolerance
-  const double tolerance = 1.e-12;
+  const double tolerance = 1.e-6;
 
   // Index
   unsigned id = 123;
@@ -32,6 +33,18 @@ TEST_CASE("Node is checked", "[Node]") {
   SECTION("check hydraulic head at the node") {
     double head = 110.1;
     node->head(head);
+    auto pdd_coeff1 = node->get_pdd_poly_coef_1 ();
+    auto pdd_coeff2 = node->get_pdd_poly_coef_2 ();
+
+REQUIRE(pdd_coeff1[0] == Approx(-18.75).epsilon(tolerance));
+REQUIRE(pdd_coeff1[1] == Approx(6.25).epsilon(tolerance));
+REQUIRE(pdd_coeff1[2] == Approx(1.00009e-12).epsilon(tolerance));
+REQUIRE(pdd_coeff1[3] == Approx(-3.88578e-17).epsilon(tolerance));
+
+      REQUIRE(pdd_coeff2[0] == Approx(-0.624992).epsilon(tolerance));
+      REQUIRE(pdd_coeff2[1] == Approx(37.2492).epsilon(tolerance));
+      REQUIRE(pdd_coeff2[2] == Approx(-739.978).epsilon(tolerance));
+      REQUIRE(pdd_coeff2[3] == Approx(4900.81).epsilon(tolerance));
 
     // Check hydraulic head at the node
     REQUIRE(node->head() == Approx(head).epsilon(tolerance));
