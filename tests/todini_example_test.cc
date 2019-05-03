@@ -11,7 +11,7 @@
 // Test to solve example network in Todini(2013)
 TEST_CASE("Example network is tested", "[NR method]") {
   // Tolerance
-  const double tolerance = 1.e-10;
+  const double tolerance = 1.e-6;
 
   // Mesh index
   const unsigned meshid = 101;
@@ -50,88 +50,152 @@ TEST_CASE("Example network is tested", "[NR method]") {
   mesh->initialize_pipe_discharge(pipe_discharge_unknown);
 
   // Assign initial nodal head and discharge
-  mesh->assign_node_head(init_nodal_head);
-  mesh->assign_node_discharge(init_nodal_discharge);
+  mesh->assign_node_elevation (init_nodal_head);
+  mesh->assign_node_demand (init_nodal_discharge);
 
-  // Initialize matrix assembler and obtain global index to nodes and pipes
-  auto assembler = std::make_shared<pipenetwork::MatrixAssembler>();
-  assembler->global_nodal_pipe_indices(mesh, 0);
+  SECTION ("DD mode test"){
+      // Initialize matrix assembler and obtain global index to nodes and pipes
+      bool pdd_mode = false;
+      auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(pdd_mode);
+      assembler->global_nodal_pipe_indices(mesh);
 
-  // Assemble variable vector, residual vector and Jacobian
-  assembler->assemble_variable_vector();
-  std::shared_ptr<Eigen::VectorXd> variable_vec = assembler->variable_vec();
-  assembler->assemble_residual_vector_v3(true);
-  std::shared_ptr<Eigen::VectorXd> residual_vec = assembler->residual_vec();
-  assembler->sim_assemble_jacobian_v3(true);
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
+      // Assemble variable vector, residual vector and Jacobian
+      assembler->assemble_variable_vector();
+      std::shared_ptr<Eigen::VectorXd> variable_vec = assembler->variable_vec();
+      assembler->assemble_residual_vector();
+      std::shared_ptr<Eigen::VectorXd> residual_vec = assembler->residual_vec();
+      assembler->assemble_jacobian();
+      std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
 
-  // Creat a eigen gmres solver and solve
-  double gmres_tolerance = 1.e-12;
-  const unsigned max_iter = 5000;
-  auto solver =
-      std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
-  solver->assembled_matrices(jac, variable_vec, residual_vec);
+      // Creat a eigen gmres solver and solve
+      double gmres_tolerance = 1.e-12;
+      const unsigned max_iter = 5000;
+      auto solver =
+              std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
+      solver->assembled_matrices(jac, variable_vec, residual_vec);
 
-  // Apply restraints
-  Eigen::VectorXd restraints(17);
-  restraints << 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
-  solver->restrains(restraints);
+      //  // Apply restraints
+      //  Eigen::VectorXd restraints(17);
+      //  restraints << 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+      //  solver->restrains(restraints);
+//        std::cout << "Jac = " << std::endl
+//                  << (*jac) << std::endl
+//                  << std::endl
+//                  << "residual = " << std::endl
+//                  << std::endl
+//                  << (*residual_vec) << std::endl
+//                  << "variable = " << std::endl
+//                  << (*variable_vec) << std::endl
+//                  << std::endl;
+      bool issolved = solver->solve();
+      assembler->apply_variables();
+      assembler->assemble_residual_vector();
+//        std::cout << "Jac = " << std::endl
+//                  << (*jac) << std::endl
+//                  << std::endl
+//                  << "residual = " << std::endl
+//                  << std::endl
+//                  << (*residual_vec) << std::endl
+//                  << "variable = " << std::endl
+//                  << (*variable_vec) << std::endl
+//                  << std::endl;
 
-  std::cout << "Jac = " << std::endl
-            << (*jac) << std::endl
-            << std::endl
-            << "residual = " << std::endl
-            << std::endl
-            << (*residual_vec) << std::endl
-            << "variable = " << std::endl
-            << (*variable_vec) << std::endl
-            << std::endl;
-  //
-  bool issolved = solver->solve();
-  assembler->sim_apply_variables_v3();
-  assembler->assemble_residual_vector_v3(true);
-  std::cout << "Jac = " << std::endl
-            << (*jac) << std::endl
-            << std::endl
-            << "residual = " << std::endl
-            << std::endl
-            << (*residual_vec) << std::endl
-            << "variable = " << std::endl
-            << (*variable_vec) << std::endl
-            << std::endl;
+      unsigned nr_iter = 1;
+      while (nr_iter < 30) {
 
-  unsigned nr_iter = 1;
-  while (nr_iter < 30) {
-    std::cout << "niter = " << nr_iter << std::endl;
-    bool issolved = solver->solve();
-    assembler->sim_apply_variables_v3();
-    assembler->assemble_residual_vector_v3(true);
-    assembler->sim_assemble_jacobian_v3(true);
-    if (residual_vec->norm() < tolerance) {
-      std::cout << "Jac = "
-                << std::endl
-                //                << (*jac) << std::endl
-                //                << std::endl
-                << "residual = " << std::endl
-                << (*residual_vec) << std::endl
-                << std::endl
-                << "variable = " << std::endl
-                << (*variable_vec) << std::endl
-                << std::endl;
-      break;
-    }
-    std::cout << "Jac = "
-              << std::endl
-//                            << (*jac) << std::endl
-//                            << std::endl
-              << "residual = " << std::endl
-              << (*residual_vec) << std::endl
-              << std::endl
-              << "variable = " << std::endl
-              << (*variable_vec) << std::endl
-              << std::endl;
-    //
-    nr_iter++;
+          bool issolved = solver->solve();
+          assembler->apply_variables();
+          assembler->assemble_residual_vector();
+          assembler->assemble_jacobian();
+          if (residual_vec->norm() < tolerance) {
+              std::cout << "niter = " << nr_iter << std::endl;
+              std::cout << "Jac = " << std::endl
+                        << (*jac) << std::endl
+                        << std::endl
+                        << "residual = " << std::endl
+                        << (*residual_vec) << std::endl
+                        << std::endl
+                        << "variable = " << std::endl
+                        << (*variable_vec) << std::endl
+                        << std::endl;
+              break;
+          }
+//          std::cout << "niter = " << nr_iter << std::endl;
+//          std::cout << "Jac = " << std::endl
+//                    << (*jac) << std::endl
+//                    << std::endl
+//                    << "residual = " << std::endl
+//                    << (*residual_vec) << std::endl
+//                    << std::endl
+//                    << "variable = " << std::endl
+//                    << (*variable_vec) << std::endl
+//                    << std::endl;
+
+          nr_iter++;
+      }
+      REQUIRE(residual_vec->norm() == Approx(0.0).epsilon(tolerance));
+
   }
-//  REQUIRE(residual_vec->norm() == Approx(0.0).epsilon(tolerance));
+
+    SECTION ("PD mode test"){
+        // Initialize matrix assembler and obtain global index to nodes and pipes
+        bool pdd_mode = true;
+        auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(pdd_mode);
+        assembler->global_nodal_pipe_indices(mesh);
+
+        // Assemble variable vector, residual vector and Jacobian
+        assembler->assemble_variable_vector();
+        std::shared_ptr<Eigen::VectorXd> variable_vec = assembler->variable_vec();
+        assembler->assemble_residual_vector();
+        std::shared_ptr<Eigen::VectorXd> residual_vec = assembler->residual_vec();
+        assembler->assemble_jacobian();
+        std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
+
+        // Creat a eigen gmres solver and solve
+        double gmres_tolerance = 1.e-12;
+        const unsigned max_iter = 5000;
+        auto solver =
+                std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
+        solver->assembled_matrices(jac, variable_vec, residual_vec);
+
+        bool issolved = solver->solve();
+        assembler->apply_variables();
+        assembler->assemble_residual_vector();
+
+        unsigned nr_iter = 1;
+        while (nr_iter < 30) {
+
+            bool issolved = solver->solve();
+            assembler->apply_variables();
+            assembler->assemble_residual_vector();
+            assembler->assemble_jacobian();
+            if (residual_vec->norm() < tolerance) {
+                std::cout << "niter = " << nr_iter << std::endl;
+                std::cout << "Jac = " << std::endl
+                          << (*jac) << std::endl
+                          << std::endl
+                          << "residual = " << std::endl
+                          << (*residual_vec) << std::endl
+                          << std::endl
+                          << "variable = " << std::endl
+                          << (*variable_vec) << std::endl
+                          << std::endl;
+                break;
+            }
+//            std::cout << "niter = " << nr_iter << std::endl;
+//            std::cout << "Jac = " << std::endl
+//                      << (*jac) << std::endl
+//                      << std::endl
+//                      << "residual = " << std::endl
+//                      << (*residual_vec) << std::endl
+//                      << std::endl
+//                      << "variable = " << std::endl
+//                      << (*variable_vec) << std::endl
+//                      << std::endl;
+
+            nr_iter++;
+        }
+        REQUIRE(residual_vec->norm() == Approx(0.0).epsilon(tolerance));
+  }
+
 }
