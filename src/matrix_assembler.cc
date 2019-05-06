@@ -8,7 +8,6 @@ pipenetwork::MatrixAssembler::MatrixAssembler(bool pdd_mode) {
   jac_ = std::make_shared<Eigen::SparseMatrix<double>>();
   variable_vec_ = std::make_shared<Eigen::VectorXd>();
   residual_vec_ = std::make_shared<Eigen::VectorXd>();
-  id_map_ = std::make_shared<std::map<Index, Index>>();
 };
 
 // Obtain global nodal and pipe indices and pointers from meshes
@@ -49,9 +48,10 @@ void pipenetwork::MatrixAssembler::assemble_variable_vector() {
 }
 
 // assember the pressure demand part of jacobian matrix
-void pipenetwork::MatrixAssembler::construct_demand_jac(
-    const std::shared_ptr<pipenetwork::Node> & node, Index index,
-    std::vector<Eigen::Triplet<double>>& update) {
+std::vector<Eigen::Triplet<double>>
+    pipenetwork::MatrixAssembler::construct_demand_jac(
+        const std::shared_ptr<pipenetwork::Node>& node, Index index) {
+  std::vector<Eigen::Triplet<double>> update;
   if (not node->isres()) {
     // construct jacH part
     update.emplace_back(nnode_ + npipe_ + index, nnode_ + index, 1);
@@ -64,6 +64,7 @@ void pipenetwork::MatrixAssembler::construct_demand_jac(
     // JacH will be 0, consturct jac G
     update.emplace_back(nnode_ + npipe_ + index, index, 1);
   }
+  return update;
 }
 
 // Assemble Jacobian matrix
@@ -109,7 +110,8 @@ void pipenetwork::MatrixAssembler::construct_demand_jac(
 //            0.
 //
 // Each node has one nodal balance equation, each pipe has one headloss
-// equation, Thus the Jacobian has (2*nnode+npipe) row and (2*nnode+npipe) column
+// equation, Thus the Jacobian has (2*nnode+npipe) row and (2*nnode+npipe)
+// column
 //
 
 void pipenetwork::MatrixAssembler::assemble_jacobian() {
@@ -127,7 +129,9 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
     // construct jacB part
     update.emplace_back(index, nnode_ + index, -1);
     // construct jacH, jacG part
-    construct_demand_jac(node.second, index, update);
+    auto demand_update = construct_demand_jac(node.second, index);
+    update.insert(std::end(update), std::begin(demand_update),
+                  std::end(demand_update));
   }
 
   // Iterate through all pipes
@@ -204,18 +208,18 @@ void pipenetwork::MatrixAssembler::assemble_residual_vector() {
     Index index = node.first;
     // Calculate the nodal balance residual (demand part)
     if (node.second->isdischarge())
-      residual_vec_->coeffRef(index) -= (-1) * node.second->iter_demand ();
+      residual_vec_->coeffRef(index) -= (-1) * node.second->iter_demand();
     // Calculate the demand pressure residual
     // Case 1 the node is Reservior/tank
     if (node.second->isres()) {
       residual_vec_->coeffRef(nnode_ + npipe_ + index) =
-          node.second->head () - node.second->elevation ();
+          node.second->head() - node.second->elevation();
     }
     // case 2 the node is a junction
     else {
       if (not pdd_) {
         residual_vec_->coeffRef(nnode_ + npipe_ + index) =
-            node.second->iter_demand () - node.second->demand ();
+            node.second->iter_demand() - node.second->demand();
       } else {
         assemble_pdd_residual(node.second, index);
       }
@@ -231,9 +235,9 @@ void pipenetwork::MatrixAssembler::apply_variables() {
     // Get index of target variables
     Index index_nh = node.first;
     // Assign head
-    node.second->head (variable_vec_->coeff(index_nh));
+    node.second->head(variable_vec_->coeff(index_nh));
     // Assign demand
-    node.second->iter_demand (variable_vec_->coeff(nnode_ + index_nh));
+    node.second->iter_demand(variable_vec_->coeff(nnode_ + index_nh));
   }
 
   // Iterate through pipes, assign pipe discharge during iteration
@@ -246,47 +250,49 @@ void pipenetwork::MatrixAssembler::apply_variables() {
 }
 
 void pipenetwork::MatrixAssembler::assemble_pdd_residual(
-    const std::shared_ptr<pipenetwork::Node> & node, Index index) {
-  auto pressure = node->head () - node->elevation ();
+    const std::shared_ptr<pipenetwork::Node>& node, Index index) {
+  auto pressure = node->head() - node->elevation();
   double res;
 
-  // case 1
+  // case 1: pressure below min pressure, no discharge
   if (pressure < node->min_pressure()) {
-    res = -1 * (node->iter_demand () - node->demand () * node->pdd_slope() *
-                                             (pressure - node->min_pressure()));
+    res = -1 * (node->iter_demand() - node->demand() * node->pdd_slope() *
+                                          (pressure - node->min_pressure()));
   }
-  // case 2
+  // case 2: pressure just above min pressure, use polynomial to approximate
+  // nonlinear pressure-demand function for stabilization considerations
   else if ((pressure > node->min_pressure()) and
            (pressure <= (node->min_pressure() + node->pdd_smooth_delta()))) {
     auto pdd_coeff_1 = node->get_pdd_poly_coef_1();
-    res = -1 * (node->iter_demand () -
-                node->demand () *
+    res = -1 * (node->iter_demand() -
+                node->demand() *
                     (pdd_coeff_1[0] * std::pow(pressure, 3) +
                      pdd_coeff_1[1] * std::pow(pressure, 2) +
                      pdd_coeff_1[2] * std::pow(pressure, 1) + pdd_coeff_1[3]));
   }
-  // case 3
+  // case 3: pressure-demand nonlinear function
   else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) and
            (pressure <= (node->norm_pressure() - node->pdd_smooth_delta()))) {
-    res = -1 * (node->iter_demand () -
-                node->demand () *
+    res = -1 * (node->iter_demand() -
+                node->demand() *
                     std::pow((pressure - node->min_pressure()) /
                                  (node->norm_pressure() - node->min_pressure()),
                              0.5));
   }
-  // case 4
+  // case 4:pressure close to normal pressure, use polynomial to approximate
+  // nonlinear pressure-demand function for stabilization considerations
   else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) and
             (pressure <= node->norm_pressure()))) {
     auto pdd_coeff_2 = node->get_pdd_poly_coef_2();
-    res = -1 * (node->iter_demand () -
-                node->demand () *
+    res = -1 * (node->iter_demand() -
+                node->demand() *
                     (pdd_coeff_2[0] * std::pow(pressure, 3) +
                      pdd_coeff_2[1] * std::pow(pressure, 2) +
                      pdd_coeff_2[2] * std::pow(pressure, 1) + pdd_coeff_2[3]));
   }
-  // case 5
+  // case 5: pressure above normal pressure, demand can be met
   else {
-    res = -1 * (node->iter_demand () - node->demand ());
+    res = -1 * (node->iter_demand() - node->demand());
   }
   // assign the residual
   residual_vec_->coeffRef(nnode_ + npipe_ + index) = res;
@@ -295,38 +301,40 @@ void pipenetwork::MatrixAssembler::assemble_pdd_residual(
 double pipenetwork::MatrixAssembler::get_pressure_head_jacob(
     const std::shared_ptr<pipenetwork::Node>& node) {
 
-  auto pressure = node->head () - node->elevation ();
+  auto pressure = node->head() - node->elevation();
   double res;
 
-  // case 1
-  if (pressure <= node->min_pressure()) {
+  // case 1: pressure below min pressure, no discharge
+  if (pressure < node->min_pressure()) {
     res = 0;
   }
-  // case 2
+  // case 2: pressure just above min pressure, use polynomial to approximate
+  // nonlinear pressure-demand function for stabilization considerations
   else if ((pressure > node->min_pressure()) and
            (pressure <= (node->min_pressure() + node->pdd_smooth_delta()))) {
     auto pdd_coeff_1 = node->get_pdd_poly_coef_1();
-    res = -1 * node->demand () *
+    res = -1 * node->demand() *
           (3 * pdd_coeff_1[0] * std::pow(pressure, 2) +
            2 * pdd_coeff_1[1] * std::pow(pressure, 1) + pdd_coeff_1[2]);
   }
-  // case 3
+  // case 3: pressure-demand nonlinear function
   else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) and
            (pressure <= (node->norm_pressure() - node->pdd_smooth_delta()))) {
-    res = -1 * (0.5 * node->demand () *
+    res = -1 * (0.5 * node->demand() *
                 std::pow((pressure - node->min_pressure()) /
                              (node->norm_pressure() - node->min_pressure()),
                          -0.5));
   }
-  // case 4
+  // case 4:pressure close to normal pressure, use polynomial to approximate
+  // nonlinear pressure-demand function for stabilization considerations
   else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) and
             (pressure <= node->norm_pressure()))) {
     auto pdd_coeff_2 = node->get_pdd_poly_coef_2();
-    res = -1 * node->demand () *
+    res = -1 * node->demand() *
           (3 * pdd_coeff_2[0] * std::pow(pressure, 2) +
            2 * pdd_coeff_2[1] * std::pow(pressure, 1) + pdd_coeff_2[2]);
   }
-  // case 5
+  // case 5: pressure above normal pressure, demand can be met
   else {
     res = 0;
   }

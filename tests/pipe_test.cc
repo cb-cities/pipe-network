@@ -140,8 +140,5 @@ TEST_CASE("Pipe is checked", "[Pipe]") {
     // Check return ids of the nodes
     REQUIRE(pipe1->nodes().at(0)->id() == 100);
     REQUIRE(pipe1->nodes().at(1)->id() == 101);
-    // Check return head assignment status
-    REQUIRE(pipe1->nodes().at(0)->ishead() == false);
-    REQUIRE(pipe1->nodes().at(1)->ishead() == false);
   }
 }

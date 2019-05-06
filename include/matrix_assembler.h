@@ -25,7 +25,7 @@ class MatrixAssembler {
 
  public:
   //! Constructor
-  explicit MatrixAssembler(bool pdd_mode = false) ;
+  explicit MatrixAssembler(bool pdd_mode = false);
 
   //! Destructor
   ~MatrixAssembler() = default;
@@ -78,8 +78,6 @@ class MatrixAssembler {
   std::map<Index, std::shared_ptr<pipenetwork::Pipe>> global_pipes_;
   //! number of nodes in the network
   unsigned nnode_{0};
-  //! number of known nodes in the network
-  unsigned nnode_known_{0};
   //! number of pipes in the network
   unsigned npipe_{0};
   //! pdd mode
@@ -90,26 +88,24 @@ class MatrixAssembler {
   std::shared_ptr<Eigen::VectorXd> residual_vec_;
   //! Jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double>> jac_;
-  //! id map that maps node id to variable id
-  std::shared_ptr<std::map<Index, Index>> id_map_;
 
   //! Assemble pressure demand part of the jacobian matrix
   //! \param[in] n the corresponding node pointer
   //! \param[in] index the position of the corresponding node in variable vector
-  //! \param[in] update the vector that stores the position of element in
   //! jacobian matrix
-  void construct_demand_jac(const std::shared_ptr<pipenetwork::Node> & n, Index index,
-                            std::vector<Eigen::Triplet<double>>& update);
+  std::vector<Eigen::Triplet<double>> construct_demand_jac(
+      const std::shared_ptr<pipenetwork::Node>& n, Index index);
 
   //! Method to get the corresponding value of jacobian for head-pressure
   //! equations \param[in] node pointer for the desired node \retval The value
   //! for the corresponding jacobian entry
-  double get_pressure_head_jacob(const std::shared_ptr<pipenetwork::Node> & node);
+  double get_pressure_head_jacob(
+      const std::shared_ptr<pipenetwork::Node>& node);
 
   //! Method to assemble residuals for demand equation in pressure-demand mode
   //! \param[in] node pointer for the desired node
   //! \param[in]  ndex the position of the corresponding node in variable vector
-  void assemble_pdd_residual(const std::shared_ptr<pipenetwork::Node> & node,
+  void assemble_pdd_residual(const std::shared_ptr<pipenetwork::Node>& node,
                              Index index);
 };
 }  // namespace pipenetwork

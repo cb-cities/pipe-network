@@ -1,7 +1,6 @@
 
 #include <mesh.h>
 
-#include "mesh.h"
 
 // Create nodal pointers and assign indices based on input coordinates
 void pipenetwork::Mesh::create_nodes(

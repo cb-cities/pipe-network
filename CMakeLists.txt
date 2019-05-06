@@ -69,10 +69,10 @@ SET(test_src
    src/mesh.cc
    src/pipe.cc
    src/io.cc
-        src/node.cc
+   src/node.cc
    tests/eigen_gmres_test.cc
 #   tests/matrix_assembler_test.cc
-        tests/matrix_assembler_test_full.cc
+   tests/matrix_assembler_test_full.cc
    tests/mesh_test.cc
    tests/node_test.cc
    tests/pipe_test.cc

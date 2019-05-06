@@ -1,6 +1,4 @@
-#include "node.h"
-#include <Eigen/Dense>
-#include <cmath>
+#include <node.h>
 
 Eigen::VectorXd pipenetwork::Node::compute_poly_coefficients(
     double x1, double x2, double f1, double f2, double df1, double df2) {

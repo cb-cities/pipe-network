@@ -23,9 +23,6 @@ TEST_CASE("Node is checked", "[Node]") {
   for (int i = 0; i < coords.size(); ++i)
     REQUIRE(node->coordinates()(i) == Approx(coords(i)).epsilon(tolerance));
 
-  // Check status of head before it is initialized
-  REQUIRE(node->ishead() == false);
-
   // Check status of discharge before it is initialized
   REQUIRE(node->isdischarge() == false);
 
@@ -50,7 +47,7 @@ TEST_CASE("Node is checked", "[Node]") {
     // Check nodal elevation
     REQUIRE(node->elevation() == Approx(elevation).epsilon(tolerance));
     // Check if hydraulic head is assigned at the node
-//    REQUIRE(node->ishead() == true);
+    //    REQUIRE(node->ishead() == true);
   }
 
   // Check discharge at the node

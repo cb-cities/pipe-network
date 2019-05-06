@@ -2,6 +2,7 @@
 #define PIPE_NETWORK_NODE_H_
 
 #include <Eigen/Dense>
+#include <cmath>
 
 namespace pipenetwork {
 
@@ -54,9 +55,6 @@ class Node {
   double elevation() const { return elevation_; }
   double head() const { return head_; }
 
-  //! Return head assignment status
-  //! \retval ishead_ head assignment status at the node
-  bool ishead() const { return ishead_; }
   //! Return if node is a reservoir
   //! \retval isres_ reservoir status
   bool isres() const { return isres_; }
@@ -65,7 +63,7 @@ class Node {
   //! \param[in] discharge discharge at the node
   void demand(double discharge) {
     demand_ = discharge;
-      iter_demand_ = discharge;
+    iter_demand_ = discharge;
     isdischarge_ = true;
     // if demand is negative, it is a reservoir or tank
     if (discharge < 0) {
@@ -84,11 +82,13 @@ class Node {
   bool isdischarge() const { return isdischarge_; }
 
   //! min pressure
-  void min_pressure(double min_pressure) { minimum_pressure_ = min_pressure; }
+  //  void min_pressure(double min_pressure) { minimum_pressure_ = min_pressure;
+  //  }
   double min_pressure() const { return minimum_pressure_; }
 
   //! norm pressure
-  void norm_pressure(double norm_pressure) { normal_pressure_ = norm_pressure; }
+  //  void norm_pressure(double norm_pressure) { normal_pressure_ =
+  //  norm_pressure; }
   double norm_pressure() const { return normal_pressure_; };
 
   //! pdd delta

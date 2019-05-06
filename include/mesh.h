@@ -23,7 +23,7 @@ class Mesh {
  public:
   // Constructor with id
   //! \param[in] id mesh id
-  explicit Mesh(unsigned id) : id_{id} {}  ;
+  explicit Mesh(unsigned id) : id_{id} {};
 
   //! Destructor
   ~Mesh() = default;
@@ -64,7 +64,8 @@ class Mesh {
   //! Assign initial heads/elevation for nodes
   //! \param[in] node_head vector of pair of nodal index and initial nodal head
   void assign_node_head(const std::vector<std::pair<Index, double>>& node_head);
-  void assign_node_elevation(const std::vector<std::pair<Index, double>>& node_head);
+  void assign_node_elevation(
+      const std::vector<std::pair<Index, double>>& node_head);
 
   //! Assign initial demand for nodes that have known discharge
   //! \param[in] node_discharge vector of pair of nodal index and initial
