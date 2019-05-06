@@ -1,6 +1,4 @@
-
-#include <cmath>
-#include <matrix_assembler.h>
+#include "matrix_assembler.h"
 
 // Constructor
 pipenetwork::MatrixAssembler::MatrixAssembler(bool pdd_mode) {
@@ -52,7 +50,7 @@ std::vector<Eigen::Triplet<double>>
     pipenetwork::MatrixAssembler::construct_demand_jac(
         const std::shared_ptr<pipenetwork::Node>& node, Index index) {
   std::vector<Eigen::Triplet<double>> update;
-  if (not node->isres()) {
+  if (!node->isres()) {
     // construct jacH part
     update.emplace_back(nnode_ + npipe_ + index, nnode_ + index, 1);
     // construct jacG part
@@ -217,7 +215,7 @@ void pipenetwork::MatrixAssembler::assemble_residual_vector() {
     }
     // case 2 the node is a junction
     else {
-      if (not pdd_) {
+      if (!pdd_) {
         residual_vec_->coeffRef(nnode_ + npipe_ + index) =
             node.second->iter_demand() - node.second->demand();
       } else {
@@ -253,6 +251,7 @@ void pipenetwork::MatrixAssembler::assemble_pdd_residual(
     const std::shared_ptr<pipenetwork::Node>& node, Index index) {
   auto pressure = node->head() - node->elevation();
   double res;
+  double tolerance = 1e-10;
 
   // case 1: pressure below min pressure, no discharge
   if (pressure < node->min_pressure()) {
@@ -261,8 +260,9 @@ void pipenetwork::MatrixAssembler::assemble_pdd_residual(
   }
   // case 2: pressure just above min pressure, use polynomial to approximate
   // nonlinear pressure-demand function for stabilization considerations
-  else if ((pressure > node->min_pressure()) and
-           (pressure <= (node->min_pressure() + node->pdd_smooth_delta()))) {
+  else if ((pressure > node->min_pressure()) &&
+           ((pressure - (node->min_pressure() + node->pdd_smooth_delta()) <
+             tolerance))) {
     auto pdd_coeff_1 = node->get_pdd_poly_coef_1();
     res = -1 * (node->iter_demand() -
                 node->demand() *
@@ -271,8 +271,9 @@ void pipenetwork::MatrixAssembler::assemble_pdd_residual(
                      pdd_coeff_1[2] * std::pow(pressure, 1) + pdd_coeff_1[3]));
   }
   // case 3: pressure-demand nonlinear function
-  else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) and
-           (pressure <= (node->norm_pressure() - node->pdd_smooth_delta()))) {
+  else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) &&
+           ((pressure - (node->norm_pressure() - node->pdd_smooth_delta()) <
+             tolerance))) {
     res = -1 * (node->iter_demand() -
                 node->demand() *
                     std::pow((pressure - node->min_pressure()) /
@@ -281,8 +282,8 @@ void pipenetwork::MatrixAssembler::assemble_pdd_residual(
   }
   // case 4:pressure close to normal pressure, use polynomial to approximate
   // nonlinear pressure-demand function for stabilization considerations
-  else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) and
-            (pressure <= node->norm_pressure()))) {
+  else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) &&
+            ((pressure - node->norm_pressure()) < tolerance))) {
     auto pdd_coeff_2 = node->get_pdd_poly_coef_2();
     res = -1 * (node->iter_demand() -
                 node->demand() *
@@ -303,6 +304,7 @@ double pipenetwork::MatrixAssembler::get_pressure_head_jacob(
 
   auto pressure = node->head() - node->elevation();
   double res;
+  double tolerance = 1e-10;
 
   // case 1: pressure below min pressure, no discharge
   if (pressure < node->min_pressure()) {
@@ -310,16 +312,18 @@ double pipenetwork::MatrixAssembler::get_pressure_head_jacob(
   }
   // case 2: pressure just above min pressure, use polynomial to approximate
   // nonlinear pressure-demand function for stabilization considerations
-  else if ((pressure > node->min_pressure()) and
-           (pressure <= (node->min_pressure() + node->pdd_smooth_delta()))) {
+  else if ((pressure > node->min_pressure()) &&
+           ((pressure - (node->min_pressure() + node->pdd_smooth_delta()) <
+             tolerance))) {
     auto pdd_coeff_1 = node->get_pdd_poly_coef_1();
     res = -1 * node->demand() *
           (3 * pdd_coeff_1[0] * std::pow(pressure, 2) +
            2 * pdd_coeff_1[1] * std::pow(pressure, 1) + pdd_coeff_1[2]);
   }
   // case 3: pressure-demand nonlinear function
-  else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) and
-           (pressure <= (node->norm_pressure() - node->pdd_smooth_delta()))) {
+  else if ((pressure > (node->min_pressure() + node->pdd_smooth_delta())) &&
+           ((pressure - (node->norm_pressure() - node->pdd_smooth_delta()) <
+             tolerance))) {
     res = -1 * (0.5 * node->demand() *
                 std::pow((pressure - node->min_pressure()) /
                              (node->norm_pressure() - node->min_pressure()),
@@ -327,8 +331,8 @@ double pipenetwork::MatrixAssembler::get_pressure_head_jacob(
   }
   // case 4:pressure close to normal pressure, use polynomial to approximate
   // nonlinear pressure-demand function for stabilization considerations
-  else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) and
-            (pressure <= node->norm_pressure()))) {
+  else if ((pressure > ((node->norm_pressure() - node->pdd_smooth_delta())) &&
+            ((pressure - node->norm_pressure()) < tolerance))) {
     auto pdd_coeff_2 = node->get_pdd_poly_coef_2();
     res = -1 * node->demand() *
           (3 * pdd_coeff_2[0] * std::pow(pressure, 2) +

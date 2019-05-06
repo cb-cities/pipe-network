@@ -19,11 +19,11 @@ pipenetwork::Pipe::Pipe(
 // length \times darcy_friction})^0.5$
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_discharge_darcy_weisbach() {
-    const double dhead = nodes_.at(0)->head() - nodes_.at(1)->head();
-    discharge_ = sqrt(std::abs(dhead) * pow(M_PI, 2) * pipenetwork::Gravity(2) *
-                      pow(2 * radius_, 5) / (8. * length_ * darcy_friction_));
-    // defined flow direction from nodes_.at(0) to nodes.at(1) as positive
-    if (dhead < 0) discharge_ *= -1.;
+  const double dhead = nodes_.at(0)->head() - nodes_.at(1)->head();
+  discharge_ = sqrt(std::abs(dhead) * pow(M_PI, 2) * pipenetwork::Gravity(2) *
+                    pow(2 * radius_, 5) / (8. * length_ * darcy_friction_));
+  // defined flow direction from nodes_.at(0) to nodes.at(1) as positive
+  if (dhead < 0) discharge_ *= -1.;
 }
 
 // Calculate discharge using Hazen-Williams equation
@@ -31,12 +31,12 @@ void pipenetwork::Pipe::compute_discharge_darcy_weisbach() {
 // (2radius)^4.8704}{10.67 \times length})^(\frac{1}{1.852})
 // SI unit meter and second are used in the whole equation
 void pipenetwork::Pipe::compute_discharge_hazen_williams() {
-    const double dhead = nodes_.at(0)->head() - nodes_.at(1)->head();
-    discharge_ = pow((std::abs(dhead) * pow(pipe_roughness_, 1.852) *
-                      pow(2 * radius_, 4.8704) / (10.67 * length_)),
-                     1 / 1.852);
-    // defined flow direction from nodes_.at(0) to nodes.at(1) as positive
-    if (dhead < 0) discharge_ *= -1.;
+  const double dhead = nodes_.at(0)->head() - nodes_.at(1)->head();
+  discharge_ = pow((std::abs(dhead) * pow(pipe_roughness_, 1.852) *
+                    pow(2 * radius_, 4.8704) / (10.67 * length_)),
+                   1 / 1.852);
+  // defined flow direction from nodes_.at(0) to nodes.at(1) as positive
+  if (dhead < 0) discharge_ *= -1.;
 }
 
 // Calculate and return derivative of Hazen-Williams equation with respect to

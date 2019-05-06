@@ -2,6 +2,7 @@
 #define PIPE_NETWORK_NODE_H_
 
 #include <Eigen/Dense>
+#include <array>
 #include <cmath>
 
 namespace pipenetwork {
@@ -82,13 +83,9 @@ class Node {
   bool isdischarge() const { return isdischarge_; }
 
   //! min pressure
-  //  void min_pressure(double min_pressure) { minimum_pressure_ = min_pressure;
-  //  }
   double min_pressure() const { return minimum_pressure_; }
 
   //! norm pressure
-  //  void norm_pressure(double norm_pressure) { normal_pressure_ =
-  //  norm_pressure; }
   double norm_pressure() const { return normal_pressure_; };
 
   //! pdd delta
@@ -128,16 +125,13 @@ class Node {
   double pdd_slope_{1e-12};
 
   //! Method to compute the coefficients of a smoothing polynomial
-  //! \param[in] x1 point on the x-axis at which the smoothing polynomial begins
-  //! \param[in] x2 point on the x-axis at which the smoothing polynomial ends
-  //! \param[in] f1 function evaluated at x1
-  //! \param[in] f2 function evaluated at x2
-  //! \param[in] df1 derivative evaluated at x1
-  //! \param[in] df2 derivative evaluated at x2
-  //! \retval  A vector with the smoothing polynomail coefficients starting with
-  //! the cubic term.
-  Eigen::VectorXd compute_poly_coefficients(double x1, double x2, double f1,
-                                            double f2, double df1, double df2);
+  //! \param[in] x points on the x-axis at which the smoothing polynomial begins
+  //! and ends \param[in] f function evaluated at x1 and f2 \param[in] df
+  //! derivative evaluated at x1 and x2 \retval  A vector with the smoothing
+  //! polynomail coefficients starting with the cubic term.
+  Eigen::VectorXd compute_poly_coefficients(const std::array<double, 2>& x,
+                                            const std::array<double, 2>& f,
+                                            const std::array<double, 2>& df);
 };
 }  // namespace pipenetwork
 

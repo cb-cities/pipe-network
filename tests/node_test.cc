@@ -1,7 +1,7 @@
 #include "catch.hpp"
+#include <iostream>
 
 #include "node.h"
-#include <iostream>
 
 // Check node class
 TEST_CASE("Node is checked", "[Node]") {

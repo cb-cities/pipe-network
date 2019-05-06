@@ -1,16 +1,14 @@
 #ifndef PIPE_NETWORK_MATRIX_ASSEMBLER_H_
 #define PIPE_NETWORK_MATRIX_ASSEMBLER_H_
 
-#include <cmath>
-
+#include <Eigen/Sparse>
 #include <array>
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include <Eigen/Sparse>
 
 #include "mesh.h"
 #include "node.h"
