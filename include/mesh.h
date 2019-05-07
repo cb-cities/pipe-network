@@ -23,7 +23,7 @@ class Mesh {
  public:
   // Constructor with id
   //! \param[in] id mesh id
-  Mesh(unsigned id) : id_{id} {};
+  explicit Mesh(unsigned id) : id_{id} {};
 
   //! Destructor
   ~Mesh() = default;
@@ -59,15 +59,18 @@ class Mesh {
   void initialize_pipe_discharge(
       const std::vector<std::pair<Index, double>>& init_discharge =
           std::vector<std::pair<Index, double>>());
+  void initialize_pipe_discharge(double init_discharge);
 
-  //! Assign initial heads for nodes that have known head
+  //! Assign initial heads/elevation for nodes
   //! \param[in] node_head vector of pair of nodal index and initial nodal head
   void assign_node_head(const std::vector<std::pair<Index, double>>& node_head);
+  void assign_node_elevation(
+      const std::vector<std::pair<Index, double>>& node_head);
 
-  //! Assign initial discharges for nodes that have known discharge
+  //! Assign initial demand for nodes that have known discharge
   //! \param[in] node_discharge vector of pair of nodal index and initial
   //! discharge
-  void assign_node_discharge(
+  void assign_node_demand(
       const std::vector<std::pair<Index, double>>& node_discharge);
 
   //! Make MatrixAssembler a friend class of mesh

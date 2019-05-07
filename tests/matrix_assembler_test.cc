@@ -58,7 +58,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   // Assign initial nodal head and discharge
   double default_init_node_head = 0.0;
   double default_init_node_discharge = 0.0;
-  double default_init_pipe_discharge = 0.001;
+  double init_pipe_discharge = 0.001;
   double head1 = 100.0;
   double head2 = 99.0;
   double discharge1 = 100.0;
@@ -69,134 +69,137 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   std::vector<std::pair<Index, double>> node_discharge;
   node_discharge.emplace_back(std::make_pair(0, discharge1));
   node_discharge.emplace_back(std::make_pair(1, discharge2));
+  mesh->initialize_pipe_discharge(init_pipe_discharge);
   mesh->assign_node_head(node_head);
   mesh->assign_node_discharge(node_discharge);
 
   // Initialize matrix assembler and obtain global index to nodes and pipes
   auto assembler = std::make_shared<pipenetwork::MatrixAssembler>();
-  assembler->global_nodal_pipe_indices(mesh);
+  assembler->global_nodal_pipe_indices(mesh, 2);
 
   // Check the number of nodes and pipes in the network
   unsigned nnodes = assembler->nnodes();
   unsigned npipes = assembler->npipes();
+  //  unsigned nnodes_known = assembler->nnodes_known();
   REQUIRE(nnodes == 5);
   REQUIRE(npipes == 7);
+  //  REQUIRE(nnodes_known == 2);
 
   // Check initialized variable (head and discharge) vector
   SECTION("Check initialized variable vector") {
     // Initialize variable vector
-    assembler->assemble_variable_vector();
+    assembler->sim_assemble_variable_vector_v2();
     std::shared_ptr<Eigen::VectorXd> variable_vec = assembler->variable_vec();
-    // Check nodal head
-    REQUIRE(variable_vec->coeff(0) == Approx(head1).epsilon(tolerance));
-    REQUIRE(variable_vec->coeff(1) == Approx(head2).epsilon(tolerance));
-    for (int i = 2; i <= 4; i++)
-      REQUIRE(variable_vec->coeff(i) ==
-              Approx(default_init_node_head).epsilon(tolerance));
-    // Check nodal discharge
-    REQUIRE(variable_vec->coeff(5) == Approx(discharge1).epsilon(tolerance));
-    REQUIRE(variable_vec->coeff(6) == Approx(discharge2).epsilon(tolerance));
-    for (int i = 7; i <= 9; i++)
-      REQUIRE(variable_vec->coeff(i) ==
-              Approx(default_init_node_discharge).epsilon(tolerance));
-    // Check pipe discharge
-    for (int i = 10; i <= 16; i++)
-      REQUIRE(variable_vec->coeff(i) ==
-              Approx(default_init_pipe_discharge).epsilon(tolerance));
-  }
+    std::shared_ptr<std::map<Index, Index>> id_map = assembler->id_map();
 
+    std::cout << (*variable_vec) << std::endl;
+    for (auto const& pair : *id_map) {
+      std::cout << " " << pair.first << ": " << pair.second << " \n";
+    }
+    //       Check id mapping
+    REQUIRE(id_map->at(2) == 0);
+    REQUIRE(id_map->at(3) == 1);
+    //    for (int i = 2; i <= 4; i++)
+    //      REQUIRE(variable_vec->coeff(i) ==
+    //              Approx(default_init_node_head).epsilon(tolerance));
+    //    // Check nodal discharge
+    //    REQUIRE(variable_vec->coeff(5) ==
+    //    Approx(discharge1).epsilon(tolerance)); REQUIRE(variable_vec->coeff(6)
+    //    == Approx(discharge2).epsilon(tolerance)); for (int i = 7; i <= 9;
+    //    i++)
+    //      REQUIRE(variable_vec->coeff(i) ==
+    //              Approx(default_init_node_discharge).epsilon(tolerance));
+    //    // Check pipe discharge
+    //    for (int i = 10; i <= 16; i++)
+    //      REQUIRE(variable_vec->coeff(i) ==
+    //              Approx(default_init_pipe_discharge).epsilon(tolerance));
+  }
+  //
   // Check initialized residual vector
   SECTION("Check initialized residual vector") {
     // Initialize residual vector
-    assembler->assemble_residual_vector();
+
+    assembler->assemble_residual_vector_v2();
     std::shared_ptr<Eigen::VectorXd> residual_vec = assembler->residual_vec();
+    std::cout << (*residual_vec) << std::endl;
     // Check nodal balance residual
-    REQUIRE(residual_vec->coeff(0) == Approx(100.002).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(1) == Approx(-9.998).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(2) == Approx(-0.001).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(3) == Approx(0.0).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(4) == Approx(-0.003).epsilon(tolerance));
+    //    REQUIRE(residual_vec->coeff(0) == Approx(100.002).epsilon(tolerance));
+    //    REQUIRE(residual_vec->coeff(1) == Approx(-9.998).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(0) == Approx(-0.00).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(1) == Approx(0.0).epsilon(tolerance));
+    REQUIRE(residual_vec->coeff(2) == Approx(-0.00).epsilon(tolerance));
     // Check headloss residual
-    REQUIRE(residual_vec->coeff(5) ==
+    REQUIRE(residual_vec->coeff(3) ==
             Approx(-0.99999999916924).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(6) ==
+    REQUIRE(residual_vec->coeff(4) ==
             Approx(-99.999999978347).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(7) ==
+    REQUIRE(residual_vec->coeff(5) ==
             Approx(-98.999999960916).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(8) ==
+    REQUIRE(residual_vec->coeff(6) ==
             Approx(-98.999999994002).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(9) ==
+    REQUIRE(residual_vec->coeff(7) ==
             Approx(-98.99999996752).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(10) ==
+    REQUIRE(residual_vec->coeff(8) ==
             Approx(0.000000078168179151258).epsilon(tolerance));
-    REQUIRE(residual_vec->coeff(11) ==
+    REQUIRE(residual_vec->coeff(9) ==
             Approx(0.000000039084089575629).epsilon(tolerance));
   }
-
+  //
   // Check initialized Jacobian matrix
   SECTION("Check initialized Jacobian matrix") {
 
     // Assemble Jacobian matrix
-    assembler->assemble_jacobian();
+    assembler->sim_assemble_variable_vector_v2();
+    assembler->sim_assemble_jacobian_v2();
+
     std::shared_ptr<Eigen::SparseMatrix<double>> jac = assembler->jac();
 
-    // Check jacB (nodal discharge in nodal balance equation)
-    for (int row = 0; row < nnodes; row++) {
-      for (int col = nnodes; col < nnodes + nnodes; col++) {
-        if ((col - nnodes) == row) {
-          REQUIRE(jac->coeff(row, col) == -1);
-        } else {
-          REQUIRE(jac->coeff(row, col) == 0);
-        }
-      }
-    }
+    std::cout << (*jac) << std::endl;
 
+    //    // Check jacB (nodal discharge in nodal balance equation)
+    //    for (int row = 0; row < nnodes; row++) {
+    //      for (int col = nnodes; col < nnodes + nnodes; col++) {
+    //        if ((col - nnodes) == row) {
+    //          REQUIRE(jac->coeff(row, col) == -1);
+    //        } else {
+    //          REQUIRE(jac->coeff(row, col) == 0);
+    //        }
+    //      }
+    //    }
+    //
     // Check jacC (pipe discharge in nodal balance equation)
-    REQUIRE(jac->coeff(0, 10) == -1);
-    REQUIRE(jac->coeff(0, 11) == -1);
-    REQUIRE(jac->coeff(1, 10) == 1);
-    REQUIRE(jac->coeff(1, 12) == -1);
-    REQUIRE(jac->coeff(1, 13) == -1);
-    REQUIRE(jac->coeff(1, 14) == -1);
-    REQUIRE(jac->coeff(2, 11) == 1);
-    REQUIRE(jac->coeff(2, 12) == 1);
-    REQUIRE(jac->coeff(2, 15) == -1);
-    REQUIRE(jac->coeff(3, 13) == 1);
-    REQUIRE(jac->coeff(3, 16) == -1);
-    REQUIRE(jac->coeff(4, 14) == 1);
-    REQUIRE(jac->coeff(4, 15) == 1);
-    REQUIRE(jac->coeff(4, 16) == 1);
-
+    REQUIRE(jac->coeff(0, 4) == 1);
+    REQUIRE(jac->coeff(0, 5) == 1);
+    REQUIRE(jac->coeff(0, 8) == -1);
+    REQUIRE(jac->coeff(1, 6) == 1);
+    REQUIRE(jac->coeff(1, 9) == -1);
+    REQUIRE(jac->coeff(2, 7) == 1);
+    REQUIRE(jac->coeff(2, 8) == 1);
+    REQUIRE(jac->coeff(2, 9) == 1);
+    //
     // Check jacD (nodal head in headloss equation)
-    REQUIRE(jac->coeff(5, 0) == 1);
-    REQUIRE(jac->coeff(5, 1) == -1);
-    REQUIRE(jac->coeff(6, 0) == 1);
-    REQUIRE(jac->coeff(6, 2) == -1);
-    REQUIRE(jac->coeff(7, 1) == 1);
+    REQUIRE(jac->coeff(4, 0) == -1);
+    REQUIRE(jac->coeff(5, 0) == -1);
+    REQUIRE(jac->coeff(6, 1) == -1);
     REQUIRE(jac->coeff(7, 2) == -1);
-    REQUIRE(jac->coeff(8, 1) == 1);
-    REQUIRE(jac->coeff(8, 3) == -1);
+    REQUIRE(jac->coeff(8, 0) == 1);
+    REQUIRE(jac->coeff(8, 2) == -1);
     REQUIRE(jac->coeff(9, 1) == 1);
-    REQUIRE(jac->coeff(9, 4) == -1);
-    REQUIRE(jac->coeff(10, 2) == 1);
-    REQUIRE(jac->coeff(10, 4) == -1);
-    REQUIRE(jac->coeff(11, 3) == 1);
-    REQUIRE(jac->coeff(11, 4) == -1);
-
+    REQUIRE(jac->coeff(9, 2) == -1);
+    //
     // Check jacF (pipe discharge in headloss equation)
-    REQUIRE(jac->coeff(5, 10) ==
+    REQUIRE(jac->coeff(3, 3) ==
             Approx(-0.000001538573761089).epsilon(tolerance));
-    REQUIRE(jac->coeff(6, 11) ==
+    REQUIRE(jac->coeff(4, 4) ==
             Approx(-0.00004010175932682).epsilon(tolerance));
-    REQUIRE(jac->coeff(7, 12) ==
+    REQUIRE(jac->coeff(5, 5) ==
             Approx(-0.00007238373389406).epsilon(tolerance));
-    REQUIRE(jac->coeff(8, 13) ==
+    REQUIRE(jac->coeff(6, 6) ==
             Approx(-0.00001110851163928).epsilon(tolerance));
-    REQUIRE(jac->coeff(9, 14) ==
+    REQUIRE(jac->coeff(7, 7) ==
             Approx(-0.00006015263899023).epsilon(tolerance));
-    REQUIRE(jac->coeff(10, 15) ==
-            Approx(-0.0001447674677881).epsilon(tolerance));
-    REQUIRE(jac->coeff(11, 16) ==
+    REQUIRE(jac->coeff(8, 8) == Approx(-0.0001447674677881).epsilon(tolerance));
+    REQUIRE(jac->coeff(9, 9) ==
             Approx(-0.00007238373389406).epsilon(tolerance));
   }
 }

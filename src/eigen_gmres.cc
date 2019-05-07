@@ -30,7 +30,8 @@ bool pipenetwork::EigenGMRES::solve() {
   gmres.setTolerance(tolerance_);
 
   x_diff = gmres.solve(*vec_b_);
-  x_diff = x_diff.array() * vrestraints_.array();
+  x_diff = x_diff.array();
+  //    x_diff = x_diff.array() * vrestraints_.array();
 
   if (gmres.info() == 0) {
     convergence = true;
