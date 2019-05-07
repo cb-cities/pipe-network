@@ -74,34 +74,8 @@ TEST_CASE("Example network is tested", "[NR method]") {
         std::make_shared<pipenetwork::EigenGMRES>(max_iter, gmres_tolerance);
     solver->assembled_matrices(jac, variable_vec, residual_vec);
 
-    //  // Apply restraints
-    //  Eigen::VectorXd restraints(17);
-    //  restraints << 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
-    //  solver->restrains(restraints);
-    //        std::cout << "Jac = " << std::endl
-    //                  << (*jac) << std::endl
-    //                  << std::endl
-    //                  << "residual = " << std::endl
-    //                  << std::endl
-    //                  << (*residual_vec) << std::endl
-    //                  << "variable = " << std::endl
-    //                  << (*variable_vec) << std::endl
-    //                  << std::endl;
-    bool issolved = solver->solve();
-    assembler->apply_variables();
-    assembler->assemble_residual_vector();
-    //        std::cout << "Jac = " << std::endl
-    //                  << (*jac) << std::endl
-    //                  << std::endl
-    //                  << "residual = " << std::endl
-    //                  << std::endl
-    //                  << (*residual_vec) << std::endl
-    //                  << "variable = " << std::endl
-    //                  << (*variable_vec) << std::endl
-    //                  << std::endl;
-
-    unsigned nr_iter = 1;
-    while (nr_iter < 30) {
+    unsigned niter = 30;
+    for (unsigned nr_iter = 0; nr_iter < niter; ++nr_iter) {
 
       bool issolved = solver->solve();
       assembler->apply_variables();
@@ -120,18 +94,6 @@ TEST_CASE("Example network is tested", "[NR method]") {
                   << std::endl;
         break;
       }
-      //          std::cout << "niter = " << nr_iter << std::endl;
-      //          std::cout << "Jac = " << std::endl
-      //                    << (*jac) << std::endl
-      //                    << std::endl
-      //                    << "residual = " << std::endl
-      //                    << (*residual_vec) << std::endl
-      //                    << std::endl
-      //                    << "variable = " << std::endl
-      //                    << (*variable_vec) << std::endl
-      //                    << std::endl;
-
-      nr_iter++;
     }
     REQUIRE(residual_vec->norm() == Approx(0.0).epsilon(tolerance));
   }
@@ -161,8 +123,8 @@ TEST_CASE("Example network is tested", "[NR method]") {
     assembler->apply_variables();
     assembler->assemble_residual_vector();
 
-    unsigned nr_iter = 1;
-    while (nr_iter < 30) {
+    unsigned niter = 30;
+    for (unsigned nr_iter = 0; nr_iter < niter; ++nr_iter) {
 
       bool issolved = solver->solve();
       assembler->apply_variables();
@@ -181,18 +143,6 @@ TEST_CASE("Example network is tested", "[NR method]") {
                   << std::endl;
         break;
       }
-      //            std::cout << "niter = " << nr_iter << std::endl;
-      //            std::cout << "Jac = " << std::endl
-      //                      << (*jac) << std::endl
-      //                      << std::endl
-      //                      << "residual = " << std::endl
-      //                      << (*residual_vec) << std::endl
-      //                      << std::endl
-      //                      << "variable = " << std::endl
-      //                      << (*variable_vec) << std::endl
-      //                      << std::endl;
-
-      nr_iter++;
     }
     REQUIRE(residual_vec->norm() == Approx(0.0).epsilon(tolerance));
   }
