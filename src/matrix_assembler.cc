@@ -23,18 +23,23 @@ void pipenetwork::MatrixAssembler::global_nodal_pipe_indices(
 // 1 to nnode element: nodal head
 // nnode+1 to 2*nnode element: nodal demand
 // 2*nnode+1 to 2*nnode+npipe element: pipe discharge
+// 2*nnode+npipe+1 to 3*nnode+npipe element: leak discharge
 void pipenetwork::MatrixAssembler::assemble_variable_vector() {
 
-  variable_vec_->resize(2 * nnode_ + npipe_);
+  variable_vec_->resize(3 * nnode_ + npipe_);
 
   for (const auto& node : global_nodes_) {
     Index index_nh = node.first;
     Index index_nd = node.first + nnode_;
+    Index index_nl = node.first + 2 * nnode_ + npipe_;
 
     // nodal head vector
     variable_vec_->coeffRef(index_nh) = node.second->head();
 
     // nodal demand vector
+    variable_vec_->coeffRef(index_nd) = node.second->demand();
+
+    // nodal leak discharge vector
     variable_vec_->coeffRef(index_nd) = node.second->demand();
   }
 
@@ -67,9 +72,11 @@ std::vector<Eigen::Triplet<double>>
 
 // Assemble Jacobian matrix
 //                 nodal_head  nodal_discharge(demand) pipe_discharge
-// nodal_balance   sub_jac_A        sub_jac_B         sub_jac_C
-// headloss        sub_jac_D        sub_jac_E         sub_jac_F
-// demand_pressure sub_jac_G        sub_jac_H         sub_jac_I
+//                 leak_discharge
+// nodal_balance   sub_jac_A        sub_jac_B         sub_jac_C sub_jac_M
+// headloss        sub_jac_D        sub_jac_E         sub_jac_F sub_jac_N
+// demand_pressure sub_jac_G        sub_jac_H         sub_jac_I sub_jac_O
+// leak_pressure   sub_jac_J        sub_jac_K         sub_jac_L sub_jac_P
 //
 // Nodal balance equation:
 // Residual = flow = Inflow - Outflow - Demand
@@ -106,9 +113,16 @@ std::vector<Eigen::Triplet<double>>
 // sub_jac_I: Derivative of demand_pressure equation with respect to pipe
 // discharge,
 //            0.
+// sub_jac_J: Derivative of leak-pressure equation with respect to nodal head,
+//              0 for inactive leaks, f(H-z) otherwise
+// sub_jac_K: Derivative of leak-pressure equation with respect to demand, 0
+// sub_jac_L: Derivative of leak-pressure equation with respect to pipe
+// discharge, 0 sub_jac_M: Derivative of nodal balance equation with respect to
+// leak discharge , -1 sub_jac_N: 0 sub_jac_O: 0 sub_jac_P: Derivative of
+// leak-pressure equation with respect to leak discharge, 1
 //
 // Each node has one nodal balance equation, each pipe has one headloss
-// equation, Thus the Jacobian has (2*nnode+npipe) row and (2*nnode+npipe)
+// equation, Thus the Jacobian has (3*nnode+npipe) row and (3*nnode+npipe)
 // column
 //
 
@@ -119,7 +133,7 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
         "No node or pipe index pairs created to assemble Jacobian matrix");
 
   std::vector<Eigen::Triplet<double>> update;
-  update.reserve(nnode_ + 5 * npipe_);
+  update.reserve(4 * (3 * nnode_ + npipe_));
 
   // Iterate through all nodes
   for (const auto& node : global_nodes_) {
@@ -130,6 +144,15 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
     auto demand_update = construct_demand_jac(node.second, index);
     update.insert(std::end(update), std::begin(demand_update),
                   std::end(demand_update));
+    // construct jacM part
+    update.emplace_back(index, 2 * nnode_ + npipe_ + index, -1);
+    // construct jacP part
+    update.emplace_back(2 * nnode_ + npipe_ + index,
+                        2 * nnode_ + npipe_ + index, 1);
+    // construct jacJ part
+    auto leak_update = construct_leak_jac(node.second, index);
+    update.insert(std::end(update), std::begin(leak_update),
+                  std::end(leak_update));
   }
 
   // Iterate through all pipes
@@ -156,7 +179,7 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
                         deriv_pipe_discharge);
   }
 
-  jac_->resize(2 * nnode_ + npipe_, 2 * nnode_ + npipe_);
+  jac_->resize(3 * nnode_ + npipe_, 3 * nnode_ + npipe_);
   jac_->setFromTriplets(update.begin(), update.end());
 }
 
@@ -176,7 +199,7 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
 // The network has nnode Nodal balance equation and npipe Headloss equation
 // Thus the residual vector has (nnode+npipe) elements
 void pipenetwork::MatrixAssembler::assemble_residual_vector() {
-  residual_vec_->resize(2 * nnode_ + npipe_);
+  residual_vec_->resize(3 * nnode_ + npipe_);
   residual_vec_->setZero();
 
   // Iterate through all pipes
@@ -204,9 +227,10 @@ void pipenetwork::MatrixAssembler::assemble_residual_vector() {
   // Iterate through all nodes
   for (const auto& node : global_nodes_) {
     Index index = node.first;
-    // Calculate the nodal balance residual (demand part)
-    if (node.second->isdischarge())
-      residual_vec_->coeffRef(index) -= (-1) * node.second->iter_demand();
+    // Calculate the nodal balance residual (demand and leak parts)
+    residual_vec_->coeffRef(index) -= (-1) * node.second->iter_demand();
+    residual_vec_->coeffRef(index) -= (-1) * node.second->iter_leak_discharge();
+
     // Calculate the demand pressure residual
     // Case 1 the node is Reservior/tank
     if (node.second->isres()) {
@@ -222,6 +246,14 @@ void pipenetwork::MatrixAssembler::assemble_residual_vector() {
         assemble_pdd_residual(node.second, index);
       }
     }
+    // Calculate the leak pressure residual
+    // case 1 if the node is not leaking
+    if (!node.second->is_leak()) {
+      residual_vec_->coeffRef(2 * nnode_ + npipe_ + index) =
+          node.second->iter_leak_discharge() - node.second->leak_discharge();
+    } else {
+      assemble_leak_residual(node.second, index);
+    }
   }
 }
 
@@ -236,6 +268,9 @@ void pipenetwork::MatrixAssembler::apply_variables() {
     node.second->head(variable_vec_->coeff(index_nh));
     // Assign demand
     node.second->iter_demand(variable_vec_->coeff(nnode_ + index_nh));
+    // Assign leak
+    node.second->iter_leak_discharge(
+        variable_vec_->coeff(2 * nnode_ + npipe_ + index_nh));
   }
 
   // Iterate through pipes, assign pipe discharge during iteration
@@ -344,4 +379,68 @@ double pipenetwork::MatrixAssembler::get_pressure_head_jacob(
   }
 
   return res;
+}
+
+double pipenetwork::MatrixAssembler::get_pressure_leak_jacob(
+    const std::shared_ptr<pipenetwork::Node>& node) {
+
+  double m = 1e-11;
+  auto pressure = node->head() - node->elevation();
+  double res;
+  // case 1, no pressure
+  if (pressure < m) {
+    res = -1 * (-m);
+    // case 2, pressure is small, use polynomial approximation
+  } else if (pressure < 1e-4) {
+    auto leak_poly_coef = node->get_leak_poly_coef();
+    res = -1 * (-(3 * leak_poly_coef[0] * std::pow(pressure, 2) +
+                  2 * leak_poly_coef[1] * std::pow(pressure, 1) +
+                  leak_poly_coef[2]));
+    // case 3, enough pressure, normal equation
+  } else {
+    res = -1 * (-0.5 * node->leak_discharge_coefficient() * node->leak_area() *
+                std::pow(2 * node->g(), 0.5) * std::pow(pressure, -0.5));
+  }
+
+  return res;
+}
+
+void pipenetwork::MatrixAssembler::assemble_leak_residual(
+    const std::shared_ptr<pipenetwork::Node>& node, Index index) {
+  double m = 1e-11;
+  auto pressure = node->head() - node->elevation();
+  double res;
+  // case 1, no pressure
+  if (pressure < m) {
+    res = -1 * (node->iter_leak_discharge());
+    // case 2, pressure is small, use polynomial approximation
+  } else if (pressure < 1e-4) {
+    auto leak_poly_coef = node->get_leak_poly_coef();
+    res =
+        -1 * (node->iter_leak_discharge() -
+              (leak_poly_coef[0] * std::pow(pressure, 3) +
+               leak_poly_coef[1] * std::pow(pressure, 2) +
+               leak_poly_coef[2] * std::pow(pressure, 3) + leak_poly_coef[3]));
+    // case 3, enough pressure, normal equation
+  } else {
+    res = -1 * (node->iter_leak_discharge() -
+                node->leak_discharge_coefficient() * node->leak_area() *
+                    std::pow(2 * node->g() * pressure, 0.5));
+  }
+  // assign the residual
+  residual_vec_->coeffRef(2 * nnode_ + npipe_ + index) = res;
+}
+
+std::vector<Eigen::Triplet<double>>
+    pipenetwork::MatrixAssembler::construct_leak_jac(
+        const std::shared_ptr<pipenetwork::Node>& node, Index index) {
+
+  std::vector<Eigen::Triplet<double>> update;
+  if (node->is_leak()) {
+    // construct jacH part
+    update.emplace_back(2 * nnode_ + npipe_ + index, index,
+                        get_pressure_leak_jacob(node));
+  }
+
+  return update;
 }

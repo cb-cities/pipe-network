@@ -73,6 +73,11 @@ class Mesh {
   void assign_node_demand(
       const std::vector<std::pair<Index, double>>& node_discharge);
 
+  //! Assign leaks for nodes
+  //! \param[in] node_leak_dia vector of pair of nodal index and leak diameter
+  void assign_node_leak(
+      const std::vector<std::pair<Index, double>>& node_leak_dia);
+
   //! Make MatrixAssembler a friend class of mesh
   friend class MatrixAssembler;
 

@@ -1,7 +1,6 @@
 
 #include "mesh.h"
 
-
 // Create nodal pointers and assign indices based on input coordinates
 void pipenetwork::Mesh::create_nodes(
     const std::vector<Eigen::Vector3d>& coords) {
@@ -81,16 +80,22 @@ void pipenetwork::Mesh::assign_node_head(
 }
 
 // Assign initial elevation for nodes that have known head
-void pipenetwork::Mesh::assign_node_elevation (
-        const std::vector<std::pair<Index, double>>& node_head) {
-    for (const auto& head : node_head) nodes_.at(head.first)->elevation(head.second);
+void pipenetwork::Mesh::assign_node_elevation(
+    const std::vector<std::pair<Index, double>>& node_head) {
+  for (const auto& head : node_head)
+    nodes_.at(head.first)->elevation(head.second);
 }
-
-
 
 // Assign initial discharges for nodes that have known discharge
 void pipenetwork::Mesh::assign_node_demand(
     const std::vector<std::pair<Index, double>>& node_discharge) {
   for (const auto& discharge : node_discharge)
-    nodes_.at(discharge.first)->demand (discharge.second);
+    nodes_.at(discharge.first)->demand(discharge.second);
+}
+
+// Assign leak diameter for nodes that have known leaks
+void pipenetwork::Mesh::assign_node_leak(
+    const std::vector<std::pair<Index, double>>& node_leak_dia) {
+  for (const auto& leak : node_leak_dia)
+    nodes_.at(leak.first)->leak_diameter(leak.second);
 }

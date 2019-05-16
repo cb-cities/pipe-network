@@ -93,9 +93,34 @@ class Node {
   //! pdd slope
   double pdd_slope() const { return pdd_slope_; }
 
+  //! leak status
+  bool is_leak() const {
+      return leak_area_ > 0 || false;
+  }
+  //! set diameter/area for the leak
+  void leak_diameter(double leak_diameter) {
+    leak_diameter_ = leak_diameter;
+    leak_area_ = std::pow((leak_diameter_ / 2), 2) * pi_;
+  }
+
+  double leak_area() const { return leak_area_; }
+  double leak_discharge() const { return leak_diameter_; }
+  double iter_leak_discharge() { return iter_leak_discharge_; }
+
+  void iter_leak_discharge(double iter_leak_discharge) {
+    iter_leak_discharge_ = iter_leak_discharge;
+  }
+
+  double g() const { return g_; }
+  double leak_discharge_coefficient() const {
+    return leak_discharge_coefficient_;
+  }
+
   //! polynomial coefficients for pressure demand equations
   Eigen::VectorXd get_pdd_poly_coef_1();
   Eigen::VectorXd get_pdd_poly_coef_2();
+  //! polynomial coefficients for leakage equations
+  Eigen::VectorXd get_leak_poly_coef();
 
  private:
   //! node id
@@ -124,6 +149,29 @@ class Node {
   double pdd_smoothing_delta_{0.2};
   double pdd_slope_{1e-12};
 
+  //! leak diameter
+  double leak_diameter_{0};
+  //! Value of pi
+  double pi_{3.1415926};
+  //! leak area
+  double leak_area_{0};
+
+  //! accleration due to gravity
+  double g_{9.81};
+  //! leak dischage (static and iter)
+  double leak_discharge_{0};
+  double iter_leak_discharge_{0};
+  //! leak coefficients
+  double leak_discharge_coefficient_{0.75};
+
+  //! polynomial coefficients for demand-pressure leak-pressure
+  bool is_pdd_coef1_{false};
+  bool is_pdd_coef2_{false};
+  bool is_leak_coef_{false};
+  Eigen::VectorXd pdd_poly_coef_1_;
+  Eigen::VectorXd pdd_poly_coef_2_;
+  Eigen::VectorXd leak_poly_coef_;
+
   //! Method to compute the coefficients of a smoothing polynomial
   //! \param[in] x points on the x-axis at which the smoothing polynomial begins
   //! and ends \param[in] f function evaluated at x1 and f2 \param[in] df
@@ -132,6 +180,12 @@ class Node {
   Eigen::VectorXd compute_poly_coefficients(const std::array<double, 2>& x,
                                             const std::array<double, 2>& f,
                                             const std::array<double, 2>& df);
+  //! Method to compute the polynomial coefficients for pressure demand
+  //! equations
+  void compute_pdd_poly_coef_1();
+  void compute_pdd_poly_coef_2();
+  //! Method to compute the polynomial coefficients for leak equations
+  void compute_leak_poly_coef();
 };
 }  // namespace pipenetwork
 
