@@ -19,7 +19,7 @@ Eigen::VectorXd pipenetwork::Node::compute_poly_coefficients(
   return ret;
 }
 
-Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_1() {
+void pipenetwork::Node::compute_pdd_poly_coef_1() {
   double x1 = minimum_pressure_;
   double f1 = 0;
   double x2 = minimum_pressure_ + pdd_smoothing_delta_;
@@ -32,10 +32,11 @@ Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_1() {
                         -0.5) *
                (1 / (normal_pressure_ - minimum_pressure_));
 
-  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+  pdd_poly_coef_1_ = compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+  is_pdd_coef1_ = true;
 }
 
-Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_2() {
+void pipenetwork::Node::compute_pdd_poly_coef_2() {
   double x1 = normal_pressure_ - pdd_smoothing_delta_;
   double f1 = std::pow(
       (x1 - minimum_pressure_) / (normal_pressure_ - minimum_pressure_), 0.5);
@@ -47,5 +48,41 @@ Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_2() {
                         -0.5) *
                (1 / (normal_pressure_ - minimum_pressure_));
   double df2 = pdd_slope_;
-  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+  pdd_poly_coef_2_ = compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+  is_pdd_coef2_ = true;
+}
+
+void pipenetwork::Node::compute_leak_poly_coef() {
+  double x1 = 0.0;
+  double f1 = 0.0;
+  double df1 = 1.0e-11;
+  double x2 = 1e-4;
+  double f2 =
+      leak_discharge_coefficient_ * leak_area_ * std::pow((2 * g_ * x2), 0.5);
+  double df2 = 0.5 * leak_discharge_coefficient_ * leak_area_ *
+               std::pow((2 * g_), 0.5) * std::pow(x2, -0.5);
+
+  leak_poly_coef_ = compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+  is_leak_coef_ = true;
+}
+
+Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_1() {
+  if (!is_pdd_coef1_) {
+    compute_pdd_poly_coef_1();
+  }
+  return pdd_poly_coef_1_;
+}
+
+Eigen::VectorXd pipenetwork::Node::get_pdd_poly_coef_2() {
+  if (!is_pdd_coef2_) {
+    compute_pdd_poly_coef_2();
+  }
+  return pdd_poly_coef_2_;
+}
+
+Eigen::VectorXd pipenetwork::Node::get_leak_poly_coef() {
+  if (!is_leak_coef_) {
+    compute_leak_poly_coef();
+  }
+  return leak_poly_coef_;
 }

@@ -61,5 +61,26 @@ TEST_CASE("Node is checked", "[Node]") {
     REQUIRE(node->isdischarge() == true);
   }
 
-  // TODO: test return nconnections
+    // Check leak at the node
+    SECTION("Check leak at the node") {
+      REQUIRE (node->is_leak () == false);
+        double leak_d = 0.05;
+        node->leak_diameter (leak_d);
+
+        REQUIRE(node->is_leak () == true);
+        REQUIRE (node->leak_area () == Approx(0.0019634954).epsilon(tolerance));
+
+        auto leak_coeff = node->get_leak_poly_coef ();
+        REQUIRE(leak_coeff[0] == Approx(-97843485.21421291).epsilon(tolerance));
+        REQUIRE(leak_coeff[1] == Approx(16307.24753566882).epsilon(tolerance));
+        REQUIRE(leak_coeff[2] == Approx(1.000000082740371e-11).epsilon(tolerance));
+        REQUIRE(leak_coeff[3] == Approx(1.3791051633906438e-20).epsilon(tolerance));
+
+        node->leak_diameter (0);
+
+        REQUIRE(node->is_leak () == false);
+
+
+    }
+
 }

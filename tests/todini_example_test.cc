@@ -53,6 +53,15 @@ TEST_CASE("Example network is tested", "[NR method]") {
   mesh->assign_node_elevation(init_nodal_head);
   mesh->assign_node_demand(init_nodal_discharge);
 
+
+    double leak_dia1 = 0.5;
+    double leak_dia2 = 0.2;
+    std::vector<std::pair<Index, double>> node_leak_dia;
+    node_leak_dia.emplace_back(std::make_pair(1, leak_dia1));
+    node_leak_dia.emplace_back(std::make_pair(2, leak_dia2));
+
+    mesh->assign_node_leak (node_leak_dia);
+
   SECTION("DD mode test") {
     // Initialize matrix assembler and obtain global index to nodes and pipes
     bool pdd_mode = false;

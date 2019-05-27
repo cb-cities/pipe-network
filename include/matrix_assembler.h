@@ -50,7 +50,7 @@ class MatrixAssembler {
   //! Apply variables (head, demand and discharge) to nodes and pipes
   void apply_variables();
 
-  //! Initialize variable vector (unknown variables only)
+  //! Initialize variable vector
   void assemble_residual_vector();
 
   //! Return variable vector
@@ -94,10 +94,23 @@ class MatrixAssembler {
   std::vector<Eigen::Triplet<double>> construct_demand_jac(
       const std::shared_ptr<pipenetwork::Node>& n, Index index);
 
+  //! Assemble pressure leak part of the jacobian matrix
+  //! \param[in] n the corresponding node pointer
+  //! \param[in] index the position of the corresponding node in variable vector
+  //! jacobian matrix
+  std::vector<Eigen::Triplet<double>> construct_leak_jac(
+      const std::shared_ptr<pipenetwork::Node>& n, Index index);
+
   //! Method to get the corresponding value of jacobian for head-pressure
   //! equations \param[in] node pointer for the desired node \retval The value
   //! for the corresponding jacobian entry
   double get_pressure_head_jacob(
+      const std::shared_ptr<pipenetwork::Node>& node);
+
+  //! Method to get the corresponding value of jacobian for head-leak
+  //! equations \param[in] node pointer for the desired node \retval The value
+  //! for the corresponding jacobian entry
+  double get_pressure_leak_jacob(
       const std::shared_ptr<pipenetwork::Node>& node);
 
   //! Method to assemble residuals for demand equation in pressure-demand mode
@@ -105,6 +118,12 @@ class MatrixAssembler {
   //! \param[in]  ndex the position of the corresponding node in variable vector
   void assemble_pdd_residual(const std::shared_ptr<pipenetwork::Node>& node,
                              Index index);
+
+  //! Method to assemble residuals for leak pressure equation for leaking nodes
+  //! \param[in] node pointer for the desired node
+  //! \param[in]  ndex the position of the corresponding node in variable vector
+  void assemble_leak_residual(const std::shared_ptr<pipenetwork::Node>& node,
+                              Index index);
 };
 }  // namespace pipenetwork
 
