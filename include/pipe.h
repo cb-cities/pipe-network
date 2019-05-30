@@ -27,7 +27,7 @@ class Pipe {
   //! \param[in] maximum allowable velocity
   Pipe(unsigned id,
        const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-       double diameter, double roughness, bool status,
+       double diameter, double length,double roughness, bool status,
        double max_velocity = std::numeric_limits<double>::max());
 
   //! Destructor

@@ -12,10 +12,22 @@ void pipenetwork::Mesh::create_nodes(
   }
 }
 
+// Create nodal pointers and assign indices based on input ID and coordinates
+void pipenetwork::Mesh::create_nodes(
+    const std::vector<std::pair<Index, Eigen::Vector3d>>& coords_info) {
+  for (const auto& coord_info : coords_info) {
+    auto index = coord_info.first;
+    auto coord = coord_info.second;
+    nodes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Node>>(
+        index, std::make_shared<pipenetwork::Node>(index, coord)));
+  }
+}
+
 // Create pipe pointers and assign indices based on the nodes at its ends
 bool pipenetwork::Mesh::create_pipes(
     const std::vector<std::pair<Index, Index>>& nodeids,
-    const std::vector<double>& diameter, const std::vector<double>& roughness,
+    const std::vector<double>& diameter, const std::vector<double>& length,
+    const std::vector<double>& roughness,
     const std::vector<bool>& pipe_status) {
   bool status = true;
   Index index = 0;
@@ -26,7 +38,7 @@ bool pipenetwork::Mesh::create_pipes(
       nodes.at(1) = nodes_.at(nodeid.second);
       pipes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Pipe>>(
           index, std::make_shared<pipenetwork::Pipe>(
-                     index, nodes, diameter.at(index), roughness.at(index),
+                     index, nodes, diameter.at(index),length.at(index), roughness.at(index),
                      pipe_status.at(index))));
       ++index;
     }
@@ -36,6 +48,36 @@ bool pipenetwork::Mesh::create_pipes(
               << ") is not created, as input node does not exist, nodal id: "
               << nodeids.at(index).first << " or " << nodeids.at(index).second
               << '\n'
+              << "Pipe creation is unfinished" << '\n';
+  }
+  return status;
+}
+
+// Create pipe pointers and assign indices based on the nodes at its ends
+bool pipenetwork::Mesh::create_pipes(
+    const std::vector<std::tuple<int, int, int>>& ids,
+    const std::vector<double>& diameter, const std::vector<double>& length,
+    const std::vector<double>& roughness,
+    const std::vector<bool>& pipe_status) {
+  bool status = true;
+  Index index = 0;
+  try {
+    for (const auto& id : ids) {
+
+      std::array<std::shared_ptr<pipenetwork::Node>, 2> nodes;
+      auto pipe_id = std::get<0>(id);
+      nodes.at(0) = nodes_.at(std::get<1>(id));
+      nodes.at(1) = nodes_.at(std::get<2>(id));
+      pipes_.emplace(std::pair<Index, std::shared_ptr<pipenetwork::Pipe>>(
+          pipe_id, std::make_shared<pipenetwork::Pipe>(
+                       index, nodes, diameter.at(index), length.at(index), roughness.at(index),
+                       pipe_status.at(index))));
+      ++index;
+    }
+  } catch (std::out_of_range& range_error) {
+    status = false;
+    std::cout << "Pipe(vec loc: " << index
+              << ") is not created, as input node does not exist" << '\n'
               << "Pipe creation is unfinished" << '\n';
   }
   return status;

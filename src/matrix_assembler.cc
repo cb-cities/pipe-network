@@ -163,13 +163,10 @@ void pipenetwork::MatrixAssembler::assemble_jacobian() {
     Index index_node2 = pipe.second->nodes().at(1)->id();
 
     // construct jacC part
-    if (pipe.second->iter_discharge() >= 0) {
-      update.emplace_back(index_node1, 2 * nnode_ + index_pipe, -1);
-      update.emplace_back(index_node2, 2 * nnode_ + index_pipe, 1);
-    } else {
-      update.emplace_back(index_node1, 2 * nnode_ + index_pipe, 1);
-      update.emplace_back(index_node2, 2 * nnode_ + index_pipe, -1);
-    }
+
+    update.emplace_back(index_node1, 2 * nnode_ + index_pipe, -1);
+    update.emplace_back(index_node2, 2 * nnode_ + index_pipe, 1);
+
     // construct jacD part
     update.emplace_back(nnode_ + index_pipe, index_node1, 1);
     update.emplace_back(nnode_ + index_pipe, index_node2, -1);
@@ -213,7 +210,6 @@ void pipenetwork::MatrixAssembler::assemble_residual_vector() {
     double head2 = 0;
     head1 = pipe.second->nodes().at(0)->head();
     head2 = pipe.second->nodes().at(1)->head();
-
     auto head_res = (-1) * ((head1 - head2) - pipe.second->headloss());
     residual_vec_->coeffRef(nnode_ + index_pipe) = head_res;
 

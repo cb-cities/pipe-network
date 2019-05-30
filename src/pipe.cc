@@ -4,15 +4,15 @@
 // velocity
 pipenetwork::Pipe::Pipe(
     unsigned id, const std::array<std::shared_ptr<pipenetwork::Node>, 2>& nodes,
-    double diameter, double roughness, bool status, double max_velocity)
+    double diameter, double length, double roughness, bool status,
+    double max_velocity)
     : id_{id},
       nodes_{nodes},
       radius_{diameter / 2.},
       pipe_roughness_{roughness},
       isopen_{status},
-      max_velocity_{max_velocity} {
-  length_ = (nodes_.at(0)->coordinates() - nodes_.at(1)->coordinates()).norm();
-}
+      max_velocity_{max_velocity},
+      length_{length} {}
 
 // Calculate discharge using Darcy-Weisbach equation
 // $discharge = (\frac{dhead \times \pi^2 \times g \times (2radius)^5}{8 \times
@@ -52,7 +52,7 @@ double pipenetwork::Pipe::deriv_hazen_williams_discharge() {
   double coeff = 10.67 * length_ /
                  (pow(pipe_roughness_, 1.852) * pow(2 * radius_, 4.8704));
   double deriv = -1.852 * coeff * pow(std::abs(iter_discharge_), 0.852);
-  if (iter_discharge_ < 0) deriv *= -1.;
+//  if (iter_discharge_ < 0) deriv *= -1.;
   return deriv;
 }
 

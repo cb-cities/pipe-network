@@ -70,14 +70,17 @@ SET(test_src
    src/pipe.cc
    src/io.cc
    src/node.cc
-   tests/eigen_gmres_test.cc
-   tests/matrix_assembler_test_leak.cc
+   src/input.cc
+#   tests/eigen_gmres_test.cc
+#   tests/matrix_assembler_test_leak.cc
 #   tests/matrix_assembler_test_full.cc
-   tests/mesh_test.cc
-   tests/node_test.cc
-   tests/pipe_test.cc
-   tests/io_test.cc
-   tests/todini_example_test.cc
+#   tests/mesh_test.cc
+#   tests/node_test.cc
+#   tests/pipe_test.cc
+#   tests/io_test.cc
+#   tests/todini_example_test.cc
+   tests/input_test.cc
+   tests/python_test.cc
    tests/test.cc
 )
 add_executable(pipe_network_test

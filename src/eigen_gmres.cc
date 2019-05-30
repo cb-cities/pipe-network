@@ -35,6 +35,7 @@ bool pipenetwork::EigenGMRES::solve() {
 
   if (gmres.info() == 0) {
     convergence = true;
+//    std::cout << "difference :" <<x_diff<<std::endl;
 
     // Update x (variables) in the system
     (*vec_x_) += x_diff;

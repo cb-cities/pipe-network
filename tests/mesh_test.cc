@@ -27,20 +27,19 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   std::vector<Eigen::Vector3d> coords = {coords1, coords2, coords3, coords4,
                                          coords5, coords6, coords7};
 
+  // Input vector of pipe diameter and status
+  std::vector<double> diameter{1.1, 1.2, 1.3, 1.4};
+  std::vector<double> roughness{0.01, 0.01, 0.01, 0.01};
+  std::vector<bool> status{true, true, true, true};
+
   // Create nodal pointers based on nodal coordinates in the mesh
   mesh->create_nodes(coords);
-
   // Make pairs of nodes to create pipe
   std::vector<std::pair<Index, Index>> node_pairs;
   node_pairs.emplace_back(std::make_pair(0, 2));
   node_pairs.emplace_back(std::make_pair(1, 2));
   node_pairs.emplace_back(std::make_pair(2, 3));
   node_pairs.emplace_back(std::make_pair(2, 4));
-
-  // Input vector of pipe diameter and status
-  std::vector<double> diameter{1.1, 1.2, 1.3, 1.4};
-  std::vector<double> roughness{0.01, 0.01, 0.01, 0.01};
-  std::vector<bool> status{true, true, true, true};
 
   // Check mesh id
   REQUIRE(mesh->id() == meshid);
@@ -93,5 +92,23 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     REQUIRE(mesh->npipes() == 4);
     // Check whether exception is thrown when creating pipe
     REQUIRE(all_pipe_created == false);
+  }
+
+  SECTION("CHECK initialization with specific ids ") {
+    std::vector<std::pair<Index, Eigen::Vector3d>> coords_info = {
+        std::make_pair(17, coords7), std::make_pair(16, coords6),
+        std::make_pair(15, coords5), std::make_pair(14, coords4),
+        std::make_pair(13, coords3), std::make_pair(12, coords2),
+        std::make_pair(11, coords1)};
+
+    // Make pairs of nodes to create pipe
+    std::vector<std::tuple<int, int, int>> pipe_ids_info;
+
+    pipe_ids_info.emplace_back(std::make_tuple(25, 12, 11));
+    pipe_ids_info.emplace_back(std::make_tuple(33, 12, 14));
+
+    mesh->create_nodes(coords_info);
+    mesh->create_pipes(pipe_ids_info, diameter, roughness, status);
+    mesh->print_mesh_info();
   }
 }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "node.h"
@@ -36,11 +37,26 @@ class Mesh {
   //! \param[in] coords vector of the coordinates of the nodes
   void create_nodes(const std::vector<Eigen::Vector3d>& coords);
 
+  //! Create nodal pointers and assign indices based on coordinates
+  //! \param[in] coords vector of the ID and coordinates of the nodes
+  void create_nodes(
+      const std::vector<std::pair<Index, Eigen::Vector3d>>& coords_info);
+
   //! Create a pipe pointers and assign indices based on the nodes at its ends
   //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
   //! \retval status to check whether all input pipe created successfully
   bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
                     const std::vector<double>& diameter,
+                    const std::vector<double>& length,
+                    const std::vector<double>& roughness,
+                    const std::vector<bool>& pipe_status);
+
+  //! Create a pipe pointers and assign indices based on the nodes at its ends
+  //! \param[in] pipeid, nodeid1 and nodeid2 indices of the nodes at pipe ends
+  //! \retval status to check whether all input pipe created successfully
+  bool create_pipes(const std::vector<std::tuple<int, int, int>>& ids,
+                    const std::vector<double>& diameter,
+                    const std::vector<double>& length,
                     const std::vector<double>& roughness,
                     const std::vector<bool>& pipe_status);
 
@@ -80,6 +96,28 @@ class Mesh {
 
   //! Make MatrixAssembler a friend class of mesh
   friend class MatrixAssembler;
+
+  //! print nodes,pipes for testing purpose
+  void print_mesh_info(){
+      std::cout << "node information :"<<std::endl;
+      for (auto const& node : nodes_)
+      {
+          std::cout << node.first
+                    << ':' <<std::endl
+                    << (node.second)->coordinates ()
+                    << std::endl ;
+      }
+      std::cout << "pipe information :"<<std::endl;
+      for (auto const& pipe : pipes_)
+      {
+          std::cout << pipe.first
+                    << ':'
+                    << (pipe.second)->length ()
+                    << std::endl ;
+      }
+
+
+  }
 
  private:
   //! mesh id
