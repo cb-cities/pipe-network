@@ -48,13 +48,8 @@ include_directories(
 
 # pipe_network executable
 SET(pipe_network_src
-  src/main.cc
-  src/eigen_gmres.cc
-  src/matrix_assembler.cc
-        src/mesh_old.cc
-        src/pipe_old.cc
-        src/node.cc
-  src/io.cc
+        src/main.cc
+        src/mesh.cc
 )
 add_executable(pipe_network
   ${pipe_network_src}
@@ -64,23 +59,10 @@ target_link_libraries(pipe_network Threads::Threads)
 
 # Unit test
 SET(test_src
-#   src/eigen_gmres.cc
-#   src/matrix_assembler.cc
    src/mesh.cc
-#   src/pipe.cc
-#   src/io.cc
-#   src/node.cc
-#   src/input.cc
-#   tests/eigen_gmres_test.cc
-#   tests/matrix_assembler_test_leak.cc
-#   tests/matrix_assembler_test_full.cc
    tests/mesh_test.cc
    tests/node_test.cc
    tests/link_test.cc
-#   tests/io_test.cc
-#   tests/todini_example_test.cc
-#   tests/input_test.cc
-#   tests/python_test.cc
    tests/test.cc
 )
 add_executable(pipe_network_test
