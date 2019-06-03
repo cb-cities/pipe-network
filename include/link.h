@@ -6,6 +6,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <memory>
 
 #include "node_base.h"
 #include "settings.h"
