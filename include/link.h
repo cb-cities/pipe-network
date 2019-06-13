@@ -3,7 +3,6 @@
 
 #include <Eigen/Dense>
 #include <array>
-#include <cmath>
 #include <map>
 #include <string>
 #include <memory>
@@ -20,7 +19,7 @@ class Link {
  public:
   Link(Index link_id, const std::shared_ptr<pipenetwork::Node>& node1,
        const std::shared_ptr<pipenetwork::Node>& node2)
-      : link_id_{link_id}, end_nodes_{node1, node2} {};
+      : link_id_{link_id}, nodes_{node1, node2} {};
 
   //! Destructor
   virtual ~Link(){};
@@ -43,11 +42,11 @@ class Link {
   std::pair<std::shared_ptr<pipenetwork::Node>,
             std::shared_ptr<pipenetwork::Node>>
       nodes() const {
-    return end_nodes_;
+    return nodes_;
   }
 
   //! Assign simulated discharge
-  void sim_discharge(double sim_demand) { sim_demand_ = sim_demand; }
+  void update_sim_discharge(double sim_demand) { sim_demand_ = sim_demand; }
 
   //! Return simulated discharge
   double sim_discharge() const { return sim_demand_; }
@@ -58,7 +57,7 @@ class Link {
   //! pair of node pointers which form the pipe
   std::pair<std::shared_ptr<pipenetwork::Node>,
             std::shared_ptr<pipenetwork::Node>>
-      end_nodes_;
+      nodes_;
   //! demand from simulation
   double sim_demand_{0};
 };

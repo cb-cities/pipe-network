@@ -35,25 +35,14 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     const std::vector<double> length{100,200,300};
     const std::vector<double> diameter{3,4,5};
     const std::vector<double> roughness{0.2,.6,.9};
-    const std::vector<Pipe_status> status{open,open,open};
+    const std::vector<Pipe_status> status{OPEN,OPEN,OPEN};
 
     mesh->create_pipes (pipe_ids,nodeids,length,diameter,roughness,status);
 
-    mesh->print_summary ();
+//    mesh->print_summary ();
+    double init_head = 10;
+    mesh->iterate_over_nodes (std::bind(&pipenetwork::Node::update_sim_demand, std::placeholders::_1,init_head));
 
-//
-//    //! Create Pipe pointers
-//    //! \param[in] nodeids pair of end node ids for the pipe
-//    //! \param[in] length, length of the pipe
-//    //! \param[in] diameter, diameter of the pipe
-//    //! \param[in] roughness, roughness of the pipe
-//    //! \param[in] status, status of the pipe (open or close)
-//    bool create_pipes(const std::vector<Index>& ids,
-//                      const std::vector<std::pair<Index, Index>>& nodeids,
-//                      const std::vector<double>& length,
-//                      const std::vector<double>& diameter,
-//                      const std::vector<double>& roughness,
-//                      const std::vector<Pipe_status>& status);
 
 
 

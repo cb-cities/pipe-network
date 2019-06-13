@@ -4,11 +4,16 @@
 #include <array>
 #include <cmath>
 #include <exception>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <tuple>
 #include <vector>
+
+// TBB
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_for_each.h>
 
 #include "junction.h"
 #include "pipe.h"
@@ -38,7 +43,7 @@ class Mesh {
   //! \param[in] demands base vector of demand for the junction
   //! \param[in] leak_diameters vector of diameter of the leak hole for the
   //! junction
-  bool create_junctions(const std::vector<Index>& ids,
+  void create_junctions(const std::vector<Index>& ids,
                         const std::vector<double>& elevations,
                         const std::vector<double>& demands,
                         const std::vector<double>& leak_diameters);
@@ -46,7 +51,7 @@ class Mesh {
   //! Create Reservoir pointers
   //! \param[in] ids reservoir id
   //! \param[in] heads base head for reservoirs
-  bool create_reservoirs(const std::vector<Index>& ids,
+  void create_reservoirs(const std::vector<Index>& ids,
                          const std::vector<double>& heads);
 
   //! Create Pipe pointers
@@ -62,8 +67,51 @@ class Mesh {
                     const std::vector<double>& roughness,
                     const std::vector<Pipe_status>& status);
 
+  //! get all nodes map
+  std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes() const {
+    return nodes_;
+  }
+  //! get connected nodes map
+  std::map<Index, std::shared_ptr<pipenetwork::Node>> connect_nodes() const {
+    return connected_nodes_;
+  }
+  //! get links map
+  std::map<Index, std::shared_ptr<pipenetwork::Link>> links() const {
+    return links_;
+  }
+
+  //! Iterate over nodes
+  //! \tparam Toper Callable object typically a baseclass functor
+  template <typename Toper>
+  void iterate_over_nodes(Toper oper) {
+    std::for_each(
+        connected_nodes_.cbegin(), connected_nodes_.cend(),
+        [=](std::pair<Index, std::shared_ptr<pipenetwork::Node>> node) {
+          oper(node.second);
+        });
+  };
+
+  //! Iterate over links
+  //! \tparam Toper Callable object typically a baseclass functor
+  template <typename Toper>
+  void iterate_over_links(Toper oper) {
+    std::for_each(
+        links_.cbegin(), links_.cend(),
+        [=](std::pair<Index, std::shared_ptr<pipenetwork::Link>> link) {
+          oper(link.second);
+        });
+  };
+
   //! Print summary for the mesh
   void print_summary();
+
+  //! Return number of nodes in the network
+  //! \retval nnode_ number of nodes in the network
+  unsigned nnodes() const { return connected_nodes_.size(); }
+
+  //! Return number of pipes in the network
+  //! \retval nnode_ number of pipes in the network
+  unsigned nlinks() const { return links_.size(); }
 
  private:
   //! mesh id
@@ -71,7 +119,7 @@ class Mesh {
   //! nodal id and corresponding nodal pointer
   std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! pipe id and corresponding pipe pointer
-  std::map<Index, std::shared_ptr<pipenetwork::Link>> pipes_;
+  std::map<Index, std::shared_ptr<pipenetwork::Link>> links_;
   //! nodal id and corresponding nodal pointer
   std::map<Index, std::shared_ptr<pipenetwork::Node>> connected_nodes_;
 };

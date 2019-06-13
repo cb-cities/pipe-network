@@ -40,6 +40,12 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+# TBB
+find_package(TBB REQUIRED)
+add_definitions(${TBB_DEFINITIONS})
+include_directories(${TBB_INCLUDE_DIRS})
+link_libraries(${TBB_LIBRARIES})
+
 # Include directories
 include_directories(
   ${pipe_network_SOURCE_DIR}/include/
@@ -50,7 +56,10 @@ include_directories(
 SET(pipe_network_src
         src/main.cc
         src/mesh.cc
-)
+        src/matrix_assembler.cc
+        src/hydralic_sim.cc
+        src/eigen_gmres.cc
+        src/input.cc)
 add_executable(pipe_network
   ${pipe_network_src}
 )
@@ -59,12 +68,18 @@ target_link_libraries(pipe_network Threads::Threads)
 
 # Unit test
 SET(test_src
-   src/mesh.cc
-   tests/mesh_test.cc
-   tests/node_test.cc
-   tests/link_test.cc
-   tests/test.cc
-)
+        src/mesh.cc
+        src/matrix_assembler.cc
+        src/hydralic_sim.cc
+        src/eigen_gmres.cc
+        src/input.cc
+        tests/mesh_test.cc
+        tests/node_test.cc
+        tests/link_test.cc
+        tests/matrix_assembler_test.cc
+        tests/hydraulic_sim_test.cc
+        tests/input_test.cc
+        tests/test.cc)
 add_executable(pipe_network_test
   ${test_src}
 )

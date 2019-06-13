@@ -25,7 +25,7 @@ TEST_CASE("Link is checked", "[Link]") {
         Index pipe_id = 111;
         double length{10},diameter{8},roughness{0.5};
         auto pipe = std::make_shared<pipenetwork::Pipe>(pipe_id, reservoir_node,
-                junction_node,length,diameter,roughness,closed);
+                junction_node,length,diameter,roughness,CLOSED);
         // check id
         REQUIRE(pipe->id() == pipe_id);
 
@@ -34,7 +34,7 @@ TEST_CASE("Link is checked", "[Link]") {
         REQUIRE(pipe->nodes ().second->id () == junction_id);
 
         // check pipe type
-        REQUIRE(pipe->link_info ()["type"] == pipe_type);
+        REQUIRE(pipe->link_info ()["type"] == PIPE);
         // check length
         REQUIRE(pipe->link_info()["length"] == Approx(length).epsilon(tolerance));
         // check diameter
@@ -42,7 +42,7 @@ TEST_CASE("Link is checked", "[Link]") {
         // check roughness
         REQUIRE(pipe->link_info()["roughness"] == Approx(roughness).epsilon(tolerance));
         // check status
-        REQUIRE(pipe->link_info()["status"] == closed);
+        REQUIRE(pipe->link_info()["status"] == CLOSED);
     }
 
 }

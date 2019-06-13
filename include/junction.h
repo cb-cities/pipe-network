@@ -15,10 +15,14 @@ class Junction : public Node {
   Junction(Index id, const double elevation, const double demand,
            const double leak_diameter)
       : Node(id) {
-    junction_info_["type"] = junction_type;
+
+    junction_info_["type"] = JUNCTION;
     junction_info_["elevation"] = elevation;
     junction_info_["demand"] = demand;
     junction_info_["leak_area"] = std::pow((leak_diameter / 2), 2) * PI;
+
+    update_sim_demand(demand);
+    update_sim_head(elevation);
   };
 
   //! Virtual destructor

@@ -17,7 +17,7 @@ namespace pipenetwork {
 class Node {
 
  public:
-  Node(Index node_id) : node_id_{node_id} {};
+  explicit Node(Index node_id) : node_id_{node_id} {};
 
   //! Destructor
   virtual ~Node(){};
@@ -38,19 +38,19 @@ class Node {
   Index id() const { return node_id_; }
 
   //! Assign simulated demand
-  void sim_demand(double demand) { sim_demand_ = demand; }
+  void update_sim_demand(double demand) { sim_demand_ = demand; }
 
   //! Return simulated demand
   double sim_demand() const { return sim_demand_; }
 
   //! Assign simulated head
-  void sim_head(double head) { sim_head_ = head; }
+  void update_sim_head(double head) { sim_head_ = head; }
 
   //! Return simulated head
   double sim_head() const { return sim_head_; }
 
   //! Assign simulated leak discharge
-  void sim_leak(double leak) { sim_leak_ = leak; }
+  void update_sim_leak(double leak) { sim_leak_ = leak; }
 
   //! Return simulated leak discharge
   double sim_leak() const { return sim_leak_; }

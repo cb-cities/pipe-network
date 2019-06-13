@@ -11,8 +11,10 @@ class Reservoir : public Node {
   //! \param[in] id reservoir id
   //! \param[in] head base head for the reservoir
   Reservoir(Index id, const double head) : Node(id) {
-    reservoir_info_["type"] = reservoir_type;
+    reservoir_info_["type"] = RESERVOIR;
     reservoir_info_["head"] = head;
+    update_sim_demand(0);
+    update_sim_head(head);
   };
 
   //! Virtual destructor

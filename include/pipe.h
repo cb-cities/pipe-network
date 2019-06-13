@@ -18,7 +18,7 @@ class Pipe : public Link {
        const std::shared_ptr<pipenetwork::Node>& node2, const double length,
        const double diameter, const double roughness, const Pipe_status status)
       : Link(id, node1, node2) {
-    pipe_info_["type"] = pipe_type;
+    pipe_info_["type"] = PIPE;
     pipe_info_["length"] = length;
     pipe_info_["diameter"] = diameter;
     pipe_info_["roughness"] = roughness;

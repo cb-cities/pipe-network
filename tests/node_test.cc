@@ -24,7 +24,7 @@ TEST_CASE("Node is checked", "[Node]") {
     // check elevation
     REQUIRE(junction_node->nodal_info()["elevation"] == elevation);
     // check type
-    REQUIRE(junction_node->nodal_info()["type"] == junction_type);
+    REQUIRE(junction_node->nodal_info()["type"] == JUNCTION);
     // check demand
     REQUIRE(junction_node->nodal_info()["demand"] == demand);
     // check leak hole area
@@ -32,7 +32,7 @@ TEST_CASE("Node is checked", "[Node]") {
             Approx(19.634954084936).epsilon(tolerance));
 
     // set some simulation result
-    junction_node->sim_head(99);
+    junction_node->update_sim_head (99);
     REQUIRE(junction_node->sim_head() == Approx(99).epsilon(tolerance));
   }
 
@@ -47,6 +47,6 @@ TEST_CASE("Node is checked", "[Node]") {
     // check elevation
     REQUIRE(reservoir_node->nodal_info()["head"] == head);
     // check type
-    REQUIRE(reservoir_node->nodal_info()["type"] == reservoir_type);
+    REQUIRE(reservoir_node->nodal_info()["type"] == RESERVOIR);
   }
 }
