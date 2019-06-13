@@ -2,6 +2,7 @@
 #define PIPE_NETWORK_SOLVER_H_
 
 #include <Eigen/Sparse>
+#include <memory>
 
 
 namespace pipenetwork {
