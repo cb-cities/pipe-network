@@ -80,7 +80,7 @@ std::pair<std::vector<Index>, std::vector<double>>
   // check if the section name is right.
   if (!sections_.count(section_name)) {
     throw std::invalid_argument(
-        "Parsing elevation faild! Invalid section name");
+        "Parsing faild! Invalid section name");
   }
 
   double elevation_head, demand;
