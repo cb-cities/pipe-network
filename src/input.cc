@@ -74,19 +74,18 @@ void pipenetwork::Input::construct_node_demand() {
   junction_demands_ = junction_demand_info.second;
 }
 
-std::pair<std::vector<Index>, std::vector<double>>
+std::pair<std::vector<std::string>, std::vector<double>>
     pipenetwork::Input::parse_node_line(const std::string& section_name,
                                         const std::string& mode) const {
   // check if the section name is right.
   if (!sections_.count(section_name)) {
-    throw std::invalid_argument(
-        "Parsing faild! Invalid section name");
+    throw std::invalid_argument("Parsing faild! Invalid section name");
   }
 
   double elevation_head, demand;
-  Index id;
+  std::string id;
 
-  std::vector<Index> node_ids;
+  std::vector<std::string> node_ids;
   std::vector<double> node_info;
   // get elevation for junctions
   for (auto const& line : sections_.at(section_name)) {
@@ -113,10 +112,32 @@ std::pair<std::vector<Index>, std::vector<double>>
   return std::make_pair(node_ids, node_info);
 }
 
+void pipenetwork::Input::construct_node_info() {
+  construct_node_elevation_head();
+  construct_node_demand();
+
+  for (int i = 0; i < junction_elevations_.size(); ++i) {
+    pipenetwork::Junction_prop junc_prop;
+    junc_prop.id = junction_ids_[i];
+    junc_prop.elevation = junction_elevations_[i];
+    junc_prop.demand = junction_demands_[i];
+
+    junc_props_.emplace_back(junc_prop);
+  }
+
+  for (int i = 0; i < reservoir_ids_.size(); ++i) {
+    pipenetwork::Reservoir_prop res_prop;
+    res_prop.id = reservoir_ids_[i];
+    res_prop.head = reservoir_heads_[i];
+
+    res_props_.emplace_back(res_prop);
+  }
+}
+
 void pipenetwork::Input::construct_pipe_info() {
-  Index pid, nid1, nid2, mesh_id = 0;
+  Index mesh_id = 0;
   double length, diameter, roughness, loss;
-  std::string status;
+  std::string pid, nid1, nid2, status;
 
   // get pipe information
   for (auto const& line : sections_.at("[PIPES]")) {
@@ -139,6 +160,18 @@ void pipenetwork::Input::construct_pipe_info() {
       }
       ++mesh_id;
     }
+  }
+
+  for (int i = 0; i < pipe_ids_.size(); ++i) {
+    pipenetwork::Pipe_prop pipe_prop;
+    pipe_prop.id = pipe_ids_[i];
+    pipe_prop.length = length_[i];
+    pipe_prop.diameter = diameter_[i];
+    pipe_prop.roughness = roughness_[i];
+    pipe_prop.node1_id = nodeids_[i].first;
+    pipe_prop.node2_id = nodeids_[i].second;
+    pipe_prop.status = pipe_status_[i];
+    pipe_props_.emplace_back(pipe_prop);
   }
 }
 

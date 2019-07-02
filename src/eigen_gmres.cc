@@ -16,7 +16,7 @@ bool pipenetwork::EigenGMRES::solve() {
 
   if (gmres.info() == 0) {
     convergence = true;
-//    std::cout << "difference :" <<x_diff<<std::endl;
+    //    std::cout << "difference :" <<x_diff<<std::endl;
 
     // Update x (variables) in the system
     (*vec_x_) -= x_diff;
@@ -25,12 +25,14 @@ bool pipenetwork::EigenGMRES::solve() {
     this->delta_ = gmres.error();
     this->niterations_ = gmres.iterations();
 
-//    std::cout << "Iteration: " << niterations_ << " of " << max_iter_
-//              << "; delta: " << delta_ << std::endl;
+    //    std::cout << "Iteration: " << niterations_ << " of " << max_iter_
+    //              << "; delta: " << delta_ << std::endl;
   } else if (gmres.info() == 1) {
     throw std::runtime_error(
         "The provided data did not satisfy the prerequisites.");
   } else if (gmres.info() == 2) {
+    std::cout << "Iteration: " << gmres.iterations() << " of " << max_iter_
+              << "; delta: " << gmres.error() << std::endl;
     throw std::runtime_error("Iterative procedure did not converge.");
   } else {
     throw std::runtime_error(

@@ -12,50 +12,85 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
 
     assembler_->assemble_residual();
     assembler_->update_jacobian();
-    //
-    //    std::cout << "niter = " << nr_iter << std::endl;
-    //    std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-    //    std::cout << "Jac = " << std::endl
-    //              << (*jac) << std::endl
-    //              << std::endl
-    //              << "residual = " << std::endl
-    //              << (*residual_vec) << std::endl
-    //              << std::endl
-    //              << "variable = " << std::endl
-    //              << (*variable_vec) << std::endl
-    //              << std::endl;
+    if (debug_) {
+      // save the initial values into csv files for debugging
+      if (nr_iter < 1) {
+        std::ofstream outFile("../benchmarks/init_var_res.csv");
+        std::ofstream outFile2("../benchmarks/init_jacob.csv");
+        outFile << "variables"
+                << ","
+                << "residuals"
+                << "\n";
+        for (int i = 0; i < (*residual_vec).size(); ++i) {
+          outFile << (*variable_vec).coeff(i) << "," << (*residual_vec).coeff(i)
+                  << "\n";
+        }
+        outFile2 << "row"
+                 << ","
+                 << "col"
+                 << ","
+                 << "val"
+                 << "\n";
+        for (int k = 0; k < (*jac).outerSize(); ++k)
+          for (Eigen::SparseMatrix<double>::InnerIterator it((*jac), k); it;
+               ++it) {
+            outFile2 << it.row() << "," << it.col() << "," << it.value()
+                     << "\n";
+          }
+      }
+      std::cout << "niter = " << nr_iter << std::endl;
+      std::cout << "residual norm = " << residual_vec->norm() << std::endl;
+//                  std::cout << "Jac = " << std::endl
+//                            << (*jac) << std::endl
+//                            << std::endl
+//                            << "residual = " << std::endl
+//                            << (*residual_vec) << std::endl
+//                            << std::endl
+//                            << "variable = " << std::endl
+//                            << (*variable_vec) << std::endl
+//                            << std::endl;
+    }
 
     bool issolved = solver_->solve();
+    residual_norm_ = residual_vec->norm();
     if (residual_vec->norm() < NR_tolerance) {
-      residual_norm_ = residual_vec->norm();
+      if (debug_) {
+        std::ofstream outFile3("../benchmarks/final_var.csv");
+        outFile3 << "variables"
+                 << "\n";
+        for (int i = 0; i < (*variable_vec).size(); ++i) {
+          outFile3 << (*variable_vec).coeff(i) << "\n";
+        }
+          std::cout << "Final vairables " << (*variable_vec) << std::endl;
+      }
+
       return true;
     }
   }
-  residual_norm_ = residual_vec->norm();
   return false;
 }
 
 pipenetwork::Hydralic_sim::Hydralic_sim(
-    const std::string & filepath, const std::vector<double>& leak_diameters,
-    bool pdd_mode) {
+    const std::string& filepath, const std::vector<double>& leak_diameters,
+    bool pdd_mode, bool debug) {
   auto IO = std::make_unique<pipenetwork::Input>(filepath);
 
   // Mesh index
   const unsigned meshid = 9999;
   // Creat a mesh
   auto m = std::make_shared<pipenetwork::Mesh>(meshid);
-  m->create_junctions(IO->junction_ids(), IO->junction_elevations(),
-                      IO->junction_demands(), leak_diameters);
-  m->create_reservoirs(IO->reservoir_ids(), IO->reservoir_heads());
-  m->create_pipes(IO->pipe_ids(), IO->pipe_nodes_ids(), IO->pipe_length(),
-                  IO->pipe_diameters(), IO->pipe_roughness(),
-                  IO->pipe_status());
-  //  m->print_summary();
+  m->create_junctions(IO->junction_properties());
+  m->create_reservoirs(IO->reservoir_properties());
+  std::vector<pipenetwork::Pipe_prop> pipe_props = IO->pipe_properties();
+  m->create_pipes(pipe_props);
   // initialize discharges
   m->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                   std::placeholders::_1,
                                   init_discharge_));  // initialze discharge
   assembler_ = std::make_shared<MatrixAssembler>(m, pdd_mode);
   solver_ =
-      std::make_shared<EigenGMRES>(max_solver_steps_, inner_solver_tolerance_);
+      std::make_shared<EigenCG>(max_solver_steps_, inner_solver_tolerance_);
+  debug_ = debug;
+  // print mesh summary if on debug mode
+  if (debug_) m->print_summary();
 }

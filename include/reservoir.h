@@ -3,18 +3,25 @@
 
 #include "node_base.h"
 
+//! Reservoir Property
+//! id junction id
+//! head head for the reservoir
 namespace pipenetwork {
+struct Reservoir_prop {
+  std::string id;
+  double head{std::numeric_limits<float>::min()};
+};
 
 class Reservoir : public Node {
  public:
   //! Constructor with id abd head
   //! \param[in] id reservoir id
   //! \param[in] head base head for the reservoir
-  Reservoir(Index id, const double head) : Node(id) {
+  Reservoir(const Reservoir_prop& res_prop) : Node(res_prop.id) {
     reservoir_info_["type"] = RESERVOIR;
-    reservoir_info_["head"] = head;
+    reservoir_info_["head"] = res_prop.head;
     update_sim_demand(0);
-    update_sim_head(head);
+    update_sim_head(res_prop.head);
   };
 
   //! Virtual destructor

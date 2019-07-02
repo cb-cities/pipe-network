@@ -4,8 +4,9 @@
 #include <Eigen/Dense>
 #include <array>
 #include <map>
-#include <string>
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 #include "node_base.h"
 #include "settings.h"
@@ -17,9 +18,14 @@ namespace pipenetwork {
 class Link {
 
  public:
-  Link(Index link_id, const std::shared_ptr<pipenetwork::Node>& node1,
+  Link(std::string link_id, const std::shared_ptr<pipenetwork::Node>& node1,
        const std::shared_ptr<pipenetwork::Node>& node2)
-      : link_id_{link_id}, nodes_{node1, node2} {};
+      : link_id_{link_id} {
+    if (!node1 || !node2)
+      throw std::invalid_argument(
+          "Link can not be constructed due to invalid input node pointers");
+    nodes_ = std::make_pair(node1, node2);
+  };
 
   //! Destructor
   virtual ~Link(){};
@@ -37,7 +43,7 @@ class Link {
   virtual std::map<std::string, double> link_info() const = 0;
 
   //! Return link id
-  Index id() const { return link_id_; }
+  std::string id() const { return link_id_; }
   //! Return end nodes
   std::pair<std::shared_ptr<pipenetwork::Node>,
             std::shared_ptr<pipenetwork::Node>>
@@ -53,7 +59,7 @@ class Link {
 
  private:
   //! link id
-  Index link_id_;
+  std::string link_id_;
   //! pair of node pointers which form the pipe
   std::pair<std::shared_ptr<pipenetwork::Node>,
             std::shared_ptr<pipenetwork::Node>>

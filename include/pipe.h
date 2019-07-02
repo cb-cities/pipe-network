@@ -4,25 +4,36 @@
 #include "link.h"
 
 namespace pipenetwork {
+//! Pipe Property
+//! node1 ptr for end node
+//! node2 ptr for end node
+//! length, length of the pipe
+//! diameter, diameter of the pipe
+//! roughness, roughness of the pipe
+//! status, status of the pipe (open or close)
+struct Pipe_prop {
+  std::string id;
+  std::shared_ptr<pipenetwork::Node> node1{NULL};
+  std::shared_ptr<pipenetwork::Node> node2{NULL};
+  double length{std::numeric_limits<float>::max()};
+  double diameter{std::numeric_limits<float>::max()};
+  double roughness{std::numeric_limits<float>::max()};
+  Pipe_status status{OPEN};
+  std::string node1_id{"None"};
+  std::string node2_id{"None"};
+};
 
 class Pipe : public Link {
  public:
   //! Constructor with two end nodes, length, diameter roughness and pipe status
-  //! \param[in] node1 ptr for end node
-  //! \param[in] node2 ptr for end node
-  //! \param[in] length, length of the pipe
-  //! \param[in] diameter, diameter of the pipe
-  //! \param[in] roughness, roughness of the pipe
-  //! \param[in] status, status of the pipe (open or close)
-  Pipe(Index id, const std::shared_ptr<pipenetwork::Node>& node1,
-       const std::shared_ptr<pipenetwork::Node>& node2, const double length,
-       const double diameter, const double roughness, const Pipe_status status)
-      : Link(id, node1, node2) {
+  //! \param[in] pipe_prop struct with properties for the pipe
+  Pipe(const Pipe_prop& pipe_prop)
+      : Link(pipe_prop.id, pipe_prop.node1, pipe_prop.node2) {
     pipe_info_["type"] = PIPE;
-    pipe_info_["length"] = length;
-    pipe_info_["diameter"] = diameter;
-    pipe_info_["roughness"] = roughness;
-    pipe_info_["status"] = status;
+    pipe_info_["length"] = pipe_prop.length;
+    pipe_info_["diameter"] = pipe_prop.diameter;
+    pipe_info_["roughness"] = pipe_prop.roughness;
+    pipe_info_["status"] = pipe_prop.status;
   };
 
   //! Virtual destructor

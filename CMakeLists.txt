@@ -73,6 +73,7 @@ SET(test_src
         src/hydralic_sim.cc
         src/eigen_gmres.cc
         src/input.cc
+        src/eigen_cg.cc
         tests/mesh_test.cc
         tests/node_test.cc
         tests/link_test.cc

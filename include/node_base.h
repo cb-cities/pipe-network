@@ -5,8 +5,8 @@
 #include <array>
 #include <cmath>
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "settings.h"
 
@@ -17,7 +17,7 @@ namespace pipenetwork {
 class Node {
 
  public:
-  explicit Node(Index node_id) : node_id_{node_id} {};
+  explicit Node(std::string node_id) : node_id_{node_id} {};
 
   //! Destructor
   virtual ~Node(){};
@@ -35,7 +35,7 @@ class Node {
   virtual std::map<std::string, double> nodal_info() const = 0;
 
   //! Return nodal id
-  Index id() const { return node_id_; }
+  std::string id() const { return node_id_; }
 
   //! Assign simulated demand
   void update_sim_demand(double demand) { sim_demand_ = demand; }
@@ -56,7 +56,7 @@ class Node {
   double sim_leak() const { return sim_leak_; }
 
  private:
-  Index node_id_;
+  std::string node_id_;
   // demand from simulation
   double sim_demand_{0};
   // head from simulation

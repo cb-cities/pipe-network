@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "junction.h"
+#include "pipe.h"
+#include "reservoir.h"
 #include "settings.h"
 
 #ifndef PIPE_NETWORK_INPUT_H
@@ -22,32 +25,24 @@ class Input {
  public:
   //! constructor
   //! \param[in] filename path of the .inp file
-  explicit Input(const std::string & filename) : filename_(filename) {
+  explicit Input(const std::string& filename) : filename_(filename) {
     parse_sections();
     construct_node_info();
     construct_pipe_info();
   };
 
   //! Return node information
-
-  std::vector<Index> junction_ids() const { return junction_ids_; }
-  std::vector<double> junction_elevations() const {
-    return junction_elevations_;
+  std::vector<pipenetwork::Junction_prop> junction_properties() const {
+    return junc_props_;
   }
-  std::vector<double> junction_demands() const { return junction_demands_; }
-
-  std::vector<Index> reservoir_ids() const { return reservoir_ids_; }
-  std::vector<double> reservoir_heads() const { return reservoir_heads_; }
+  std::vector<pipenetwork::Reservoir_prop> reservoir_properties() const {
+    return res_props_;
+  }
 
   //! Return pipe information
-  std::vector<std::pair<Index, Index>> pipe_nodes_ids() const {
-    return nodeids_;
+  std::vector<pipenetwork::Pipe_prop> pipe_properties() const {
+    return pipe_props_;
   }
-  std::vector<Index> pipe_ids() const { return pipe_ids_; }
-  std::vector<double> pipe_diameters() const { return diameter_; }
-  std::vector<double> pipe_length() const { return length_; }
-  std::vector<double> pipe_roughness() const { return roughness_; }
-  std::vector<Pipe_status> pipe_status() const { return pipe_status_; }
 
  private:
   //! Filepath
@@ -62,30 +57,30 @@ class Input {
   std::map<std::string, std::vector<std::string>> sections_;
 
   //! info for node constructions
-  std::vector<std::pair<Index, Eigen::Vector3d>> node_coords_;
-  std::vector<Index> junction_ids_;
+  std::vector<std::pair<std::string, Eigen::Vector3d>> node_coords_;
+  std::vector<std::string> junction_ids_;
   std::vector<double> junction_elevations_;
   std::vector<double> junction_demands_;
+  std::vector<pipenetwork::Junction_prop> junc_props_;
 
-  std::vector<Index> reservoir_ids_;
+  std::vector<std::string> reservoir_ids_;
   std::vector<double> reservoir_heads_;
+  std::vector<pipenetwork::Reservoir_prop> res_props_;
 
   //! info for pipe constructions
-  std::vector<Index> pipe_ids_;
-  std::vector<std::pair<Index, Index>> nodeids_;
+  std::vector<std::string> pipe_ids_;
+  std::vector<std::pair<std::string, std::string>> nodeids_;
   std::vector<double> diameter_;
   std::vector<double> length_;
   std::vector<double> roughness_;
   std::vector<Pipe_status> pipe_status_;
+  std::vector<pipenetwork::Pipe_prop> pipe_props_;
 
   //! Parse information to each section from the input file
   void parse_sections();
 
   //! Construct node info that is used for pipeline-mesh
-  void construct_node_info() {
-    construct_node_elevation_head();
-    construct_node_demand();
-  }
+  void construct_node_info();
 
   //  void construct_node_coord();
   void construct_node_elevation_head();
@@ -97,12 +92,12 @@ class Input {
   //! Parse elevation, head or demand from a given node section
   //! \param[in] an opened file
   //!\retval a pair with vector of node ids their corresponding elevations,
-  //!heads or demand
-  std::pair<std::vector<Index>, std::vector<double>> parse_node_line(
+  //! heads or demand
+  std::pair<std::vector<std::string>, std::vector<double>> parse_node_line(
       const std::string& section_name, const std::string& mode) const;
 };
 
-double to_si(double val, const std::string &);
+double to_si(double val, const std::string&);
 }  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_INPUT_H

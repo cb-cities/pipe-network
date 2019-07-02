@@ -4,25 +4,33 @@
 #include "node_base.h"
 
 namespace pipenetwork {
+//! Junction Property
+//! id junction id
+//! elevation elevation for the junction
+//! demand base demand for the junction
+//! leak_diameter diameter of the leak hole for the junction
+struct Junction_prop {
+  std::string id;
+  double elevation{std::numeric_limits<float>::min()};
+  double demand{std::numeric_limits<float>::min()};
+  double leak_diameter{0};
+};
 
 class Junction : public Node {
  public:
   //! Constructor with id, elevation, demand and leak diameter
-  //! \param[in] id junction id
-  //! \param[in] elevation elevation for the junction
-  //! \param[in] demand base demand for the junction
-  //! \param[in] leak_diameter diameter of the leak hole for the junction
-  Junction(Index id, const double elevation, const double demand,
-           const double leak_diameter)
-      : Node(id) {
+  //! \param[in] junc_prop junction properties
+
+  Junction(const Junction_prop& junc_prop) : Node(junc_prop.id) {
 
     junction_info_["type"] = JUNCTION;
-    junction_info_["elevation"] = elevation;
-    junction_info_["demand"] = demand;
-    junction_info_["leak_area"] = std::pow((leak_diameter / 2), 2) * PI;
+    junction_info_["elevation"] = junc_prop.elevation;
+    junction_info_["demand"] = junc_prop.demand;
+    junction_info_["leak_area"] =
+        std::pow((junc_prop.leak_diameter / 2), 2) * PI;
 
-    update_sim_demand(demand);
-    update_sim_head(elevation);
+    update_sim_demand(junc_prop.demand);
+    update_sim_head(junc_prop.elevation);
   };
 
   //! Virtual destructor

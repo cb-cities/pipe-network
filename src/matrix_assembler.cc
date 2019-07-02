@@ -13,6 +13,8 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
 
   Index idx = 0, leak_idx = 0;
   for (const auto& node : mesh_->connect_nodes()) {
+    Index index_nd = idx + nnodes_;
+    Index index_nl = leak_idx + 2 * nnodes_ + nlinks_;
 
     // get node information, determine possible leak nodes and assemble demands
     // heads vector
@@ -25,6 +27,8 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
         if (info["leak_area"] > 0) {
           leak_ids_.emplace_back(node.second->id());
           leak_area_.emplace_back(info["leak_area"]);
+          // nodal leak discharge vector
+          variable_vec_->coeffRef(index_nl) = node.second->sim_leak();
           ++leak_idx;
         }
         break;
@@ -33,15 +37,10 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
         source_idx_.emplace_back(idx);
     }
 
-    Index index_nd = idx + nnodes_;
-    Index index_nl = leak_idx + 2 * nnodes_ + nlinks_;
-
     // nodal head vector
     variable_vec_->coeffRef(idx) = node.second->sim_head();
     // nodal demand vector
     variable_vec_->coeffRef(index_nd) = node.second->sim_demand();
-    // nodal leak discharge vector
-    variable_vec_->coeffRef(index_nl) = node.second->sim_leak();
     // id map
     node_id_map_.emplace(node.second->id(), idx);
 
@@ -146,15 +145,19 @@ void pipenetwork::MatrixAssembler::assemble_residual() {
   residual_vec_->segment(0, nnodes_) =
       node_balance_mat_ * (variable_vec_->segment(2 * nnodes_, nlinks_)) -
       variable_vec_->segment(nnodes_, nnodes_);
+
   // get leak effect
+  int leak_count = 0;
   for (const auto& leak_id : leak_ids_) {
     auto idx = node_id_map_[leak_id];
     residual_vec_->coeffRef(idx) -=
-        variable_vec_->coeffRef(2 * nnodes_ + nlinks_ + idx);
+        variable_vec_->coeffRef(2 * nnodes_ + nlinks_ + leak_count);
+    ++leak_count;
   }
 
   // demand or head residual
   assemble_demand_head_residual();
+
   // headloss residual
   assemble_headloss_residual();
   // leak residual
@@ -167,14 +170,77 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     // demand for junctions
     residual_vec_->segment(nnodes_, nnodes_) =
         variable_vec_->segment(nnodes_, nnodes_) - demands_heads_vec_;
-    // correct residuals for sources (head for reservoir/tanks)
-    for (const auto& idx : source_idx_) {
-      (*residual_vec_)[idx + nnodes_] =
-          (*variable_vec_)[idx] - demands_heads_vec_[idx];
-    }
+  } else {
+    auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
+    // case 1, pressure smaller than min pressure, no water
+    auto case1_bool = pressure
+                          .unaryExpr([](double x) {
+                            if (x < MIN_PRESSURE) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 2, pressure larger than min pressure but in a small range, use
+    // polynomial approximation
+    auto case2_bool =
+        pressure
+            .unaryExpr([](double x) {
+              if ((x > MIN_PRESSURE) && (x < (MIN_PRESSURE + PDD_DELTA)))
+                return 1.0;
+              return 0.0;
+            })
+            .array();
+    // case 3, pressure close to normal pressure, use polynomial approximation
+    auto case3_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > (NORMAL_PRESSURE - PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 4, pressure above normal pressure, demand can be met
+    auto case4_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > NORMAL_PRESSURE)) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 5, pressure falls in between min pressure and normal pressure, use
+    // pressure-demand equation
+    auto case5_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > (MIN_PRESSURE + PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE - PDD_DELTA)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    residual_vec_->segment(nnodes_, nnodes_) =
+        case1_bool * (variable_vec_->segment(nnodes_, nnodes_).array()) +
+        case2_bool *
+            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+             demands_heads_vec_.array() *
+                 (PDD_POLY_VEC1[0] * pressure.array().pow(3) +
+                  PDD_POLY_VEC1[1] * pressure.array().pow(2) +
+                  PDD_POLY_VEC1[2] * pressure.array() + HW_POLY_VEC[3])) +
+        case3_bool *
+            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+             demands_heads_vec_.array() *
+                 (PDD_POLY_VEC2[0] * pressure.array().pow(3) +
+                  PDD_POLY_VEC2[1] * pressure.array().pow(2) +
+                  PDD_POLY_VEC2[2] * pressure.array() + HW_POLY_VEC[3])) +
+        case4_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                      demands_heads_vec_.array()) +
+        case5_bool *
+            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+             demands_heads_vec_.array() * ((pressure.array() - MIN_PRESSURE) /
+                                           (NORMAL_PRESSURE - MIN_PRESSURE))
+                                              .pow(0.5));
   }
-  // TODO: pressure demand part
-  else {
+  // correct residuals for sources (head for reservoir/tanks)
+  for (const auto& idx : source_idx_) {
+    (*residual_vec_)[idx + nnodes_] =
+        (*variable_vec_)[idx] - demands_heads_vec_[idx];
   }
 }
 
@@ -381,6 +447,74 @@ void pipenetwork::MatrixAssembler::update_jacobian() {
 // TODO: pressure demand part
 void pipenetwork::MatrixAssembler::update_jac_d() {
   if (pdd_) {
+    auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
+    // case 1, pressure smaller than min pressure, no water
+    auto case1_bool = pressure
+                          .unaryExpr([](double x) {
+                            if (x < MIN_PRESSURE) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 2, pressure larger than min pressure but in a small range, use
+    // polynomial approximation
+    auto case2_bool =
+        pressure
+            .unaryExpr([](double x) {
+              if ((x > MIN_PRESSURE) && (x < (MIN_PRESSURE + PDD_DELTA)))
+                return 1.0;
+              return 0.0;
+            })
+            .array();
+    // case 3, pressure close to normal pressure, use polynomial approximation
+    auto case3_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > (NORMAL_PRESSURE - PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 4, pressure above normal pressure, demand can be met
+    auto case4_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > NORMAL_PRESSURE)) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 5, pressure falls in between min pressure and normal pressure, use
+    // pressure-demand equation
+    auto case5_bool = pressure
+                          .unaryExpr([](double x) {
+                            if ((x > (MIN_PRESSURE + PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE - PDD_DELTA)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+
+    auto vals =
+        case1_bool *
+            (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
+        case2_bool * (-demands_heads_vec_.array() *
+                      (3 * PDD_POLY_VEC1[0] * pressure.array().pow(2) +
+                       2 * PDD_POLY_VEC1[1] * pressure.array().pow(1) +
+                       PDD_POLY_VEC1[2])) +
+        case3_bool * (-demands_heads_vec_.array() *
+                      (3 * PDD_POLY_VEC2[0] * pressure.array().pow(2) +
+                       2 * PDD_POLY_VEC2[1] * pressure.array().pow(1) +
+                       PDD_POLY_VEC2[2])) +
+        case4_bool *
+            (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
+        case5_bool * (-0.5 * demands_heads_vec_.array() *
+                      ((pressure.array() - MIN_PRESSURE) /
+                       (NORMAL_PRESSURE - MIN_PRESSURE))
+                          .pow(-0.5));
+
+    auto trip_d = sub_jac_trip_["jac_d"];
+    for (int i = 0; i < nnodes_; ++i) {
+      if (trip_d[i].value() == 0)
+        jac_->coeffRef(trip_d[i].row(), trip_d[i].col()) = vals[i];
+    }
   }
 }
 
@@ -477,7 +611,7 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
 
 Eigen::VectorXd pipenetwork::MatrixAssembler::compute_poly_coefficients(
     const std::array<double, 2>& x, const std::array<double, 2>& f,
-    const std::array<double, 2>& df) {
+    const std::array<double, 2>& df) const {
   Eigen::VectorXd ret(4);
   double a =
       (2 * (f[0] - f[1]) - (x[0] - x[1]) * (df[1] + df[0])) /
@@ -492,7 +626,7 @@ Eigen::VectorXd pipenetwork::MatrixAssembler::compute_poly_coefficients(
 }
 
 Eigen::VectorXd pipenetwork::MatrixAssembler::compute_leak_poly_coef(
-    double leak_area) {
+    double leak_area) const {
   double x1 = 0.0;
   double f1 = 0.0;
   double df1 = 1.0e-11;

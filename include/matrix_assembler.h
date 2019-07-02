@@ -57,9 +57,9 @@ class MatrixAssembler {
   //! if it is pressure demand simulation mode
   bool pdd_{false};
   //! nodal id to corresponding matrix entry number (0-nnodes_)
-  std::map<Index, Index> node_id_map_;
+  std::map<std::string, Index> node_id_map_;
   //! link id to corresponding matrix entry number (0-nlinks_)
-  std::map<Index, Index> link_id_map_;
+  std::map<std::string, Index> link_id_map_;
 
   //! demand (for junction) and heads (for sources) of nodes
   Eigen::VectorXd demands_heads_vec_;
@@ -68,7 +68,7 @@ class MatrixAssembler {
   //! matrix entry id for node sources (reservoir/tank)
   std::vector<Index> source_idx_;
   //! nodal ids for possible leak nodes
-  std::vector<Index> leak_ids_;
+  std::vector<std::string> leak_ids_;
   std::vector<double> leak_area_;
   //! hazen-williams coefficients for links
   Eigen::VectorXd link_resistance_coeff_vec_;
@@ -112,74 +112,98 @@ class MatrixAssembler {
   //! Method to update jacobian h part (leakage equation)
   void update_jac_h();
 
+  //! Assemble Jacobian matrix for nodal head, demand and pipe discharge as
+  //! variables
+  //!    Create the jacobian as a sparse matrix
+  //!           Initialize all jacobian entries that have the possibility to be
+  //!           non-zero
+  //!            Structure of jacobian:
+  //!            H_n => Head for node id n
+  //!            D_n => Demand for node id n
+  //!            F_l => Flow for link id l
+  //!            node_bal_n => node balance for node id n
+  //!            D/H_n      => demand/head equation for node id n
+  //!            headloss_l => headloss equation for link id l
+  //!            in link refers to a link that has node_n as an end node
+  //!    out link refers to a link that has node_n as a start node
+  //!            Note that there will only be leak variables and equations for
+  //!            nodes with leaks. Thus some of the rows and columns below may
+  //!            be missing. The leak id is equal to the node id though.
+  //!    Variable          H_1   H_2   H_n   H_(N-1)   H_N   D_1   D_2   D_n
+  //!    D_(N-1)   D_N   F_1   F_2   F_l   F_(L-1)   F_L      Dleak1  Dleak2
+  //!    Dleakn  Dleak(N-1)  DleakN
+  //!            Equation
+  //!    node_bal_1         0     0     0     0         0     -1    0     0 0 0
+  //!    (1 for in link, -1 for out link)       -1      0        0        0 0
+  //!    node_bal_2         0     0     0     0         0     0     -1    0 0 0
+  //!    (1 for in link, -1 for out link)        0     -1        0        0 0
+  //!    node_bal_n         0     0     0     0         0     0     0     -1 0
+  //!    0    (1 for in link, -1 for out link)        0      0       -1        0
+  //!    0 node_bal_(N-1)     0     0     0     0         0     0     0     0 -1
+  //!    0    (1 for in link, -1 for out link)        0      0        0       -1
+  //!    0 node_bal_N         0     0     0     0         0     0     0     0 0
+  //!    -1   (1 for in link, -1 for out link)        0      0        0        0
+  //!    -1 D/H_1              *1    0     0     0         0     *2    0     0
+  //!    0         0     0      0     0    0         0          0      0 0 0 0
+  //!    D/H_2              0     *1    0     0         0     0     *2    0 0 0
+  //!    0      0     0    0         0          0      0        0        0 0
+  //!    D/H_n              0     0     *1    0         0     0     0     *2 0
+  //!    0     0      0     0    0         0          0      0        0        0
+  //!    0 D/H_(N-1)          0     0     0     *1        0     0     0     0 *2
+  //!    0     0      0     0    0         0          0      0        0        0
+  //!    0 D/H_N              0     0     0     0         *1    0     0     0 0
+  //!    *2    0      0     0    0         0          0      0        0        0
+  //!    0 headloss_1         (NZ for start/end node *3    )    0     0     0 0
+  //!    0     *4     0     0    0         0          0      0        0        0
+  //!    0 headloss_2         (NZ for start/end node *3    )    0     0     0 0
+  //!    0     0      *4    0    0         0          0      0        0        0
+  //!    0 headloss_l         (NZ for start/end node *3    )    0     0     0 0
+  //!    0     0      0     *4   0         0          0      0        0        0
+  //!    0 headloss_(L-1)     (NZ for start/end node *3    )    0     0     0 0
+  //!    0     0      0     0    *4        0          0      0        0        0
+  //!    0 headloss_L         (NZ for start/end node *3    )    0     0     0 0
+  //!    0     0      0     0    0         *4         0      0        0        0
+  //!    0 leak flow 1        *5    0     0     0         0     0     0     0 0
+  //!    0     0      0     0    0         0          1      0        0        0
+  //!    0 leak flow 2        0     *5    0     0         0     0     0     0 0
+  //!    0     0      0     0    0         0          0      1        0        0
+  //!    0 leak flow n        0     0     *5    0         0     0     0     0 0
+  //!    0     0      0     0    0         0          0      0        1        0
+  //!    0 leak flow N-1      0     0     0     *5        0     0     0     0 0
+  //!    0     0      0     0    0         0          0      0        0        1
+  //!    0 leak flow N        0     0     0     0         *5    0     0     0 0
+  //!    0     0      0     0    0         0          0      0        0        0
+  //!    1 *1: 1 for tanks and reservoirs 1 for isolated junctions 0 for
+  //!    junctions if the simulation is demand-driven and the junction is not
+  //!    isolated f(H) for junctions if the simulation is pressure dependent
+  //!    demand and the junction is not isolated *2: 0 for tanks and reservoirs
+  //!    1 for non-isolated junctions
+  //!    0 for isolated junctions
+  //!    *3: 0 for closed/isolated links
+  //!    pipes   head_pumps  power_pumps  active_PRV   open_prv active/openTCV
+  //!    active_FCV   open_FCV
+  //!            start node    -1        1            f(F)        0 -1 -1 0 -1
+  //!    end node       1       -1            f(F)        1              1 1 0 1
+  //!    *4: 1 for closed/isolated links
+  //!    f(F) for pipes
+  //!    f(F) for head pumps
+  //!    f(Hstart,Hend) for power pumps
+  //!    0 for active PRVs
+  //!    f(F) for open PRVs
+  //!    f(F) for open or active TCVs
+  //!    f(F) for open FCVs
+  //!    1 for active FCVs
+  //!    *5: 0 for inactive leaks
+  //!    0 for leaks at isolated junctions
+  //!    f(H-z) otherwise
 
-    //! Assemble Jacobian matrix for nodal head, demand and pipe discharge as
-    //! variables
-    //!    Create the jacobian as a sparse matrix
-    //!           Initialize all jacobian entries that have the possibility to be non-zero
-    //!            Structure of jacobian:
-    //!            H_n => Head for node id n
-    //!            D_n => Demand for node id n
-    //!            F_l => Flow for link id l
-    //!            node_bal_n => node balance for node id n
-    //!            D/H_n      => demand/head equation for node id n
-    //!            headloss_l => headloss equation for link id l
-    //!            in link refers to a link that has node_n as an end node
-    //!    out link refers to a link that has node_n as a start node
-    //!            Note that there will only be leak variables and equations for nodes with leaks. Thus some of the rows and columns below may be missing. The leak id is equal to the node id though.
-    //!    Variable          H_1   H_2   H_n   H_(N-1)   H_N   D_1   D_2   D_n   D_(N-1)   D_N   F_1   F_2   F_l   F_(L-1)   F_L      Dleak1  Dleak2  Dleakn  Dleak(N-1)  DleakN
-    //!            Equation
-    //!    node_bal_1         0     0     0     0         0     -1    0     0     0         0    (1 for in link, -1 for out link)       -1      0        0        0          0
-    //!    node_bal_2         0     0     0     0         0     0     -1    0     0         0    (1 for in link, -1 for out link)        0     -1        0        0          0
-    //!    node_bal_n         0     0     0     0         0     0     0     -1    0         0    (1 for in link, -1 for out link)        0      0       -1        0          0
-    //!    node_bal_(N-1)     0     0     0     0         0     0     0     0     -1        0    (1 for in link, -1 for out link)        0      0        0       -1          0
-    //!    node_bal_N         0     0     0     0         0     0     0     0     0         -1   (1 for in link, -1 for out link)        0      0        0        0         -1
-    //!    D/H_1              *1    0     0     0         0     *2    0     0     0         0     0      0     0    0         0          0      0        0        0          0
-    //!    D/H_2              0     *1    0     0         0     0     *2    0     0         0     0      0     0    0         0          0      0        0        0          0
-    //!    D/H_n              0     0     *1    0         0     0     0     *2    0         0     0      0     0    0         0          0      0        0        0          0
-    //!    D/H_(N-1)          0     0     0     *1        0     0     0     0     *2        0     0      0     0    0         0          0      0        0        0          0
-    //!    D/H_N              0     0     0     0         *1    0     0     0     0         *2    0      0     0    0         0          0      0        0        0          0
-    //!    headloss_1         (NZ for start/end node *3    )    0     0     0     0         0     *4     0     0    0         0          0      0        0        0          0
-    //!    headloss_2         (NZ for start/end node *3    )    0     0     0     0         0     0      *4    0    0         0          0      0        0        0          0
-    //!    headloss_l         (NZ for start/end node *3    )    0     0     0     0         0     0      0     *4   0         0          0      0        0        0          0
-    //!    headloss_(L-1)     (NZ for start/end node *3    )    0     0     0     0         0     0      0     0    *4        0          0      0        0        0          0
-    //!    headloss_L         (NZ for start/end node *3    )    0     0     0     0         0     0      0     0    0         *4         0      0        0        0          0
-    //!    leak flow 1        *5    0     0     0         0     0     0     0     0         0     0      0     0    0         0          1      0        0        0          0
-    //!    leak flow 2        0     *5    0     0         0     0     0     0     0         0     0      0     0    0         0          0      1        0        0          0
-    //!    leak flow n        0     0     *5    0         0     0     0     0     0         0     0      0     0    0         0          0      0        1        0          0
-    //!    leak flow N-1      0     0     0     *5        0     0     0     0     0         0     0      0     0    0         0          0      0        0        1          0
-    //!    leak flow N        0     0     0     0         *5    0     0     0     0         0     0      0     0    0         0          0      0        0        0          1
-    //!    *1: 1 for tanks and reservoirs
-    //!    1 for isolated junctions
-    //!    0 for junctions if the simulation is demand-driven and the junction is not isolated
-    //!    f(H) for junctions if the simulation is pressure dependent demand and the junction is not isolated
-    //!    *2: 0 for tanks and reservoirs
-    //!    1 for non-isolated junctions
-    //!    0 for isolated junctions
-    //!    *3: 0 for closed/isolated links
-    //!    pipes   head_pumps  power_pumps  active_PRV   open_prv active/openTCV   active_FCV   open_FCV
-    //!            start node    -1        1            f(F)        0             -1         -1             0           -1
-    //!    end node       1       -1            f(F)        1              1          1             0            1
-    //!    *4: 1 for closed/isolated links
-    //!    f(F) for pipes
-    //!    f(F) for head pumps
-    //!    f(Hstart,Hend) for power pumps
-    //!    0 for active PRVs
-    //!    f(F) for open PRVs
-    //!    f(F) for open or active TCVs
-    //!    f(F) for open FCVs
-    //!    1 for active FCVs
-    //!    *5: 0 for inactive leaks
-    //!    0 for leaks at isolated junctions
-    //!    f(H-z) otherwise
-
-    void initialize_jacobian();
+  void initialize_jacobian();
 
   //! Method to compute the polynomial coefficients for leak equations
   //! \param[in] leak_area leak area of the leak hole
   //! \retval leak_poly_coef polynomial approximation coefficient for leak
   //! equation
-  Eigen::VectorXd compute_leak_poly_coef(double leak_area);
+  Eigen::VectorXd compute_leak_poly_coef(double leak_area) const;
 
   //! Method to compute the coefficients of a smoothing polynomial
   //! \param[in] x points on the x-axis at which the smoothing polynomial begins
@@ -188,9 +212,9 @@ class MatrixAssembler {
   //! derivative evaluated at x1 and x2
   //! \retval  A vector with the smoothing
   //! polynomail coefficients starting with the cubic term.
-  Eigen::VectorXd compute_poly_coefficients(const std::array<double, 2>& x,
-                                            const std::array<double, 2>& f,
-                                            const std::array<double, 2>& df);
+  Eigen::VectorXd compute_poly_coefficients(
+      const std::array<double, 2>& x, const std::array<double, 2>& f,
+      const std::array<double, 2>& df) const;
 };
 
 }  // namespace pipenetwork
