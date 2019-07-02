@@ -57,6 +57,7 @@ SET(pipe_network_src
         src/main.cc
         src/mesh.cc
         src/matrix_assembler.cc
+        src/eigen_cg.cc
         src/hydralic_sim.cc
         src/eigen_gmres.cc
         src/input.cc)
