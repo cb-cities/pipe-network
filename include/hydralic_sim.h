@@ -6,6 +6,8 @@
 
 #include "eigen_cg.h"
 #include "eigen_gmres.h"
+#include "eigen_cg_lem.h"
+#include "pardiso_unsym.h"
 #include "input.h"
 #include "matrix_assembler.h"
 #include "settings.h"
@@ -19,7 +21,7 @@ class Hydralic_sim {
                         bool pdd_mode = false, bool debug = false) {
     assembler_ = std::make_shared<MatrixAssembler>(mesh, pdd_mode);
     solver_ =
-        std::make_shared<EigenCG>(max_solver_steps_, inner_solver_tolerance_);
+        std::make_shared<Pardiso_unsym>(max_solver_steps_, inner_solver_tolerance_);
     debug_ = debug;
   };
   Hydralic_sim(const std::string& filepath,
@@ -27,7 +29,7 @@ class Hydralic_sim {
                bool debug = false);
 
   //! run simulation
-  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 100);
+  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000);
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
 
@@ -35,7 +37,7 @@ class Hydralic_sim {
   //! the assember ptr
   std::shared_ptr<MatrixAssembler> assembler_;
   //! the solver ptr
-  std::shared_ptr<EigenCG> solver_;
+  std::shared_ptr<Pardiso_unsym> solver_;
   //! solver tolerance
   double inner_solver_tolerance_{1e-8};
   //! iteration steps

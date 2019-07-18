@@ -170,6 +170,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     // demand for junctions
     residual_vec_->segment(nnodes_, nnodes_) =
         variable_vec_->segment(nnodes_, nnodes_) - demands_heads_vec_;
+
   } else {
     auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
     // case 1, pressure smaller than min pressure, no water
@@ -236,6 +237,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
              demands_heads_vec_.array() * ((pressure.array() - MIN_PRESSURE) /
                                            (NORMAL_PRESSURE - MIN_PRESSURE))
                                               .pow(0.5));
+
   }
   // correct residuals for sources (head for reservoir/tanks)
   for (const auto& idx : source_idx_) {
@@ -281,8 +283,9 @@ void pipenetwork::MatrixAssembler::assemble_leak_residual() {
 void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-                          if (x < 0) return -1.0;
-                          return 1.0;
+//                            return (x < 0) ? -1 : 1;
+                            if (x > 0) return 1.0;
+                            return -1.0;
                         })
                         .array();  // get the sign of discharges
 
@@ -290,8 +293,10 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-                          if (std::abs(x) > HW_Q2) return 1.0;
-                          return 0.0;
+                            if (std::abs(x) > HW_Q2) return 1.0;
+                            return 0.0;
+
+
                         })
                         .array();
   // case 2, discharges that fall in between HW_Q1 and HW_Q2, use polynomial
@@ -526,8 +531,8 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
 
   auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-                          if (x < 0) return -1.0;
-                          return 1.0;
+                            if (x > 0) return 1.0;
+                            return -1.0;
                         })
                         .array();  // get the sign of discharges
 

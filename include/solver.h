@@ -15,14 +15,11 @@ class Solver {
   Solver(unsigned max_iter, double tolerance)
       : max_iter_{max_iter}, tolerance_{tolerance} {}
 
-  // using VectorX = typename Eigen::VectorXd;
-  // using SparseMatrix = typename Eigen::SparseMatrix<double>;
-
   //! Copy Matrix A, Vectors b and x
   //! \param[in] mat_a_ pointer to assembled A matrix
   //! \param[in] vec_x_ pointer to assembled x vector
   //! \param[in] vec_b_ pointer to assembled b vector
-  void assembled_matrices(std::shared_ptr<Eigen::SparseMatrix<double>> mat_a,
+  void assembled_matrices(std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> mat_a,
                           std::shared_ptr<Eigen::VectorXd> vec_x,
                           std::shared_ptr<Eigen::VectorXd> vec_b) {
     mat_a_ = mat_a;
@@ -60,7 +57,7 @@ class Solver {
   //! Force vector
   std::shared_ptr<Eigen::VectorXd> vec_b_;
   //! Sparse Stiffness Matrix
-  std::shared_ptr<Eigen::SparseMatrix<double>> mat_a_;
+  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> mat_a_;
 };
 }  // namespace pipenetwork
 

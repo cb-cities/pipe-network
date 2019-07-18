@@ -7,7 +7,7 @@ bool pipenetwork::EigenCG::solve() {
     Eigen::VectorXd x_diff(n);
 
     // Use GMRES solver in Eigen to solve
-    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > lscg;
+    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor> > lscg;
     lscg.setMaxIterations(max_iter_);
     lscg.setTolerance(tolerance_);
 

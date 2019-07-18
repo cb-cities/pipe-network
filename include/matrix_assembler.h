@@ -43,7 +43,7 @@ class MatrixAssembler {
   }
   //! Method to update jacobian matrix from the variable vector
   void update_jacobian();
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac_matrix() const {
+  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> jac_matrix() const {
     return jac_;
   }
 
@@ -88,8 +88,8 @@ class MatrixAssembler {
   std::shared_ptr<Eigen::VectorXd> residual_vec_{
       std::make_shared<Eigen::VectorXd>()};
   //! Jacobian matrix
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac_{
-      std::make_shared<Eigen::SparseMatrix<double>>()};
+  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> jac_{
+      std::make_shared<Eigen::SparseMatrix<double,Eigen::RowMajor>>()};
 
   //! Initialize variable vector
   void init_variable_vector();

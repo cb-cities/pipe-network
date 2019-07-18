@@ -7,7 +7,7 @@ bool pipenetwork::EigenGMRES::solve() {
   Eigen::VectorXd x_diff(n);
 
   // Use GMRES solver in Eigen to solve
-  Eigen::GMRES<Eigen::SparseMatrix<double>> gmres(*mat_a_);
+  Eigen::GMRES<Eigen::SparseMatrix<double,Eigen::RowMajor>> gmres(*mat_a_);
   gmres.setMaxIterations(max_iter_);
   gmres.setTolerance(tolerance_);
 

@@ -32,26 +32,28 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                  << "val"
                  << "\n";
         for (int k = 0; k < (*jac).outerSize(); ++k)
-          for (Eigen::SparseMatrix<double>::InnerIterator it((*jac), k); it;
-               ++it) {
+          for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
+                   (*jac), k);
+               it; ++it) {
             outFile2 << it.row() << "," << it.col() << "," << it.value()
                      << "\n";
           }
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-//                  std::cout << "Jac = " << std::endl
-//                            << (*jac) << std::endl
-//                            << std::endl
-//                            << "residual = " << std::endl
-//                            << (*residual_vec) << std::endl
-//                            << std::endl
-//                            << "variable = " << std::endl
-//                            << (*variable_vec) << std::endl
-//                            << std::endl;
+      //                  std::cout << "Jac = " << std::endl
+      //                            << (*jac) << std::endl
+      //                            << std::endl
+      //                            << "residual = " << std::endl
+      //                            << (*residual_vec) << std::endl
+      //                            << std::endl
+      //                            << "variable = " << std::endl
+      //                            << (*variable_vec) << std::endl
+      //                            << std::endl;
     }
 
     bool issolved = solver_->solve();
+
     residual_norm_ = residual_vec->norm();
     if (residual_vec->norm() < NR_tolerance) {
       if (debug_) {
@@ -61,7 +63,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
         for (int i = 0; i < (*variable_vec).size(); ++i) {
           outFile3 << (*variable_vec).coeff(i) << "\n";
         }
-          std::cout << "Final vairables " << (*variable_vec) << std::endl;
+        std::cout << "Final vairables " << (*variable_vec) << std::endl;
       }
 
       return true;
@@ -88,8 +90,8 @@ pipenetwork::Hydralic_sim::Hydralic_sim(
                                   std::placeholders::_1,
                                   init_discharge_));  // initialze discharge
   assembler_ = std::make_shared<MatrixAssembler>(m, pdd_mode);
-  solver_ =
-      std::make_shared<EigenCG>(max_solver_steps_, inner_solver_tolerance_);
+  solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
+                                            inner_solver_tolerance_);
   debug_ = debug;
   // print mesh summary if on debug mode
   if (debug_) m->print_summary();

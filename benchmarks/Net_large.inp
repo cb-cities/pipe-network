@@ -4794,6 +4794,28 @@
  P-997           	J-915           	J-1125          	336.63      	6           	150         	0           	Open  	;
  P-998           	J-1185          	J-1056          	881.479     	8           	150         	0           	Open  	;
  P-999           	J-1432          	J-1453          	443.029     	3           	150         	0           	Open  	;
+ ~@RV-1          	I-RV-1          	O-RV-1          	10     			1000           	150         	0           	Open  	;
+ ~@RV-10         	I-RV-10         	O-RV-10         	10     			1000           	150         	0           	Open  	;
+ ~@RV-11         	I-RV-11         	O-RV-11         	10     			1000           	150         	0           	Open  	;
+ ~@RV-12         	I-RV-12         	O-RV-12         	10     			1000           	150         	0           	Open  	;
+ ~@RV-13         	I-RV-13         	O-RV-13         	10     			1000           	150         	0           	Open  	;
+ ~@RV-14         	I-RV-14         	O-RV-14         	10     			1000           	150         	0           	Open  	;
+ ~@RV-15         	I-RV-15         	O-RV-15         	10     			1000           	150         	0           	Open  	;
+ ~@RV-16         	I-RV-16         	O-RV-16         	10     			1000           	150         	0           	Open  	;
+ ~@RV-17         	I-RV-17         	O-RV-17         	10     			1000           	150         	0           	Open  	;
+ ~@RV-18         	I-RV-18         	O-RV-18         	10     			1000           	150         	0           	Open  	;
+ ~@RV-19         	I-RV-19         	O-RV-19         	10     			1000           	150         	0           	Open  	;
+ ~@RV-2          	I-RV-2          	O-RV-2          	10     			1000           	150         	0           	Open  	;
+ ~@RV-20         	I-RV-20         	O-RV-20         	10     			1000           	150         	0           	Open  	;
+ ~@RV-21         	I-RV-21         	O-RV-21         	10     			1000           	150         	0           	Open  	;
+ ~@RV-22         	I-RV-22         	O-RV-22         	10     			1000           	150         	0           	Open  	;
+ ~@RV-3          	I-RV-3          	O-RV-3          	10     			1000           	150         	0           	Open  	;
+ ~@RV-4          	I-RV-4          	O-RV-4          	10     			1000           	150         	0           	Open  	;
+ ~@RV-5          	I-RV-5          	O-RV-5          	10     			1000           	150         	0           	Open  	;
+ ~@RV-6          	I-RV-6          	O-RV-6          	10     			1000           	150         	0           	Open  	;
+ ~@RV-7          	I-RV-7          	O-RV-7          	10     			1000           	150         	0           	Open  	;
+ ~@RV-8          	I-RV-8          	O-RV-8          	10     			1000           	150         	0           	Open  	;
+ ~@RV-9          	I-RV-9          	O-RV-9          	10     			1000           	150         	0           	Open  	;
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
@@ -4845,40 +4867,40 @@
 
 
 [REACTIONS]
- Order Bulk            	0
- Order Tank            	0
- Order Wall            	0
- Global Bulk           	0
- Global Wall           	0
- Limiting Potential    	0
- Roughness Correlation 	0
+ Order Bulk            	1
+ Order Tank            	1
+ Order Wall            	1
+ Global Bulk           	0.0
+ Global Wall           	0.0
+ Limiting Potential    	0.0
+ Roughness Correlation 	0.0
 
 [MIXING]
 ;Tank            	Model
 
 [TIMES]
- Duration           	0
+ Duration           	55:00 
  Hydraulic Timestep 	1:00 
- Quality Timestep   	1:00 
+ Quality Timestep   	0:05 
  Pattern Timestep   	1:00 
  Pattern Start      	0:00 
  Report Timestep    	1:00 
  Report Start       	0:00 
- Start ClockTime    	12 am
+ Start ClockTime    	8 am
  Statistic          	NONE
 
 [REPORT]
- Status             	Full
+ Status             	No
  Summary            	No
  Page               	0
 
 [OPTIONS]
  Units              	GPM
  Headloss           	H-W
- Specific Gravity   	1
- Viscosity          	1
- Trials             	130
- Accuracy           	0.0001
+ Specific Gravity   	1.0
+ Viscosity          	1.0
+ Trials             	40
+ Accuracy           	0.001
  CHECKFREQ          	2
  MAXCHECK           	10
  DAMPLIMIT          	0
@@ -4886,8 +4908,8 @@
  Pattern            	1
  Demand Multiplier  	1.0
  Emitter Exponent   	0.5
- Quality            	AGE mg/L
- Diffusivity        	0.05
+ Quality            	Fluoride mg/L
+ Diffusivity        	1.0
  Tolerance          	0.01
 
 [COORDINATES]

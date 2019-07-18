@@ -1,6 +1,9 @@
 #include "catch.hpp"
 
 #include "hydralic_sim.h"
+#include <chrono>
+using namespace std::chrono;
+
 // Check matrix_assembler class
 TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
@@ -77,57 +80,74 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                      std::placeholders::_1,
                                      init_discharge));  // initialze discharge
-  SECTION("DD SIM TEST CASE 1: MESH INPUT") {
+  //  SECTION("DD SIM TEST CASE 1: MESH INPUT") {
+  //    bool pdd_mode = false;
+  //      bool debug = false;
+  //    auto sim =
+  //        std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //
+  //    // pressure test for stability
+  //    REQUIRE(!sim->run_simulation(1e-30, 1000));
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //
+  //  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
+  //    std::vector<double> leak_diameters{0, 0, 0, 0, 0, 0, 0, 0, 0};
+  //    bool pdd_mode = false;
+  //    bool debug = false;
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //        "../benchmarks/Net1c.inp", leak_diameters, pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //    // pressure test for stability
+  //    REQUIRE(!sim->run_simulation(1e-30, 1000));
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //
+  //  SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
+  //    std::vector<double> leak_diameters(200, 0);
+  //    bool pdd_mode = false;
+  //    bool debug = false;
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //        "../benchmarks/Net_small.inp", leak_diameters, pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //
+  //  SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
+  //    std::vector<double> leak_diameters(500, 0);
+  //    bool pdd_mode = true;
+  //    bool debug = true;
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //        "../benchmarks/Net_m.inp", leak_diameters, pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //  SECTION("DD SIM TEST CASE 5: MESH INPUT WITH PDD MODE on ") {
+  //    bool pdd_mode = false;
+  //    bool debug = false;
+  //    auto sim =
+  //        std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //
+  SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
+    std::vector<double> leak_diameters(10000, 0);
     bool pdd_mode = false;
-    auto sim =
-        std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode, false);
-    REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-
-    // pressure test for stability
-    REQUIRE(!sim->run_simulation(1e-30, 1000));
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
-
-  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
-    std::vector<double> leak_diameters{0, 0, 0, 0, 0, 0, 0, 0, 0};
+    bool debug = true;
     auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../benchmarks/Net1c.inp", leak_diameters, false, false);
-    REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-    // pressure test for stability
-    REQUIRE(!sim->run_simulation(1e-30, 1000));
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
+        "../benchmarks/ky10_c.inp", leak_diameters, pdd_mode, debug);
+    auto start = high_resolution_clock::now();
 
-  SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
-    std::vector<double> leak_diameters(200, 0);
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../benchmarks/Net_small.inp", leak_diameters);
     REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
+//    sim->run_simulation(1e-8, 10000);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<seconds>(stop - start);
 
-  SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
-    std::vector<double> leak_diameters(500, 0);
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../benchmarks/Net_m.inp", leak_diameters, false, false);
-    REQUIRE(sim->run_simulation());
+    std::cout << duration.count() << std::endl;
     REQUIRE(sim->sim_residual_norm() < tolerance);
   }
-  SECTION("DD SIM TEST CASE 5: MESH INPUT WITH PDD MODE on ") {
-    bool pdd_mode = true;
-    auto sim =
-        std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode, false);
-    REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
-
-  //    SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
-  //        std::vector<double> leak_diameters(3000, 0);
-  //        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-  //                "../benchmarks/Net_large.inp", leak_diameters, false, true);
-  //        REQUIRE(sim->run_simulation());
-  //        REQUIRE(sim->sim_residual_norm() < tolerance);
-  //    }
 }
