@@ -4,7 +4,6 @@
 #include <Eigen/Sparse>
 #include <memory>
 
-
 namespace pipenetwork {
 
 //! Pipe network solver base class
@@ -19,12 +18,17 @@ class Solver {
   //! \param[in] mat_a_ pointer to assembled A matrix
   //! \param[in] vec_x_ pointer to assembled x vector
   //! \param[in] vec_b_ pointer to assembled b vector
-  void assembled_matrices(std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> mat_a,
-                          std::shared_ptr<Eigen::VectorXd> vec_x,
-                          std::shared_ptr<Eigen::VectorXd> vec_b) {
+  void assembled_matrices(
+      std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a,
+      std::shared_ptr<Eigen::VectorXd> vec_x,
+      std::shared_ptr<Eigen::VectorXd> vec_b) {
     mat_a_ = mat_a;
     vec_x_ = vec_x;
     vec_b_ = vec_b;
+
+    ia_ = mat_a_->outerIndexPtr();
+    ja_ = mat_a_->innerIndexPtr();
+    a_ = mat_a_->valuePtr();
   }
   //! Restrain vector
   void restrains(const Eigen::VectorXd& restraints) {
@@ -57,7 +61,14 @@ class Solver {
   //! Force vector
   std::shared_ptr<Eigen::VectorXd> vec_b_;
   //! Sparse Stiffness Matrix
-  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> mat_a_;
+  std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a_;
+
+  //! Row index for csr format matrix
+  int* ia_;
+  //! Column index for csr format matrix
+  int* ja_;
+  //! Matrix values for csr format matrix
+  double* a_;
 };
 }  // namespace pipenetwork
 

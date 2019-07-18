@@ -15,78 +15,37 @@ extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*,
                                    double*, int*);
 
-bool pipenetwork::Pardiso_unsym::solve() {
+pipenetwork::Pardiso_unsym::Pardiso_unsym(unsigned max_iter, double tolerance)
+    : Solver(max_iter, tolerance) {
   // configure pardiso
-  int n = this->vec_b_->size();
-  double* vec_x = this->vec_x_->data();
-  double* vec_b = this->vec_b_->data();
-  double x_diff[n];
-
-  auto ia = (this->mat_a_)->outerIndexPtr();
-  auto ja = (this->mat_a_)->innerIndexPtr();
-  auto a = (this->mat_a_)->valuePtr();
-
-  int nnz = ia[n];
-  int mtype = 11; /* Real unsymmetric matrix */
-
-  /* RHS and solution vectors. */
-  int nrhs = 1; /* Number of right hand sides. */
-
-  /* Internal solver memory pointer pt,                  */
-  /* 32-bit: int pt[64]; 64-bit: long int pt[64]         */
-  /* or void *pt[64] should be OK on both architectures  */
-  void* pt[64];
-
-  /* Pardiso control parameters. */
-  int iparm[64];
-  double dparm[64];
-  int solver;
-  int maxfct, mnum, phase, error, msglvl;
-
-  /* Number of processors. */
-  int num_procs;
 
   /* Auxiliary variables. */
   char* var;
-  int i;
 
-  double ddum; /* Double dummy */
-  int idum;    /* Integer dummy. */
-
-  /* -------------------------------------------------------------------- */
-  /* ..  Convert matrix from 0-based C-notation to Fortran 1-based        */
-  /*     notation.                                                        */
-  /* -------------------------------------------------------------------- */
-  for (i = 0; i < n + 1; i++) {
-    ia[i] += 1;
-  }
-  for (i = 0; i < nnz; i++) {
-    ja[i] += 1;
-  }
-
+  mtype_ = 11; /* Real unsymmetric matrix */
+  /* RHS and solution vectors. */
+  nrhs_ = 1; /* Number of right hand sides. */
   /* -------------------------------------------------------------------- */
   /* ..  Setup Pardiso control parameters and initialize the solvers      */
   /*     internal adress pointers. This is only necessary for the FIRST   */
   /*     call of the PARDISO solver.                                      */
   /* ---------------------------------------------------------------------*/
+  error_ = 0;
+  solver_ = 0; /* use sparse direct solver */
+  pardisoinit(pt_, &mtype_, &solver_, iparm_, dparm_, &error_);
 
-  error = 0;
-  solver = 0; /* use sparse direct solver */
-  pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
-
-  if (error != 0) {
-    if (error == -10) printf("No license file found \n");
-    if (error == -11) printf("License is expired \n");
-    if (error == -12) printf("Wrong username or hostname \n");
-    return 1;
-  }
-  //    else
-  //        printf("[PARDISO]: License check was successful ... \n");
+  if (error_ != 0) {
+    if (error_ == -10) printf("No license file found \n");
+    if (error_ == -11) printf("License is expired \n");
+    if (error_ == -12) printf("Wrong username or hostname \n");
+    exit(1);
+  } else
+    printf("[PARDISO]: License check was successful ... \n");
 
   /* Numbers of processors, value of OMP_NUM_THREADS */
   var = getenv("OMP_NUM_THREADS");
   if (var != NULL)
-    sscanf(var, "%d", &num_procs);
+    sscanf(var, "%d", &num_procs_);
   else {
     printf("Set environment OMP_NUM_THREADS to 1");
     exit(1);
@@ -95,40 +54,53 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /* -------------------------------------------------------------------- */
   /* .. Setup Pardiso control parameters. */
   /* -------------------------------------------------------------------- */
-  for (i = 0; i < 64; i++) {
-    iparm[i] = 0;
+  for (int i = 0; i < 64; i++) {
+    iparm_[i] = 0;
   }
-  iparm[0] = 1; /* No solver default */
-  iparm[1] = 0; /* Fill-in reordering from METIS */
+  iparm_[0] = 1; /* No solver default */
+  iparm_[1] = 0; /* Fill-in reordering from METIS */
   /* Numbers of processors, value of OMP_NUM_THREADS */
-  iparm[2] = num_procs;
-  iparm[3] = 0;   /* No iterative-direct algorithm */
-  iparm[4] = 0;   /* No user fill-in reducing permutation */
-  iparm[5] = 0;   /* Write solution into x */
-  iparm[6] = 0;   /* Not in use */
-  iparm[7] = 2;   /* Max numbers of iterative refinement steps */
-  iparm[8] = 0;   /* Not in use */
-  iparm[9] = 10;  /* Perturb the pivot elements with 1E-13 */
-  iparm[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
-  iparm[11] = 0;  /* Not in use */
-  iparm[12] = 0;  /* Not in use */
-  iparm[13] = 0;  /* Output: Number of perturbed pivots */
-  iparm[14] = 0;  /* Not in use */
-  iparm[15] = 0;  /* Not in use */
-  iparm[16] = 0;  /* Not in use */
-  iparm[17] = -1; /* Output: Number of nonzeros in the factor LU */
-  iparm[18] = -1; /* Output: Mflops for LU factorization */
-  iparm[19] = 0;  /* Output: Numbers of CG Iterations */
-  maxfct = 1;     /* Maximum number of numerical factorizations. */
-  mnum = 1;       /* Which factorization to use. */
-  msglvl = 1;     /* Print statistical information in file */
-  error = 0;      /* Initialize error flag */
+  iparm_[2] = num_procs_;
+  iparm_[3] = 0;   /* No iterative-direct algorithm */
+  iparm_[4] = 0;   /* No user fill-in reducing permutation */
+  iparm_[5] = 0;   /* Write solution into x */
+  iparm_[6] = 0;   /* Not in use */
+  iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
+  iparm_[8] = 0;   /* Not in use */
+  iparm_[9] = 13;  /* Perturb the pivot elements with 1E-13 */
+  iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
+  iparm_[11] = 0;  /* Not in use */
+  iparm_[12] = 0;  /* Not in use */
+  iparm_[13] = 0;  /* Output: Number of perturbed pivots */
+  iparm_[14] = 0;  /* Not in use */
+  iparm_[15] = 0;  /* Not in use */
+  iparm_[16] = 0;  /* Not in use */
+  iparm_[17] = -1; /* Output: Number of nonzeros in the factor LU */
+  iparm_[18] = -1; /* Output: Mflops for LU factorization */
+  iparm_[19] = 0;  /* Output: Numbers of CG Iterations */
+  maxfct_ = 1;     /* Maximum number of numerical factorizations. */
+  mnum_ = 1;       /* Which factorization to use. */
+  msglvl_ = 0;     /* Print statistical information in file */
+  error_ = 0;      /* Initialize error flag */
+}
 
-  maxfct = 1; /* Maximum number of numerical factorizations.  */
-  mnum = 1;   /* Which factorization to use. */
+bool pipenetwork::Pardiso_unsym::solve() {
+  // configure matrix
+  int n = vec_b_->size();
+  double* vec_b = vec_b_->data();
+  double x_diff[n];
+  int nnz = ia_[n];
 
-  msglvl = 0; /* Print statistical information  */
-  error = 0;  /* Initialize error flag */
+  /* -------------------------------------------------------------------- */
+  /* ..  Convert matrix from 0-based C-notation to Fortran 1-based        */
+  /*     notation.                                                        */
+  /* -------------------------------------------------------------------- */
+  for (int i = 0; i < n + 1; i++) {
+    ia_[i] += 1;
+  }
+  for (int i = 0; i < nnz; i++) {
+    ja_[i] += 1;
+  }
 
   /* -------------------------------------------------------------------- */
   /*  .. pardiso_chk_matrix(...)                                          */
@@ -136,11 +108,11 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /*     Use this functionality only for debugging purposes               */
   /* -------------------------------------------------------------------- */
 
-//  pardiso_chkmatrix(&mtype, &n, a, ia, ja, &error);
-//  if (error != 0) {
-//    printf("\nERROR in consistency of matrix: %d", error);
-//    exit(1);
-//  }
+  //  pardiso_chkmatrix(&mtype, &n, a, ia, ja, &error);
+  //  if (error != 0) {
+  //    printf("\nERROR in consistency of matrix: %d", error);
+  //    exit(1);
+  //  }
 
   /* -------------------------------------------------------------------- */
   /* ..  pardiso_chkvec(...)                                              */
@@ -149,11 +121,11 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /*     Use this functionality only for debugging purposes               */
   /* -------------------------------------------------------------------- */
 
-//  pardiso_chkvec(&n, &nrhs, vec_b, &error);
-//  if (error != 0) {
-//    printf("\nERROR  in right hand side: %d", error);
-//    exit(1);
-//  }
+  //  pardiso_chkvec(&n, &nrhs, vec_b, &error);
+  //  if (error != 0) {
+  //    printf("\nERROR  in right hand side: %d", error);
+  //    exit(1);
+  //  }
 
   /* -------------------------------------------------------------------- */
   /* .. pardiso_printstats(...)                                           */
@@ -162,22 +134,22 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /* -------------------------------------------------------------------- */
 
   //    pardiso_printstats (&mtype, &n, a, ia, ja, &nrhs, b, &error);
-//  if (error != 0) {
-//    printf("\nERROR right hand side: %d", error);
-//    exit(1);
-//  }
+  //  if (error != 0) {
+  //    printf("\nERROR right hand side: %d", error);
+  //    exit(1);
+  //  }
 
   /* -------------------------------------------------------------------- */
   /* ..  Reordering and Symbolic Factorization.  This step also allocates */
   /*     all memory that is necessary for the factorization.              */
   /* -------------------------------------------------------------------- */
-  phase = 11;
+  phase_ = 11;
 
-  pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs,
-          iparm, &msglvl, &ddum, &ddum, &error, dparm);
+  pardiso(pt_, &maxfct_, &mnum_, &mtype_, &phase_, &n, a_, ia_, ja_, &idum_,
+          &nrhs_, iparm_, &msglvl_, &ddum_, &ddum_, &error_, dparm_);
 
-  if (error != 0) {
-    printf("\nERROR during symbolic factorization: %d", error);
+  if (error_ != 0) {
+    printf("\nERROR during symbolic factorization: %d", error_);
     exit(1);
   }
   //    printf("\nReordering completed ... ");
@@ -187,13 +159,13 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /* -------------------------------------------------------------------- */
   /* ..  Numerical factorization.                                         */
   /* -------------------------------------------------------------------- */
-  phase = 22;
+  phase_ = 22;
 
-  pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs,
-          iparm, &msglvl, &ddum, &ddum, &error, dparm);
+  pardiso(pt_, &maxfct_, &mnum_, &mtype_, &phase_, &n, a_, ia_, ja_, &idum_,
+          &nrhs_, iparm_, &msglvl_, &ddum_, &ddum_, &error_, dparm_);
 
-  if (error != 0) {
-    printf("\nERROR during numerical factorization: %d", error);
+  if (error_ != 0) {
+    printf("\nERROR during numerical factorization: %d", error_);
     exit(2);
   }
   //    printf("\nFactorization completed ...\n ");
@@ -201,13 +173,13 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /* -------------------------------------------------------------------- */
   /* ..  Back substitution and iterative refinement.                      */
   /* -------------------------------------------------------------------- */
-  phase = 33;
+  phase_ = 33;
 
-  pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs,
-          iparm, &msglvl, vec_b, x_diff, &error, dparm);
+  pardiso(pt_, &maxfct_, &mnum_, &mtype_, &phase_, &n, a_, ia_, ja_, &idum_,
+          &nrhs_, iparm_, &msglvl_, vec_b, x_diff, &error_, dparm_);
 
-  if (error != 0) {
-    printf("\nERROR during solution: %d", error);
+  if (error_ != 0) {
+    printf("\nERROR during solution: %d", error_);
     exit(3);
   }
 
@@ -220,22 +192,23 @@ bool pipenetwork::Pardiso_unsym::solve() {
   /* -------------------------------------------------------------------- */
   /* ..  Convert matrix back to 0-based C-notation.                       */
   /* -------------------------------------------------------------------- */
-  for (i = 0; i < n + 1; i++) {
-    ia[i] -= 1;
+  for (int i = 0; i < n + 1; i++) {
+    ia_[i] -= 1;
   }
-  for (i = 0; i < nnz; i++) {
-    ja[i] -= 1;
+  for (int i = 0; i < nnz; i++) {
+    ja_[i] -= 1;
   }
 
   /* -------------------------------------------------------------------- */
   /* ..  Termination and release of memory.                               */
   /* -------------------------------------------------------------------- */
-  phase = -1; /* Release internal memory. */
+  phase_ = -1; /* Release internal memory. */
 
-  pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, &ddum, ia, ja, &idum, &nrhs,
-          iparm, &msglvl, &ddum, &ddum, &error, dparm);
+  pardiso(pt_, &maxfct_, &mnum_, &mtype_, &phase_, &n, &ddum_, ia_, ja_, &idum_,
+          &nrhs_, iparm_, &msglvl_, &ddum_, &ddum_, &error_, dparm_);
 
-  for (i = 0; i < n; i++) {
+  // update x
+  for (int i = 0; i < n; i++) {
     (*vec_x_)[i] -= x_diff[i];
   }
 

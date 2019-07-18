@@ -137,13 +137,13 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
     std::vector<double> leak_diameters(10000, 0);
     bool pdd_mode = false;
-    bool debug = true;
+    bool debug = false;
     auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
         "../benchmarks/ky10_c.inp", leak_diameters, pdd_mode, debug);
     auto start = high_resolution_clock::now();
 
-    REQUIRE(sim->run_simulation());
-//    sim->run_simulation(1e-8, 10000);
+//    REQUIRE(sim->run_simulation());
+    sim->run_simulation(1e-8, 10000);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
