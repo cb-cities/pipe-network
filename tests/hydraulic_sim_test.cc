@@ -119,7 +119,7 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 //    SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
 //      std::vector<double> leak_diameters(500, 0);
 //      bool pdd_mode = true;
-//      bool debug = false;
+//      bool debug = true;
 //      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
 //          "../benchmarks/Net_m.inp", leak_diameters, pdd_mode, debug);
 //      REQUIRE(sim->run_simulation());

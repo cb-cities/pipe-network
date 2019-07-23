@@ -61,6 +61,20 @@ TEST_CASE("Check Curves", "[Curve]") {
       curve_list.add_pump_curves (p_curve_vec);
       REQUIRE (curve_list.pump_curves ()["1"].line_param[1]  == Approx(31.6992).epsilon(tolerance));
       REQUIRE (curve_list.poly_coeffs ()["HW_POLY_VEC"][0] == Approx(6619.952473405493).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["HW_POLY_VEC"][1] == Approx(-2.562247355522429).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["HW_POLY_VEC"][2] == Approx(0.0012305046454003125).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["HW_POLY_VEC"][3] == Approx(3.4293453535907055e-09).epsilon(tolerance));
 
+
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC1"][0] == Approx(-18.749999999749996).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC1"][1] == Approx(6.2499999999).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC1"][2] == Approx(1.000000082740371e-11).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC1"][3] == Approx(-4.440892098516782e-17).epsilon(tolerance));
+
+
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC2"][0] == Approx(-0.6249920885505783).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC2"][1] == Approx(37.249212823040864).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC2"][2] == Approx(-739.9780066609305).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["PDD_POLY_VEC2"][3] == Approx(4900.811712406892).epsilon(tolerance));
   }
 }

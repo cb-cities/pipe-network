@@ -7,6 +7,7 @@
 #include <Eigen/Sparse>
 #include <algorithm>
 
+#include "curves.h"
 #include "mesh.h"
 #include "settings.h"
 
@@ -19,8 +20,9 @@ class MatrixAssembler {
  public:
   //! Constructor
   explicit MatrixAssembler(const std::shared_ptr<Mesh>& mesh,
+                           std::shared_ptr<Curves>& curves_info,
                            bool pdd_mode = false)
-      : mesh_{mesh}, pdd_{pdd_mode} {
+      : mesh_{mesh}, curves_info_{curves_info}, pdd_{pdd_mode} {
     nnodes_ = mesh_->nnodes();
     nlinks_ = mesh_->nlinks();
     init_variable_vector();
@@ -43,13 +45,16 @@ class MatrixAssembler {
   }
   //! Method to update jacobian matrix from the variable vector
   void update_jacobian();
-  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> jac_matrix() const {
+  std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> jac_matrix()
+      const {
     return jac_;
   }
 
  private:
   //! the mesh ptr
   std::shared_ptr<Mesh> mesh_;
+  //! the curves info ptr
+  std::shared_ptr<Curves> curves_info_;
   //! basic info from mesh for matrix assembling
   Index nnodes_{0};
   Index nlinks_{0};
@@ -88,8 +93,8 @@ class MatrixAssembler {
   std::shared_ptr<Eigen::VectorXd> residual_vec_{
       std::make_shared<Eigen::VectorXd>()};
   //! Jacobian matrix
-  std::shared_ptr<Eigen::SparseMatrix<double,Eigen::RowMajor>> jac_{
-      std::make_shared<Eigen::SparseMatrix<double,Eigen::RowMajor>>()};
+  std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> jac_{
+      std::make_shared<Eigen::SparseMatrix<double, Eigen::RowMajor>>()};
 
   //! Initialize variable vector
   void init_variable_vector();
@@ -198,23 +203,6 @@ class MatrixAssembler {
   //!    f(H-z) otherwise
 
   void initialize_jacobian();
-
-  //! Method to compute the polynomial coefficients for leak equations
-  //! \param[in] leak_area leak area of the leak hole
-  //! \retval leak_poly_coef polynomial approximation coefficient for leak
-  //! equation
-  Eigen::VectorXd compute_leak_poly_coef(double leak_area) const;
-
-  //! Method to compute the coefficients of a smoothing polynomial
-  //! \param[in] x points on the x-axis at which the smoothing polynomial begins
-  //! and ends
-  //! \param[in] f function evaluated at x1 and f2 \param[in] df
-  //! derivative evaluated at x1 and x2
-  //! \retval  A vector with the smoothing
-  //! polynomail coefficients starting with the cubic term.
-  Eigen::VectorXd compute_poly_coefficients(
-      const std::array<double, 2>& x, const std::array<double, 2>& f,
-      const std::array<double, 2>& df) const;
 };
 
 }  // namespace pipenetwork

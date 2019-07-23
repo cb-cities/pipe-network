@@ -25,8 +25,12 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
         elevations_[idx] = info["elevation"];
         // leak information
         if (info["leak_area"] > 0) {
-          leak_ids_.emplace_back(node.second->id());
-          leak_area_.emplace_back(info["leak_area"]);
+          std::string leak_node_name = node.second->id();
+          double leak_area = info["leak_area"];
+          leak_ids_.emplace_back(leak_node_name);
+          leak_area_.emplace_back(leak_area);
+          // register leak pdd curve
+          curves_info_->add_leak_poly_vec(leak_node_name, leak_area);
           // nodal leak discharge vector
           variable_vec_->coeffRef(index_nl) = node.second->sim_leak();
           ++leak_idx;
@@ -217,29 +221,31 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
                             return 0.0;
                           })
                           .array();
+    auto pdd1_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC1"];
+    auto pdd2_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC2"];
+
     residual_vec_->segment(nnodes_, nnodes_) =
         case1_bool * (variable_vec_->segment(nnodes_, nnodes_).array()) +
         case2_bool *
             ((variable_vec_->segment(nnodes_, nnodes_).array()) -
              demands_heads_vec_.array() *
-                 (PDD_POLY_VEC1[0] * pressure.array().pow(3) +
-                  PDD_POLY_VEC1[1] * pressure.array().pow(2) +
-                  PDD_POLY_VEC1[2] * pressure.array() + PDD_POLY_VEC1[3])) +
+                 (pdd1_poly_vec[0] * pressure.array().pow(3) +
+                  pdd1_poly_vec[1] * pressure.array().pow(2) +
+                  pdd1_poly_vec[2] * pressure.array() + pdd1_poly_vec[3])) +
         case3_bool *
             ((variable_vec_->segment(nnodes_, nnodes_).array()) -
              demands_heads_vec_.array() *
-                 (PDD_POLY_VEC2[0] * pressure.array().pow(3) +
-                  PDD_POLY_VEC2[1] * pressure.array().pow(2) +
-                  PDD_POLY_VEC2[2] * pressure.array() + PDD_POLY_VEC2[3])) +
+                 (pdd2_poly_vec[0] * pressure.array().pow(3) +
+                  pdd2_poly_vec[1] * pressure.array().pow(2) +
+                  pdd2_poly_vec[2] * pressure.array() + pdd2_poly_vec[3])) +
         case4_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
                       demands_heads_vec_.array()) +
-        case5_bool *
-            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-             demands_heads_vec_.array() * ((pressure.array().abs() - MIN_PRESSURE) /
-                                           (NORMAL_PRESSURE - MIN_PRESSURE))
-                                              .pow(0.5));
-//    std::cout<<pressure.array() <<std::endl;
-
+        case5_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                      demands_heads_vec_.array() *
+                          ((pressure.array().abs() - MIN_PRESSURE) /
+                           (NORMAL_PRESSURE - MIN_PRESSURE))
+                              .pow(0.5));
+    //    std::cout<<pressure.array() <<std::endl;
   }
   // correct residuals for sources (head for reservoir/tanks)
   for (const auto& idx : source_idx_) {
@@ -264,7 +270,7 @@ void pipenetwork::MatrixAssembler::assemble_leak_residual() {
     }
     // case 2, around the boundary, use polynomial approximation
     else if (p < 1e-4) {
-      auto leak_poly_coef = compute_leak_poly_coef(leak_area_[i]);
+      auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];
       residual_vec_->coeffRef(leak_idx) =
           (*variable_vec_)[leak_idx] - leak_poly_coef[0] * std::pow(p, 3) -
           leak_poly_coef[1] * std::pow(p, 2) - leak_poly_coef[2] * p -
@@ -285,9 +291,9 @@ void pipenetwork::MatrixAssembler::assemble_leak_residual() {
 void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-//                            return (x < 0) ? -1 : 1;
-                            if (x > 0) return 1.0;
-                            return -1.0;
+                          //                            return (x < 0) ? -1 : 1;
+                          if (x > 0) return 1.0;
+                          return -1.0;
                         })
                         .array();  // get the sign of discharges
 
@@ -295,12 +301,8 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-
-
-                            if (std::abs(x) > HW_Q2) return 1.0;
-                            return 0.0;
-
-
+                          if (std::abs(x) > HW_Q2) return 1.0;
+                          return 0.0;
                         })
                         .array();
   // case 2, discharges that fall in between HW_Q1 and HW_Q2, use polynomial
@@ -325,6 +327,8 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   auto head_diff_array =
       (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
 
+  auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
+
   residual_vec_->segment(2 * nnodes_, nlinks_) =
       case1_bool * (sign_array * link_resistance_coeff_vec_.array() *
                         discharge_abs_array.pow(1.852) -
@@ -332,9 +336,9 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
 
       + case2_bool *
             (sign_array * link_resistance_coeff_vec_.array() *
-                 (HW_POLY_VEC[0] * discharge_abs_array.pow(3) +
-                  HW_POLY_VEC[1] * discharge_abs_array.pow(2) +
-                  HW_POLY_VEC[2] * discharge_abs_array + HW_POLY_VEC[3]) -
+                 (hw_poly_vec[0] * discharge_abs_array.pow(3) +
+                  hw_poly_vec[1] * discharge_abs_array.pow(2) +
+                  hw_poly_vec[2] * discharge_abs_array + hw_poly_vec[3]) -
              head_diff_array) +
       case3_bool * (sign_array * link_resistance_coeff_vec_.array() * HW_M *
                         discharge_abs_array -
@@ -500,17 +504,20 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
                           })
                           .array();
 
+    auto pdd1_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC1"];
+    auto pdd2_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC2"];
+
     auto vals =
         case1_bool *
             (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
         case2_bool * (-demands_heads_vec_.array() *
-                      (3 * PDD_POLY_VEC1[0] * pressure.array().pow(2) +
-                       2 * PDD_POLY_VEC1[1] * pressure.array().pow(1) +
-                       PDD_POLY_VEC1[2])) +
+                      (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
+                       2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
+                       pdd1_poly_vec[2])) +
         case3_bool * (-demands_heads_vec_.array() *
-                      (3 * PDD_POLY_VEC2[0] * pressure.array().pow(2) +
-                       2 * PDD_POLY_VEC2[1] * pressure.array().pow(1) +
-                       PDD_POLY_VEC2[2])) +
+                      (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
+                       2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
+                       pdd2_poly_vec[2])) +
         case4_bool *
             (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
         case5_bool * (-0.5 * demands_heads_vec_.array() *
@@ -534,8 +541,8 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
 
   auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
-                            if (x > 0) return 1.0;
-                            return -1.0;
+                          if (x > 0) return 1.0;
+                          return -1.0;
                         })
                         .array();  // get the sign of discharges
 
@@ -569,13 +576,13 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
       ((variable_vec_->segment(2 * nnodes_, nlinks_)).array()).abs();
   auto head_diff_array =
       (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
-
+  auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
   auto vals =
       case1_bool * 1.852 * link_resistance_coeff_vec_.array() *
           discharge_abs_array.pow(.852) +
       case2_bool * link_resistance_coeff_vec_.array() *
-          (3 * HW_POLY_VEC[0] * discharge_abs_array.pow(2) +
-           2 * HW_POLY_VEC[1] * discharge_abs_array + 1 * HW_POLY_VEC[2]) +
+          (3 * hw_poly_vec[0] * discharge_abs_array.pow(2) +
+           2 * hw_poly_vec[1] * discharge_abs_array + 1 * hw_poly_vec[2]) +
       case3_bool * link_resistance_coeff_vec_.array() * HW_M;
 
   auto trip_g = sub_jac_trip_["jac_g"];
@@ -602,7 +609,7 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
     }
     // case 2, around the boundary, use polynomial approximation
     else if (p < 1e-4) {
-      auto leak_poly_coef = compute_leak_poly_coef(leak_area_[i]);
+      auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];;
       val = -3 * leak_poly_coef[0] * std::pow(p, 2) -
             2 * leak_poly_coef[1] * p - leak_poly_coef[2];
     }
@@ -615,33 +622,4 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
                    trip_h[leak_idx - 2 * nnodes_ - nlinks_].col()) = val;
     ++leak_idx;
   }
-}
-
-Eigen::VectorXd pipenetwork::MatrixAssembler::compute_poly_coefficients(
-    const std::array<double, 2>& x, const std::array<double, 2>& f,
-    const std::array<double, 2>& df) const {
-  Eigen::VectorXd ret(4);
-  double a =
-      (2 * (f[0] - f[1]) - (x[0] - x[1]) * (df[1] + df[0])) /
-      (std::pow(x[1], 3) - std::pow(x[0], 3) + 3 * x[0] * x[1] * (x[0] - x[1]));
-  double b =
-      (df[0] - df[1] + 3 * ((std::pow(x[1], 2) - std::pow(x[0], 2)) * a)) /
-      (2 * (x[0] - x[1]));
-  double c = df[1] - 3 * std::pow(x[1], 2) * a - 2 * x[1] * b;
-  double d = f[1] - std::pow(x[1], 3) * a - std::pow(x[1], 2) * b - x[1] * c;
-  ret << a, b, c, d;
-  return ret;
-}
-
-Eigen::VectorXd pipenetwork::MatrixAssembler::compute_leak_poly_coef(
-    double leak_area) const {
-  double x1 = 0.0;
-  double f1 = 0.0;
-  double df1 = 1.0e-11;
-  double x2 = 1e-4;
-  double f2 = LEAK_COEFF * leak_area * std::pow((2 * G * x2), 0.5);
-  double df2 = 0.5 * LEAK_COEFF * leak_area * std::pow((2 * G), 0.5) *
-               std::pow(x2, -0.5);
-
-  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
 }

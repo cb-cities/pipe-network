@@ -28,7 +28,8 @@
 //
 // Multi point curves are currently not supported
 pipenetwork::Pump_curve_prop::Pump_curve_prop(
-    std::string curve_name, std::vector<std::pair<double, double>>& curve_point)
+    std::string& curve_name,
+    std::vector<std::pair<double, double>>& curve_point)
     : name{curve_name}, points{curve_point} {
   num_points = points.size();
   double A, B, C;
@@ -114,4 +115,56 @@ void pipenetwork::Curves::add_pump_curves(
   for (const auto& pump_prop : head_pump_props) {
     head_pump_curves[pump_prop.name] = pump_prop;
   }
+}
+
+Eigen::Vector4d pipenetwork::Curves::compute_hw_poly_vec() {
+  auto x1 = HW_Q1;
+  auto x2 = HW_Q2;
+  auto f1 = HW_M * HW_Q1;
+  auto f2 = std::pow(HW_Q2, 1.852);
+  auto df1 = HW_M;
+  auto df2 = 1.852 * std::pow(HW_Q2, 0.852);
+  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+}
+
+Eigen::Vector4d pipenetwork::Curves::compute_pdd1_poly_vec() {
+  double x1 = MIN_PRESSURE;
+  double f1 = 0.0;
+  double x2 = MIN_PRESSURE + PDD_DELTA;
+  double f2 =
+      std::pow(((x2 - MIN_PRESSURE) / (NORMAL_PRESSURE - MIN_PRESSURE)), 0.5);
+  double df1 = PDD_SLOPE;
+  double df2 =
+      0.5 *
+      std::pow(((x2 - MIN_PRESSURE) / (NORMAL_PRESSURE - MIN_PRESSURE)),
+               (-0.5)) *
+      1.0 / (NORMAL_PRESSURE - MIN_PRESSURE);
+  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+}
+
+Eigen::Vector4d pipenetwork::Curves::compute_pdd2_poly_vec() {
+  double x1 = NORMAL_PRESSURE - PDD_DELTA;
+  double f1 =
+      std::pow(((x1 - MIN_PRESSURE) / (NORMAL_PRESSURE - MIN_PRESSURE)), 0.5);
+  double x2 = NORMAL_PRESSURE;
+  double f2 = 1;
+  double df1 =
+      0.5 *
+      std::pow(((x1 - MIN_PRESSURE) / (NORMAL_PRESSURE - MIN_PRESSURE)),
+               (-0.5)) *
+      1.0 / (NORMAL_PRESSURE - MIN_PRESSURE);
+  double df2 = PDD_SLOPE;
+  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
+}
+
+Eigen::Vector4d pipenetwork::Curves::compute_leak_poly_vec(double leak_area) {
+  double x1 = 0.0;
+  double f1 = 0.0;
+  double df1 = 1.0e-11;
+  double x2 = 1e-4;
+  double f2 = LEAK_COEFF * leak_area * std::pow((2 * G * x2), 0.5);
+  double df2 = 0.5 * LEAK_COEFF * leak_area * std::pow((2 * G), 0.5) *
+               std::pow(x2, -0.5);
+
+  return compute_poly_coefficients({x1, x2}, {f1, f2}, {df1, df2});
 }

@@ -14,6 +14,9 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   // Creat a mesh
   auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
+  // Create a curves info object
+  auto curves_info = std::make_shared<pipenetwork::Curves>();
+
   std::vector<std::string> junction_ids{"10", "11", "12"};
   std::vector<double> elevations{216.408, 216.408, 213.36};
   std::vector<double> demands{0, 9.464e-03, 9.464e-03};
@@ -82,8 +85,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
                                      init_discharge));  // initialze discharge
   SECTION("DD MODE") {
     bool pdd_mode = false;
-    auto assembler =
-        std::make_shared<pipenetwork::MatrixAssembler>(mesh, pdd_mode);
+    auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+        mesh, curves_info, pdd_mode);
 
     SECTION("vairable test") {
       auto var_vec = (assembler->variable_vector());
@@ -193,8 +196,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
           init_discharge));  // initialze discharge
-      auto assembler =
-          std::make_shared<pipenetwork::MatrixAssembler>(mesh, pdd_mode);
+      auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+          mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
 
       // test residual (headloss part)
@@ -229,7 +232,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
           init_discharge));  // initialze discharge
       auto assembler =
-          std::make_shared<pipenetwork::MatrixAssembler>(mesh, pdd_mode);
+          std::make_shared<pipenetwork::MatrixAssembler>(mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
 
       // test residual (headloss part)
@@ -263,8 +266,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
           init_discharge));  // initialze discharge
-      auto assembler =
-          std::make_shared<pipenetwork::MatrixAssembler>(mesh, pdd_mode);
+      auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+          mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
 
       // test residual (headloss part)
@@ -297,7 +300,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   SECTION("PDD MODE") {
     bool pdd_mode = true;
     auto assembler =
-        std::make_shared<pipenetwork::MatrixAssembler>(mesh, pdd_mode);
+        std::make_shared<pipenetwork::MatrixAssembler>(mesh,curves_info, pdd_mode);
 
     SECTION("vairable test") {
       auto var_vec = (assembler->variable_vector());

@@ -81,23 +81,23 @@ target_link_libraries(pipe_network libpardiso600-MACOS-X86-64.dylib)
 
 # Unit test
 SET(test_src
-#        src/mesh.cc
-#        src/matrix_assembler.cc
-#        src/hydralic_sim.cc
-#        src/eigen_gmres.cc
-#        src/input.cc
-#        src/eigen_cg.cc
-#        src/eigen_cg_lem.cc
-#        src/pardiso_unsym.cc
+        src/mesh.cc
+        src/matrix_assembler.cc
+        src/hydralic_sim.cc
+        src/eigen_gmres.cc
+        src/input.cc
+        src/eigen_cg.cc
+        src/eigen_cg_lem.cc
+        src/pardiso_unsym.cc
         src/curves.cc
-#        tests/mesh_test.cc
-#        tests/node_test.cc
-#        tests/link_test.cc
-#        tests/matrix_assembler_test.cc
-#        tests/hydraulic_sim_test.cc
-#        tests/input_test.cc
+        tests/mesh_test.cc
+        tests/node_test.cc
+        tests/link_test.cc
+        tests/matrix_assembler_test.cc
+        tests/hydraulic_sim_test.cc
+        tests/input_test.cc
         tests/curve_test.cc
-#        tests/eigen_gmres_test.cc
+        tests/solver_test.cc
         tests/test.cc)
 add_executable(pipe_network_test
   ${test_src}

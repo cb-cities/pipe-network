@@ -55,19 +55,19 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     bool issolved = solver_->solve();
 
     residual_norm_ = residual_vec->norm();
-        if (residual_vec->norm() < NR_tolerance) {
-          if (debug_) {
-            std::ofstream outFile3("../benchmarks/final_var.csv");
-            outFile3 << "variables"
-                     << "\n";
-            for (int i = 0; i < (*variable_vec).size(); ++i) {
-              outFile3 << (*variable_vec).coeff(i) << "\n";
-            }
-            std::cout << "Final vairables " << (*variable_vec) << std::endl;
-          }
-
-          return true;
+    if (residual_vec->norm() < NR_tolerance) {
+      if (debug_) {
+        std::ofstream outFile3("../benchmarks/final_var.csv");
+        outFile3 << "variables"
+                 << "\n";
+        for (int i = 0; i < (*variable_vec).size(); ++i) {
+          outFile3 << (*variable_vec).coeff(i) << "\n";
         }
+        std::cout << "Final vairables " << (*variable_vec) << std::endl;
+      }
+
+      return true;
+    }
   }
   return false;
 }
@@ -89,7 +89,8 @@ pipenetwork::Hydralic_sim::Hydralic_sim(
   m->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                   std::placeholders::_1,
                                   init_discharge_));  // initialze discharge
-  assembler_ = std::make_shared<MatrixAssembler>(m, pdd_mode);
+  auto curves_info = std::make_shared<pipenetwork::Curves>();
+  assembler_ = std::make_shared<MatrixAssembler>(m, curves_info, pdd_mode);
   solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
                                             inner_solver_tolerance_);
   debug_ = debug;

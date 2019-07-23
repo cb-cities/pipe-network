@@ -5,11 +5,11 @@
 #include <vector>
 
 #include "eigen_cg.h"
-#include "eigen_gmres.h"
 #include "eigen_cg_lem.h"
-#include "pardiso_unsym.h"
+#include "eigen_gmres.h"
 #include "input.h"
 #include "matrix_assembler.h"
+#include "pardiso_unsym.h"
 #include "settings.h"
 
 namespace pipenetwork {
@@ -18,10 +18,11 @@ namespace pipenetwork {
 class Hydralic_sim {
  public:
   explicit Hydralic_sim(const std::shared_ptr<Mesh>& mesh,
+                        std::shared_ptr<Curves>& curves_info,
                         bool pdd_mode = false, bool debug = false) {
-    assembler_ = std::make_shared<MatrixAssembler>(mesh, pdd_mode);
-    solver_ =
-        std::make_shared<Pardiso_unsym>(max_solver_steps_, inner_solver_tolerance_);
+    assembler_ = std::make_shared<MatrixAssembler>(mesh, curves_info, pdd_mode);
+    solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
+                                              inner_solver_tolerance_);
     debug_ = debug;
   };
   Hydralic_sim(const std::string& filepath,

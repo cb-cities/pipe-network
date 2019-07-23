@@ -22,13 +22,13 @@ struct Pump_curve_prop {
   //! \param[in] curve_name name of the curve
   //! \param[in] curve_point vector (1 or 3) of curve points (flow, head) used
   //! for pump curve construction
-  Pump_curve_prop(std::string curve_name,
+  Pump_curve_prop(std::string& curve_name,
                   std::vector<std::pair<double, double>>& curve_point);
 
   //! Name of the pump curve
   std::string name;
   //! Number of points used for curve generation
-  unsigned num_points;
+  unsigned num_points{0};
   //! Points used for curve generation
   std::vector<std::pair<double, double>> points;
   //! Head curve coefficients: H = head_curve_coefficients[0] -
@@ -51,37 +51,60 @@ class Curves {
  public:
   //! Constructor
   Curves() {
-    // default pdd coefficients
-    poly_coefficients["PDD_POLY_VEC1"] = {-18.749999999749996, 6.2499999999,
-                                          1.000000082740371e-11,
-                                          -4.440892098516782e-17};
-    poly_coefficients["PDD_POLY_VEC2"] = {
-        -0.6249920885505783, 37.249212823040864, -739.9780066609305,
-        4900.811712406892};
-
-    poly_coefficients["HW_POLY_VEC"] = {6619.952473405493, -2.562247355522429,
-                                        0.0012305046454003125,
-                                        3.4293453535907055e-09};
+    // default pdd(pressure demand driven) and hw(harzian williams) coefficients
+    poly_coefficients["PDD_POLY_VEC1"] = compute_pdd1_poly_vec();
+    poly_coefficients["PDD_POLY_VEC2"] = compute_pdd2_poly_vec();
+    poly_coefficients["HW_POLY_VEC"] = compute_hw_poly_vec();
   };
 
   //! Destructor
   ~Curves() = default;
+
   //
   //! Method to add head pump curve
   //! \param[in] head_pump_curves a vector that contains information of each
   //! pump curve
   void add_pump_curves(const std::vector<Pump_curve_prop>& head_pump_props);
 
+  //! Method to add polynomial coefficients for leak equation
+  //! \param[in] node_name name of the leaky node
+  //! \param[in] leak_area area of the leak hole
+  void add_leak_poly_vec(std::string& node_name, double leak_area) {
+    poly_coefficients[node_name] = compute_leak_poly_vec(leak_area);
+  };
+
+  //! get the head pump curves map
   std::map<std::string, Pump_curve_prop> pump_curves() const {
     return head_pump_curves;
   }
+
+  //! get the poly coefficient curves map
   std::map<std::string, Eigen::Vector4d> poly_coeffs() const {
     return poly_coefficients;
   }
 
  private:
+  //! map that stores all the polynomial approximation coefficients
   std::map<std::string, Eigen::Vector4d> poly_coefficients;
+  //! map that stores all the head pump curves information
   std::map<std::string, Pump_curve_prop> head_pump_curves;
+  //! Method to compute the polynomial coefficients for harzian williams
+  //! equation
+  //! \retval poly_coef polynomial approximation coefficient
+  Eigen::Vector4d compute_hw_poly_vec();
+  //! Method to compute the polynomial coefficients for the first part of
+  //! pressure demand driven demand equation
+  //! \retval poly_coef polynomial approximation coefficient
+  Eigen::Vector4d compute_pdd1_poly_vec();
+  //! Method to compute the polynomial coefficients for the second part of
+  //! pressure demand driven demand equation
+  //! \retval poly_coef polynomial approximation coefficient
+  Eigen::Vector4d compute_pdd2_poly_vec();
+  //! Method to compute the polynomial coefficients for leak equations
+  //! \param[in] leak_area leak area of the leak hole
+  //! \retval leak_poly_coef polynomial approximation coefficient for leak
+  //! equation
+  Eigen::Vector4d compute_leak_poly_vec(double leak_area);
 };
 
 //! Method to compute the coefficients of a smoothing polynomial
