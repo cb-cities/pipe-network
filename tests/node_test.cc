@@ -24,7 +24,7 @@ TEST_CASE("Node is checked", "[Node]") {
     // check elevation
     REQUIRE(junction_node->nodal_info()["elevation"] == junction_1.elevation);
     // check type
-    REQUIRE(junction_node->nodal_info()["type"] == JUNCTION);
+    REQUIRE(junction_node->nodal_info()["type"] == pipenetwork::JUNCTION);
     // check demand
     REQUIRE(junction_node->nodal_info()["demand"] == junction_1.demand);
     // check leak hole area
@@ -49,6 +49,6 @@ TEST_CASE("Node is checked", "[Node]") {
     // check elevation
     REQUIRE(reservoir_node->nodal_info()["head"] == res_1.head);
     // check type
-    REQUIRE(reservoir_node->nodal_info()["type"] == RESERVOIR);
+    REQUIRE(reservoir_node->nodal_info()["type"] == pipenetwork::RESERVOIR);
   }
 }

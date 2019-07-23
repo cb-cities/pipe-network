@@ -33,9 +33,10 @@ TEST_CASE("Input is checked", "[IO]") {
     // check roughness
     REQUIRE(pipe_props[0].roughness == 100);
     // check diameter
-    REQUIRE(pipe_props[1].diameter == Approx(0.35559999999999997).epsilon(tolerance));
+    REQUIRE(pipe_props[1].diameter ==
+            Approx(0.35559999999999997).epsilon(tolerance));
     // check diameter
-    REQUIRE(pipe_props[0].status == OPEN);
+    REQUIRE(pipe_props[0].status == pipenetwork::OPEN);
     // check length
     REQUIRE(pipe_props[1].length == Approx(1609.344).epsilon(tolerance));
     // check id

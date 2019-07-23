@@ -57,7 +57,9 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   const std::vector<double> diameter{0.5588, 0.4572, 0.35559999999999997,
                                      0.254};
   const std::vector<double> roughness{100, 100, 100, 100};
-  const std::vector<Pipe_status> status{OPEN, OPEN, OPEN, OPEN};
+  const std::vector<pipenetwork::Pipe_status> status{
+      pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN,
+      pipenetwork::OPEN};
 
   std::vector<pipenetwork::Pipe_prop> pipe_props;
   for (int i = 0; i < pipe_ids.size(); ++i) {
@@ -106,48 +108,49 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   //    REQUIRE(sim->sim_residual_norm() < tolerance);
   //  }
   //
-    SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
-      std::vector<double> leak_diameters(200, 0);
-      bool pdd_mode = true;
-      bool debug = true;
-      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-          "../benchmarks/Net_small.inp", leak_diameters, pdd_mode, debug);
-      REQUIRE(sim->run_simulation(1e-12, 100));
-      REQUIRE(sim->sim_residual_norm() < tolerance);
-    }
+  SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
+    std::vector<double> leak_diameters(200, 0);
+    bool pdd_mode = true;
+    bool debug = true;
+    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+        "../benchmarks/Net_small.inp", leak_diameters, pdd_mode, debug);
+    REQUIRE(sim->run_simulation(1e-12, 100));
+    REQUIRE(sim->sim_residual_norm() < tolerance);
+  }
 
-//    SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
-//      std::vector<double> leak_diameters(500, 0);
-//      bool pdd_mode = true;
-//      bool debug = true;
-//      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//          "../benchmarks/Net_m.inp", leak_diameters, pdd_mode, debug);
-//      REQUIRE(sim->run_simulation());
-//      REQUIRE(sim->sim_residual_norm() < tolerance);
-//    }
-//    SECTION("DD SIM TEST CASE 5: MESH INPUT WITH PDD MODE on ") {
-//      bool pdd_mode = true;
-//      bool debug = true;
-//      auto sim =
-//          std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode, debug);
-//      REQUIRE(sim->run_simulation());
-//      REQUIRE(sim->sim_residual_norm() < tolerance);
-//    }
+  //    SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
+  //      std::vector<double> leak_diameters(500, 0);
+  //      bool pdd_mode = true;
+  //      bool debug = true;
+  //      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //          "../benchmarks/Net_m.inp", leak_diameters, pdd_mode, debug);
+  //      REQUIRE(sim->run_simulation());
+  //      REQUIRE(sim->sim_residual_norm() < tolerance);
+  //    }
+  //    SECTION("DD SIM TEST CASE 5: MESH INPUT WITH PDD MODE on ") {
+  //      bool pdd_mode = true;
+  //      bool debug = true;
+  //      auto sim =
+  //          std::make_shared<pipenetwork::Hydralic_sim>(mesh, pdd_mode,
+  //          debug);
+  //      REQUIRE(sim->run_simulation());
+  //      REQUIRE(sim->sim_residual_norm() < tolerance);
+  //    }
   //
-//  SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
-//    std::vector<double> leak_diameters(10000, 0);
-//    bool pdd_mode = true;
-//    bool debug = true;
-//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//        "../benchmarks/ky10_c.inp", leak_diameters, pdd_mode, debug);
-//    auto start = high_resolution_clock::now();
-//
-////    REQUIRE(sim->run_simulation());
-//    sim->run_simulation(1e-8, 100);
-//    auto stop = high_resolution_clock::now();
-//    auto duration = duration_cast<seconds>(stop - start);
-//
-//    std::cout << duration.count() << std::endl;
-//    REQUIRE(sim->sim_residual_norm() < tolerance);
-//  }
+  //  SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
+  //    std::vector<double> leak_diameters(10000, 0);
+  //    bool pdd_mode = true;
+  //    bool debug = true;
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //        "../benchmarks/ky10_c.inp", leak_diameters, pdd_mode, debug);
+  //    auto start = high_resolution_clock::now();
+  //
+  ////    REQUIRE(sim->run_simulation());
+  //    sim->run_simulation(1e-8, 100);
+  //    auto stop = high_resolution_clock::now();
+  //    auto duration = duration_cast<seconds>(stop - start);
+  //
+  //    std::cout << duration.count() << std::endl;
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
 }

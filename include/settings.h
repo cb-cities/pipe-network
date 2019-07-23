@@ -1,6 +1,7 @@
 #ifndef PIPE_NETWORK_SETTING_H_
 #define PIPE_NETWORK_SETTING_H_
 #include <cmath>
+namespace pipenetwork {
 //! define alias of type for index
 using Index = unsigned long long;
 
@@ -17,7 +18,16 @@ const double PDD_DELTA{0.2};
 const double PDD_SLOPE{1e-11};
 
 //! link settings
-enum Link_type { PIPE, PRVALVE, PSVALVE,PBVALVE,FCVALVE,TCVALVE,GPVALVE, PUMP };
+enum Link_type {
+  PIPE,
+  PRVALVE,
+  PSVALVE,
+  PBVALVE,
+  FCVALVE,
+  TCVALVE,
+  GPVALVE,
+  PUMP
+};
 enum Pipe_status { OPEN, CLOSED };
 
 //! constant for modified hazen-williams formula
@@ -29,5 +39,6 @@ const double HW_M{0.001};
 const double PUMP_M = -0.00000000001;
 const double PUMP_Q1 = 0.0;
 const double PUMP_Q2 = 1.0e-8;
+}  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_SETTING_H_

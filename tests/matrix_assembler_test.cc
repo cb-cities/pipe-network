@@ -58,7 +58,9 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   const std::vector<double> diameter{0.5588, 0.4572, 0.35559999999999997,
                                      0.254};
   const std::vector<double> roughness{100, 100, 100, 100};
-  const std::vector<Pipe_status> status{OPEN, OPEN, OPEN, OPEN};
+  const std::vector<pipenetwork::Pipe_status> status{
+      pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN,
+      pipenetwork::OPEN};
 
   std::vector<pipenetwork::Pipe_prop> pipe_props;
   for (int i = 0; i < pipe_ids.size(); ++i) {
@@ -231,8 +233,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
           init_discharge));  // initialze discharge
-      auto assembler =
-          std::make_shared<pipenetwork::MatrixAssembler>(mesh, curves_info, pdd_mode);
+      auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+          mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
 
       // test residual (headloss part)
@@ -299,8 +301,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
 
   SECTION("PDD MODE") {
     bool pdd_mode = true;
-    auto assembler =
-        std::make_shared<pipenetwork::MatrixAssembler>(mesh,curves_info, pdd_mode);
+    auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+        mesh, curves_info, pdd_mode);
 
     SECTION("vairable test") {
       auto var_vec = (assembler->variable_vector());
