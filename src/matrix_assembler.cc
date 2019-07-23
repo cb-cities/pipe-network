@@ -173,6 +173,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
 
   } else {
     auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
+
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([](double x) {
@@ -223,20 +224,21 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
              demands_heads_vec_.array() *
                  (PDD_POLY_VEC1[0] * pressure.array().pow(3) +
                   PDD_POLY_VEC1[1] * pressure.array().pow(2) +
-                  PDD_POLY_VEC1[2] * pressure.array() + HW_POLY_VEC[3])) +
+                  PDD_POLY_VEC1[2] * pressure.array() + PDD_POLY_VEC1[3])) +
         case3_bool *
             ((variable_vec_->segment(nnodes_, nnodes_).array()) -
              demands_heads_vec_.array() *
                  (PDD_POLY_VEC2[0] * pressure.array().pow(3) +
                   PDD_POLY_VEC2[1] * pressure.array().pow(2) +
-                  PDD_POLY_VEC2[2] * pressure.array() + HW_POLY_VEC[3])) +
+                  PDD_POLY_VEC2[2] * pressure.array() + PDD_POLY_VEC2[3])) +
         case4_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
                       demands_heads_vec_.array()) +
         case5_bool *
             ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-             demands_heads_vec_.array() * ((pressure.array() - MIN_PRESSURE) /
+             demands_heads_vec_.array() * ((pressure.array().abs() - MIN_PRESSURE) /
                                            (NORMAL_PRESSURE - MIN_PRESSURE))
                                               .pow(0.5));
+//    std::cout<<pressure.array() <<std::endl;
 
   }
   // correct residuals for sources (head for reservoir/tanks)
@@ -293,6 +295,8 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
                         .unaryExpr([](double x) {
+
+
                             if (std::abs(x) > HW_Q2) return 1.0;
                             return 0.0;
 
@@ -449,7 +453,6 @@ void pipenetwork::MatrixAssembler::update_jacobian() {
 // jac_d: Derivative of demand_pressure equation with respect to nodal head,
 //            0 for junctions, 1 for reservoir/tank of demand driven model,
 //            nonlinear for pressure_demand model.
-// TODO: pressure demand part
 void pipenetwork::MatrixAssembler::update_jac_d() {
   if (pdd_) {
     auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
@@ -511,7 +514,7 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
         case4_bool *
             (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
         case5_bool * (-0.5 * demands_heads_vec_.array() *
-                      ((pressure.array() - MIN_PRESSURE) /
+                      ((pressure.array().abs() - MIN_PRESSURE) /
                        (NORMAL_PRESSURE - MIN_PRESSURE))
                           .pow(-0.5));
 

@@ -22,7 +22,7 @@ const double PDD_DELTA{0.2};
 const double PDD_SLOPE{1e-12};
 
 //! link settings
-enum Link_type { PIPE, VALVE, PUMP };
+enum Link_type { PIPE, PRVALVE, PSVALVE,PBVALVE,FCVALVE,TCVALVE,GPVALVE, PUMP };
 enum Pipe_status { OPEN, CLOSED };
 
 //! constant for modified hazen-williams formula
@@ -32,5 +32,10 @@ const double HW_M{0.001};
 const Eigen::Vector4d HW_POLY_VEC{6619.952473405493, -2.562247355522429,
                                   0.0012305046454003125,
                                   3.4293453535907055e-09};
+
+//! pump settings
+const double PUMP_M = -0.00000000001;
+const double PUMP_Q1 = 0.0;
+const double PUMP_Q2 = 1.0e-8;
 
 #endif  // PIPE_NETWORK_SETTING_H_

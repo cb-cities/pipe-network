@@ -55,19 +55,19 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     bool issolved = solver_->solve();
 
     residual_norm_ = residual_vec->norm();
-    if (residual_vec->norm() < NR_tolerance) {
-      if (debug_) {
-        std::ofstream outFile3("../benchmarks/final_var.csv");
-        outFile3 << "variables"
-                 << "\n";
-        for (int i = 0; i < (*variable_vec).size(); ++i) {
-          outFile3 << (*variable_vec).coeff(i) << "\n";
-        }
-        std::cout << "Final vairables " << (*variable_vec) << std::endl;
-      }
+        if (residual_vec->norm() < NR_tolerance) {
+          if (debug_) {
+            std::ofstream outFile3("../benchmarks/final_var.csv");
+            outFile3 << "variables"
+                     << "\n";
+            for (int i = 0; i < (*variable_vec).size(); ++i) {
+              outFile3 << (*variable_vec).coeff(i) << "\n";
+            }
+            std::cout << "Final vairables " << (*variable_vec) << std::endl;
+          }
 
-      return true;
-    }
+          return true;
+        }
   }
   return false;
 }

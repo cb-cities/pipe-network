@@ -1,0 +1,66 @@
+#include "catch.hpp"
+#include <iostream>
+#include <string>
+
+#include "curves.h"
+// Check node class
+TEST_CASE("Check Curves", "[Curve]") {
+  // Tolerance
+  const double tolerance = 1.e-8;
+  std::string head_pump_name1 = "1";
+  std::string head_pump_name2 = "2";
+
+  std::vector<std::pair<double, double>> pump_curve_points1 = {
+      {0.0, 31.6992},
+      {0.1261803928, 28.041600000000003},
+      {0.2523607856, 19.2024}};
+  std::vector<std::pair<double, double>> pump_curve_points2 = {
+      {0.1261803928, 30.48}};
+  pipenetwork::Pump_curve_prop p_curve1(head_pump_name1, pump_curve_points1);
+  pipenetwork::Pump_curve_prop p_curve2(head_pump_name2, pump_curve_points2);
+  pipenetwork::Curves curve_list;
+
+  SECTION("Check head pump curve property for three points input") {
+
+    auto head_curve_coefficients = p_curve1.head_curve_coefficients;
+
+    // check coefficients
+    REQUIRE(head_curve_coefficients[0] == Approx(31.6992).epsilon(tolerance));
+    REQUIRE(head_curve_coefficients[1] ==
+            Approx(143.47246994481017).epsilon(tolerance));
+    REQUIRE(head_curve_coefficients[2] ==
+            Approx(1.7725895038969284).epsilon(tolerance));
+  }
+
+  SECTION("Check head pump curve property for one point input") {
+
+    auto head_curve_coefficients = p_curve2.head_curve_coefficients;
+
+    // check coefficients
+    REQUIRE(head_curve_coefficients[0] == Approx(40.64).epsilon(tolerance));
+    REQUIRE(head_curve_coefficients[1] ==
+            Approx(638.1311689716313).epsilon(tolerance));
+    REQUIRE(head_curve_coefficients[2] == Approx(2).epsilon(tolerance));
+  }
+  SECTION("Check polynomial approximation coefficients") {
+    auto poly = p_curve1.poly_coefficients;
+    //      REQUIRE(poly[0] == Approx(212550574933.2975).epsilon(tolerance));
+    //      REQUIRE(poly[1] ==
+    //              Approx( -11575.72313494231).epsilon(tolerance));
+    //      REQUIRE(poly[2] ==
+    //      Approx(-9.999999960041972e-12).epsilon(tolerance)); REQUIRE(poly[3]
+    //      == Approx(31.6992).epsilon(tolerance));
+  }
+  SECTION("Check linear approximation coefficients") {
+    auto line = p_curve1.line_param;
+    REQUIRE(line[0] == Approx(4.4542219126875336e-18).epsilon(tolerance));
+    REQUIRE(line[1] == Approx(31.6992).epsilon(tolerance));
+  }
+  SECTION ("Check add pump properties"){
+      std::vector<pipenetwork::Pump_curve_prop> p_curve_vec = {p_curve1,p_curve2};
+      curve_list.add_pump_curves (p_curve_vec);
+      REQUIRE (curve_list.pump_curves ()["1"].line_param[1]  == Approx(31.6992).epsilon(tolerance));
+      REQUIRE (curve_list.poly_coeffs ()["HW_POLY_VEC"][0] == Approx(6619.952473405493).epsilon(tolerance));
+
+  }
+}

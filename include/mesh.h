@@ -18,6 +18,8 @@
 #include "junction.h"
 #include "pipe.h"
 #include "reservoir.h"
+#include "valve.h"
+//#include "pump.h"
 
 namespace pipenetwork {
 
