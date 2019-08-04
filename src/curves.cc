@@ -28,8 +28,7 @@
 //
 // Multi point curves are currently not supported
 pipenetwork::Pump_curve_prop::Pump_curve_prop(
-    std::string& curve_name,
-    std::vector<std::pair<double, double>>& curve_point)
+    std::string& curve_name, std::vector<std::pair<double, double>> curve_point)
     : name{curve_name}, points{curve_point} {
   num_points = points.size();
   double A, B, C;
@@ -112,8 +111,12 @@ Eigen::Vector4d pipenetwork::compute_poly_coefficients(
 
 void pipenetwork::Curves::add_pump_curves(
     const std::vector<Pump_curve_prop>& head_pump_props) {
+  int count = 0;
   for (const auto& pump_prop : head_pump_props) {
-    head_pump_curves[pump_prop.name] = pump_prop;
+    head_pump_curves_[pump_prop.name] = pump_prop;
+    pump_str_int_[pump_prop.name] = count;
+    pump_int_str_[count] = pump_prop.name;
+    ++count;
   }
 }
 

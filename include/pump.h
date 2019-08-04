@@ -1,38 +1,53 @@
-//
-// Created by Renjie Wu on 2019-07-19.
-//
-
 #ifndef PIPE_NETWORK_PUMP_H
 #define PIPE_NETWORK_PUMP_H
 
+namespace pipenetwork {
 
-
-
-
-class Pipe : public Pump {
-public:
-    //! Constructor with two end nodes, length, diameter roughness and pipe status
-    //! \param[in] pipe_prop struct with properties for the pipe
-    Pump(const Pipe_prop& pipe_prop)
-            : Link(pipe_prop.id, pipe_prop.node1, pipe_prop.node2) {
-        pipe_info_["type"] = PIPE;
-        pipe_info_["length"] = pipe_prop.length;
-        pipe_info_["diameter"] = pipe_prop.diameter;
-        pipe_info_["roughness"] = pipe_prop.roughness;
-        pipe_info_["status"] = pipe_prop.status;
-    };
-
-    //! Virtual destructor
-    ~Pipe() override{};
-
-    //! Return link info
-    std::map<std::string, double> link_info() const override {
-        return pipe_info_;
-    }
-
-private:
-    // node information, has key : type, elevation, demand, leak_area
-    std::map<std::string, double> pipe_info_;
+//! Pump Property
+//! node1 ptr for end node
+//! node2 ptr for end node
+//! type pump type
+//! curve_name pump head curve name
+//! speed speed for the pump
+//! pattern pattern for speed setting
+struct Pump_prop {
+  std::string id;
+  std::shared_ptr<pipenetwork::Node> node1{NULL};
+  std::shared_ptr<pipenetwork::Node> node2{NULL};
+  Link_type pump_type{POWERPUMP};
+  int curve_name{-1};
+  double power{50};
+  double speed{1.0};
+  std::string node1_id{"None"};
+  std::string node2_id{"None"};
+  std::string Pattern{"None"};
 };
 
-#endif //PIPE_NETWORK_PUMP_H
+class Pump : public Link {
+ public:
+  //! Constructor with pump property, which contains all the information for
+  //! the valve \param[in] pipe_prop struct with properties for the pipe
+  Pump(const Pump_prop& pump_prop)
+      : Link(pump_prop.id, pump_prop.node1, pump_prop.node2) {
+    pump_info_["type"] = pump_prop.pump_type;
+    pump_info_["curve_name"] = pump_prop.curve_name;
+    pump_info_["power"] = pump_prop.power;
+    pump_info_["speed"] = pump_prop.speed;
+  };
+
+  //! Virtual destructor
+  ~Pump() override{};
+
+  //! Return link info
+  std::map<std::string, double> link_info() const override {
+    return pump_info_;
+  }
+
+ private:
+  //! valve information
+  std::map<std::string, double> pump_info_;
+};
+
+}  // namespace pipenetwork
+
+#endif  // PIPE_NETWORK_PUMP_H

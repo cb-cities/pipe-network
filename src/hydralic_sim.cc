@@ -1,4 +1,5 @@
 #include "hydralic_sim.h"
+#include <iomanip>
 
 bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                                                int max_nr_steps) {
@@ -22,7 +23,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                 << "residuals"
                 << "\n";
         for (int i = 0; i < (*residual_vec).size(); ++i) {
-          outFile << (*variable_vec).coeff(i) << "," << (*residual_vec).coeff(i)
+          outFile <<std::setprecision(12)<< (*variable_vec).coeff(i) << "," << (*residual_vec).coeff(i)
                   << "\n";
         }
         outFile2 << "row"
@@ -35,21 +36,21 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
           for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
                    (*jac), k);
                it; ++it) {
-            outFile2 << it.row() << "," << it.col() << "," << it.value()
+            outFile2<<std::setprecision(12) << it.row() << "," << it.col() << "," << it.value()
                      << "\n";
           }
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-      //                  std::cout << "Jac = " << std::endl
-      //                            << (*jac) << std::endl
-      //                            << std::endl
-      //                            << "residual = " << std::endl
-      //                            << (*residual_vec) << std::endl
-      //                            << std::endl
-      //                            << "variable = " << std::endl
-      //                            << (*variable_vec) << std::endl
-      //                            << std::endl;
+//                        std::cout << "Jac = " << std::endl
+//                                  << (*jac) << std::endl
+//                                  << std::endl
+//                                  << "residual = " << std::endl
+//                                  << (*residual_vec) << std::endl
+//                                  << std::endl
+//                                  << "variable = " << std::endl
+//                                  << (*variable_vec) << std::endl
+//                                  << std::endl;
     }
 
     bool issolved = solver_->solve();
@@ -61,7 +62,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
         outFile3 << "variables"
                  << "\n";
         for (int i = 0; i < (*variable_vec).size(); ++i) {
-          outFile3 << (*variable_vec).coeff(i) << "\n";
+          outFile3<<std::setprecision(12) << (*variable_vec).coeff(i) << "\n";
         }
         std::cout << "Final vairables " << (*variable_vec) << std::endl;
       }

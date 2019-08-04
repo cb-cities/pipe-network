@@ -1,5 +1,6 @@
 #include "matrix_assembler.h"
 
+
 // Initialize variable vector
 // 1 to nnode element: nodal head
 // nnode+1 to 2*nnode element: nodal demand
@@ -584,7 +585,6 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
           (3 * hw_poly_vec[0] * discharge_abs_array.pow(2) +
            2 * hw_poly_vec[1] * discharge_abs_array + 1 * hw_poly_vec[2]) +
       case3_bool * link_resistance_coeff_vec_.array() * HW_M;
-
   auto trip_g = sub_jac_trip_["jac_g"];
   for (int i = 0; i < nlinks_; ++i) {
     jac_->coeffRef(trip_g[i].row(), trip_g[i].col()) = vals[i];

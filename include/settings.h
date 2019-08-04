@@ -26,7 +26,8 @@ enum Link_type {
   FCVALVE,
   TCVALVE,
   GPVALVE,
-  PUMP
+  POWERPUMP,
+  HEADPUMP
 };
 enum Pipe_status { OPEN, CLOSED };
 

@@ -95,28 +95,28 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   //    REQUIRE(sim->sim_residual_norm() < tolerance);
   //  }
   //
-  //  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
-  //    std::vector<double> leak_diameters{0, 0, 0, 0, 0, 0, 0, 0, 0};
-  //    bool pdd_mode = false;
-  //    bool debug = false;
-  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-  //        "../benchmarks/Net1c.inp", leak_diameters, pdd_mode, debug);
-  //    REQUIRE(sim->run_simulation());
-  //    REQUIRE(sim->sim_residual_norm() < tolerance);
-  //    // pressure test for stability
-  //    REQUIRE(!sim->run_simulation(1e-30, 1000));
-  //    REQUIRE(sim->sim_residual_norm() < tolerance);
-  //  }
+    SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
+      std::vector<double> leak_diameters(100, 0);
+      bool pdd_mode = false;
+      bool debug = true;
+      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+          "../benchmarks/test_net.inp", leak_diameters, pdd_mode, debug);
+      REQUIRE(sim->run_simulation());
+      REQUIRE(sim->sim_residual_norm() < tolerance);
+      // pressure test for stability
+//      REQUIRE(!sim->run_simulation(1e-30, 1000));
+//      REQUIRE(sim->sim_residual_norm() < tolerance);
+    }
   //
-  SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
-    std::vector<double> leak_diameters(200, 0);
-    bool pdd_mode = true;
-    bool debug = true;
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../benchmarks/Net_small.inp", leak_diameters, pdd_mode, debug);
-    REQUIRE(sim->run_simulation(1e-12, 100));
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
+//  SECTION("DD SIM TEST CASE 3: Small .INP FILE INPUT") {
+//    std::vector<double> leak_diameters(200, 0);
+//    bool pdd_mode = true;
+//    bool debug = true;
+//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+//        "../benchmarks/Net_small.inp", leak_diameters, pdd_mode, debug);
+//    REQUIRE(sim->run_simulation(1e-12, 100));
+//    REQUIRE(sim->sim_residual_norm() < tolerance);
+//  }
 
   //    SECTION("DD SIM TEST CASE 4: Medium .INP FILE INPUT") {
   //      std::vector<double> leak_diameters(500, 0);

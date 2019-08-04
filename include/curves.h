@@ -23,7 +23,7 @@ struct Pump_curve_prop {
   //! \param[in] curve_point vector (1 or 3) of curve points (flow, head) used
   //! for pump curve construction
   Pump_curve_prop(std::string& curve_name,
-                  std::vector<std::pair<double, double>>& curve_point);
+                  std::vector<std::pair<double, double>> curve_point);
 
   //! Name of the pump curve
   std::string name;
@@ -52,9 +52,9 @@ class Curves {
   //! Constructor
   Curves() {
     // default pdd(pressure demand driven) and hw(harzian williams) coefficients
-    poly_coefficients["PDD_POLY_VEC1"] = compute_pdd1_poly_vec();
-    poly_coefficients["PDD_POLY_VEC2"] = compute_pdd2_poly_vec();
-    poly_coefficients["HW_POLY_VEC"] = compute_hw_poly_vec();
+    poly_coefficients_["PDD_POLY_VEC1"] = compute_pdd1_poly_vec();
+    poly_coefficients_["PDD_POLY_VEC2"] = compute_pdd2_poly_vec();
+    poly_coefficients_["HW_POLY_VEC"] = compute_hw_poly_vec();
   };
 
   //! Destructor
@@ -70,24 +70,33 @@ class Curves {
   //! \param[in] node_name name of the leaky node
   //! \param[in] leak_area area of the leak hole
   void add_leak_poly_vec(std::string& node_name, double leak_area) {
-    poly_coefficients[node_name] = compute_leak_poly_vec(leak_area);
+    poly_coefficients_[node_name] = compute_leak_poly_vec(leak_area);
   };
 
   //! get the head pump curves map
   std::map<std::string, Pump_curve_prop> pump_curves() const {
-    return head_pump_curves;
+    return head_pump_curves_;
   }
 
   //! get the poly coefficient curves map
   std::map<std::string, Eigen::Vector4d> poly_coeffs() const {
-    return poly_coefficients;
+    return poly_coefficients_;
   }
+
+  //! get pump string name to int code map
+  std::map<std::string, int> pump_str_int() const { return pump_str_int_; }
+
+  //! get pump int code to string name map
+  std::map<int, std::string> pump_int_str() const { return pump_int_str_; }
 
  private:
   //! map that stores all the polynomial approximation coefficients
-  std::map<std::string, Eigen::Vector4d> poly_coefficients;
+  std::map<std::string, Eigen::Vector4d> poly_coefficients_;
   //! map that stores all the head pump curves information
-  std::map<std::string, Pump_curve_prop> head_pump_curves;
+  std::map<std::string, Pump_curve_prop> head_pump_curves_;
+  //! map that convert pump string key to int
+  std::map<std::string, int> pump_str_int_;
+  std::map<int, std::string> pump_int_str_;
   //! Method to compute the polynomial coefficients for harzian williams
   //! equation
   //! \retval poly_coef polynomial approximation coefficient

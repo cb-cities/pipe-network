@@ -1,4 +1,6 @@
 #include <Eigen/Dense>
+#include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -8,8 +10,10 @@
 #include <string>
 #include <vector>
 
+#include "curves.h"
 #include "junction.h"
 #include "pipe.h"
+#include "pump.h"
 #include "reservoir.h"
 #include "settings.h"
 
@@ -29,6 +33,8 @@ class Input {
     parse_sections();
     construct_node_info();
     construct_pipe_info();
+    construct_curve_info();
+    construct_pump_info();
   };
 
   //! Return node information
@@ -38,18 +44,25 @@ class Input {
   std::vector<pipenetwork::Reservoir_prop> reservoir_properties() const {
     return res_props_;
   }
-
   //! Return pipe information
   std::vector<pipenetwork::Pipe_prop> pipe_properties() const {
     return pipe_props_;
   }
+  //! Return pump information
+  std::vector<Pump_prop> pump_properties() const { return pump_props_; }
+
+  //! Return curve information
+  std::shared_ptr<Curves> curve_info() const { return curves_info_; }
 
  private:
   //! Filepath
   std::string filename_;
+  //! the curves info ptr
+  std::shared_ptr<Curves> curves_info_{std::make_shared<pipenetwork::Curves>()};
   //! Set of section key words
-  std::set<std::string> section_keys_{"[JUNCTIONS]", "[RESERVOIRS]", "[TANKS]",
-                                      "[PIPES]", "[COORDINATES]"};
+  std::set<std::string> section_keys_{"[JUNCTIONS]", "[RESERVOIRS]",  "[TANKS]",
+                                      "[PIPES]",     "[COORDINATES]", "[PUMPS]",
+                                      "[CURVES]"};
   //! number of attribute of the graph
   Index njunction_{0}, nresvoir_{0}, ntank_{0}, npipe_{0};
 
@@ -74,7 +87,8 @@ class Input {
   std::vector<double> length_;
   std::vector<double> roughness_;
   std::vector<Pipe_status> pipe_status_;
-  std::vector<pipenetwork::Pipe_prop> pipe_props_;
+  std::vector<Pipe_prop> pipe_props_;
+  std::vector<Pump_prop> pump_props_;
 
   //! Parse information to each section from the input file
   void parse_sections();
@@ -88,6 +102,8 @@ class Input {
 
   //! Construct pipe info that is used for pipeline-mesh
   void construct_pipe_info();
+  void construct_curve_info();
+  void construct_pump_info();
 
   //! Parse elevation, head or demand from a given node section
   //! \param[in] an opened file

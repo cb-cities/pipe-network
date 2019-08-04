@@ -176,6 +176,73 @@ void pipenetwork::Input::construct_pipe_info() {
   }
 }
 
+void pipenetwork::Input::construct_pump_info() {
+  // get pipe information
+  std::string pid, nid1, nid2, type, curve_name;
+  double speed{1.0}, power{50};
+  for (auto const& line : sections_.at("[PUMPS]")) {
+    Pump_prop pump_prop;
+    // skip keys entries
+    if (line[0] == '[' || line[0] == ';') continue;
+
+    std::istringstream iss(line);
+
+    if (iss >> pid >> nid1 >> nid2 >> type) {
+      std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+      if (type == "HEAD") {
+        iss >> curve_name;
+        pump_prop.curve_name = curves_info_->pump_str_int().at(curve_name);
+        pump_prop.id = pid;
+        pump_prop.node1_id = nid1;
+        pump_prop.node2_id = nid2;
+        pump_prop.pump_type = HEADPUMP;
+      }
+      if (type == "POWER") {
+        iss >> power;
+        pump_prop.id = pid;
+        pump_prop.node1_id = nid1;
+        pump_prop.node2_id = nid2;
+        pump_prop.pump_type = POWERPUMP;
+        pump_prop.power = to_si(power, "power");
+      }
+      //      std::cout << pid << " " << nid1 << " " << nid2 << " " << type << "
+      //      "
+      //                << parameter << std::endl;
+      pump_props_.emplace_back(pump_prop);
+    }
+  }
+}
+
+void pipenetwork::Input::construct_curve_info() {
+  // get curve information
+  std::string curve_id;
+  double x, y;
+  std::string id_buff;
+  std::vector<std::pair<double, double>> curve_point;
+  std::vector<Pump_curve_prop> head_pump_props;
+
+  for (auto const& line : sections_.at("[CURVES]")) {
+    // skip keys entries
+    if (line[0] == '[' || line[0] == ';') continue;
+    std::istringstream iss(line);
+
+    if (iss >> curve_id >> x >> y) {
+      if (!curve_point.empty() && curve_id != id_buff) {
+        Pump_curve_prop pump_curve(id_buff, curve_point);
+        head_pump_props.emplace_back(pump_curve);
+        curve_point.clear();
+      }
+      curve_point.emplace_back(std::make_pair(x, y));
+      id_buff = curve_id;
+    }
+  }
+  Pump_curve_prop pump_curve(curve_id, curve_point);
+  head_pump_props.emplace_back(pump_curve);
+
+  // add pump info to curve object
+  curves_info_->add_pump_curves(head_pump_props);
+}
+
 double pipenetwork::to_si(double val, const std::string& mode) {
   if (mode == "elevation" || mode == "length") {
     return val * 0.3048;  // ft to meter
@@ -183,6 +250,8 @@ double pipenetwork::to_si(double val, const std::string& mode) {
     return val * 6.30901964e-05;  // GPM to si
   } else if (mode == "diameter") {
     return val * 0.0254;  // inch to meter
+  } else if (mode == "power") {
+    return val * 745.699872;  // hp to W (Nm/s)
   } else {
     throw std::runtime_error("Mode not recognized!");
   }
