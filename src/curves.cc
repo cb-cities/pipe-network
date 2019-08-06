@@ -28,7 +28,7 @@
 //
 // Multi point curves are currently not supported
 pipenetwork::Pump_curve_prop::Pump_curve_prop(
-    std::string& curve_name, std::vector<std::pair<double, double>> curve_point)
+    std::string& curve_name, std::vector<std::pair<double, double>>& curve_point)
     : name{curve_name}, points{curve_point} {
   num_points = points.size();
   double A, B, C;

@@ -191,7 +191,7 @@ void pipenetwork::Input::construct_pump_info() {
       std::transform(type.begin(), type.end(), type.begin(), ::toupper);
       if (type == "HEAD") {
         iss >> curve_name;
-        pump_prop.curve_name = curves_info_->pump_str_int().at(curve_name);
+        pump_prop.curve_name = curves_info_->pump_str_int(curve_name);
         pump_prop.id = pid;
         pump_prop.node1_id = nid1;
         pump_prop.node2_id = nid2;
@@ -232,7 +232,7 @@ void pipenetwork::Input::construct_curve_info() {
         head_pump_props.emplace_back(pump_curve);
         curve_point.clear();
       }
-      curve_point.emplace_back(std::make_pair(x, y));
+      curve_point.emplace_back(std::make_pair(to_si(x, "flow"), to_si(y, "head")));
       id_buff = curve_id;
     }
   }
@@ -244,9 +244,9 @@ void pipenetwork::Input::construct_curve_info() {
 }
 
 double pipenetwork::to_si(double val, const std::string& mode) {
-  if (mode == "elevation" || mode == "length") {
+  if (mode == "elevation" || mode == "length" || mode == "head") {
     return val * 0.3048;  // ft to meter
-  } else if (mode == "demand") {
+  } else if (mode == "demand" || mode == "flow") {
     return val * 6.30901964e-05;  // GPM to si
   } else if (mode == "diameter") {
     return val * 0.0254;  // inch to meter

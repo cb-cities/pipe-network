@@ -17,9 +17,9 @@
 
 #include "junction.h"
 #include "pipe.h"
+#include "pump.h"
 #include "reservoir.h"
 #include "valve.h"
-//#include "pump.h"
 
 namespace pipenetwork {
 
@@ -49,18 +49,23 @@ class Mesh {
 
   //! Create Pipe pointers
   //! \param[in]  pipe_props vector of pipe properties
-  void create_pipes( std::vector<Pipe_prop>& pipe_props);
+  void create_pipes(std::vector<Pipe_prop>& pipe_props);
+
+  //! Create Pump pointers
+  //! \param[in]  pump_props vector of pump properties
+  void create_pumps(std::vector<Pump_prop>& pump_props);
 
   //! get all nodes map
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes() const {
     return nodes_;
   }
   //! get connected nodes map
-  std::map<std::string, std::shared_ptr<pipenetwork::Node>> connect_nodes() const {
+  std::map<std::string, std::shared_ptr<pipenetwork::Node>> connect_nodes()
+      const {
     return connected_nodes_;
   }
   //! get links map
-  std::map<std::string, std::shared_ptr<pipenetwork::Link>> links() const {
+  std::vector<std::shared_ptr<pipenetwork::Link>> links() const {
     return links_;
   }
 
@@ -79,11 +84,8 @@ class Mesh {
   //! \tparam Toper Callable object typically a baseclass functor
   template <typename Toper>
   void iterate_over_links(Toper oper) {
-    std::for_each(
-        links_.cbegin(), links_.cend(),
-        [=](std::pair<std::string, std::shared_ptr<pipenetwork::Link>> link) {
-          oper(link.second);
-        });
+    std::for_each(links_.cbegin(), links_.cend(),
+                  [=](std::shared_ptr<pipenetwork::Link> link) { oper(link); });
   };
 
   //! Print summary for the mesh
@@ -93,19 +95,32 @@ class Mesh {
   //! \retval nnode_ number of nodes in the network
   unsigned nnodes() const { return connected_nodes_.size(); }
 
-  //! Return number of pipes in the network
+  //! Return number of links in the network
   //! \retval nnode_ number of pipes in the network
   unsigned nlinks() const { return links_.size(); }
+
+  //! Return number of pipes in the network
+  //! \retval nnode_ number of pipes in the network
+  unsigned npipes() const { return npipes_; }
+
+  //! Return number of pipes in the network
+  //! \retval nnode_ number of pipes in the network
+  unsigned npumps() const { return npumps_; }
 
  private:
   //! mesh id
   unsigned id_{std::numeric_limits<unsigned>::max()};
+
+  //! number of pumps
+  unsigned npumps_{0};
+  //! number of pipes
+  unsigned npipes_{0};
   //! nodal id and corresponding nodal pointer
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
-  //! pipe id and corresponding pipe pointer
-  std::map<std::string, std::shared_ptr<pipenetwork::Link>> links_;
   //! nodal id and corresponding nodal pointer
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> connected_nodes_;
+  //! vector of links
+  std::vector<std::shared_ptr<pipenetwork::Link>> links_;
 };
 
 }  // namespace pipenetwork

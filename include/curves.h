@@ -23,7 +23,7 @@ struct Pump_curve_prop {
   //! \param[in] curve_point vector (1 or 3) of curve points (flow, head) used
   //! for pump curve construction
   Pump_curve_prop(std::string& curve_name,
-                  std::vector<std::pair<double, double>> curve_point);
+                  std::vector<std::pair<double, double>>& curve_point);
 
   //! Name of the pump curve
   std::string name;
@@ -84,10 +84,10 @@ class Curves {
   }
 
   //! get pump string name to int code map
-  std::map<std::string, int> pump_str_int() const { return pump_str_int_; }
+  int pump_str_int(std::string k) const { return pump_str_int_.at (k); }
 
   //! get pump int code to string name map
-  std::map<int, std::string> pump_int_str() const { return pump_int_str_; }
+  std::string pump_int_str(int k) const { return pump_int_str_.at (k); }
 
  private:
   //! map that stores all the polynomial approximation coefficients

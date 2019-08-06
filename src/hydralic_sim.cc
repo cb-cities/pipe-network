@@ -13,7 +13,9 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
 
     assembler_->assemble_residual();
     assembler_->update_jacobian();
-    if (debug_) {
+    std::cout<<"herehere"<<std::endl;
+
+      if (debug_) {
       // save the initial values into csv files for debugging
       if (nr_iter < 1) {
         std::ofstream outFile("../benchmarks/init_var_res.csv");
@@ -23,8 +25,8 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                 << "residuals"
                 << "\n";
         for (int i = 0; i < (*residual_vec).size(); ++i) {
-          outFile <<std::setprecision(12)<< (*variable_vec).coeff(i) << "," << (*residual_vec).coeff(i)
-                  << "\n";
+          outFile << std::setprecision(12) << (*variable_vec).coeff(i) << ","
+                  << (*residual_vec).coeff(i) << "\n";
         }
         outFile2 << "row"
                  << ","
@@ -36,21 +38,21 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
           for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
                    (*jac), k);
                it; ++it) {
-            outFile2<<std::setprecision(12) << it.row() << "," << it.col() << "," << it.value()
-                     << "\n";
+            outFile2 << std::setprecision(12) << it.row() << "," << it.col()
+                     << "," << it.value() << "\n";
           }
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-//                        std::cout << "Jac = " << std::endl
-//                                  << (*jac) << std::endl
-//                                  << std::endl
-//                                  << "residual = " << std::endl
-//                                  << (*residual_vec) << std::endl
-//                                  << std::endl
-//                                  << "variable = " << std::endl
-//                                  << (*variable_vec) << std::endl
-//                                  << std::endl;
+      //                        std::cout << "Jac = " << std::endl
+      //                                  << (*jac) << std::endl
+      //                                  << std::endl
+      //                                  << "residual = " << std::endl
+      //                                  << (*residual_vec) << std::endl
+      //                                  << std::endl
+      //                                  << "variable = " << std::endl
+      //                                  << (*variable_vec) << std::endl
+      //                                  << std::endl;
     }
 
     bool issolved = solver_->solve();
@@ -62,7 +64,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
         outFile3 << "variables"
                  << "\n";
         for (int i = 0; i < (*variable_vec).size(); ++i) {
-          outFile3<<std::setprecision(12) << (*variable_vec).coeff(i) << "\n";
+          outFile3 << std::setprecision(12) << (*variable_vec).coeff(i) << "\n";
         }
         std::cout << "Final vairables " << (*variable_vec) << std::endl;
       }
@@ -84,13 +86,16 @@ pipenetwork::Hydralic_sim::Hydralic_sim(
   auto m = std::make_shared<pipenetwork::Mesh>(meshid);
   m->create_junctions(IO->junction_properties());
   m->create_reservoirs(IO->reservoir_properties());
-  std::vector<pipenetwork::Pipe_prop> pipe_props = IO->pipe_properties();
+  auto pipe_props = IO->pipe_properties();
+  auto pump_props = IO->pump_properties();
   m->create_pipes(pipe_props);
+  m->create_pumps(pump_props);
+
   // initialize discharges
   m->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                   std::placeholders::_1,
                                   init_discharge_));  // initialze discharge
-  auto curves_info = std::make_shared<pipenetwork::Curves>();
+  auto curves_info = IO->curve_info ();
   assembler_ = std::make_shared<MatrixAssembler>(m, curves_info, pdd_mode);
   solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
                                             inner_solver_tolerance_);

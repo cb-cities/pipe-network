@@ -25,6 +25,9 @@ class MatrixAssembler {
       : mesh_{mesh}, curves_info_{curves_info}, pdd_{pdd_mode} {
     nnodes_ = mesh_->nnodes();
     nlinks_ = mesh_->nlinks();
+    npumps_ = mesh_->npumps();
+    npipes_ = mesh_->npipes();
+
     init_variable_vector();
     assemble_balance_headloss_matrix();
     initialize_jacobian();
@@ -58,6 +61,8 @@ class MatrixAssembler {
   //! basic info from mesh for matrix assembling
   Index nnodes_{0};
   Index nlinks_{0};
+  Index npipes_{0};
+  Index npumps_{0};
 
   //! if it is pressure demand simulation mode
   bool pdd_{false};
@@ -107,13 +112,18 @@ class MatrixAssembler {
   void assemble_leak_residual();
   //! Assemble residual for mass conservation equation
   void assemble_demand_head_residual();
-  //! Assemble residual for energy conservation equation
-  void assemble_headloss_residual();
+  //! Assemble residual for energy conservation equation (pipes)
+  void assemble_headloss_residual_pipe();
+  //! Assemble residual for energy conservation equation (pumps)
+  void assemble_headloss_residual_pump();
 
   //! Method to update jacobian d part (pressure-demand equation)
   void update_jac_d();
+  //! Method to update jacobian f part (for power pumps only)
+  void update_jac_f();
   //! Method to update jacobian g part (harzen-williams headloss equation)
-  void update_jac_g();
+  void update_jac_g_pipe();
+  void update_jac_g_pump();
   //! Method to update jacobian h part (leakage equation)
   void update_jac_h();
 

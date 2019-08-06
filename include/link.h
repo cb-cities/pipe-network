@@ -60,7 +60,7 @@ class Link {
  private:
   //! link id
   std::string link_id_;
-  //! pair of node pointers which form the pipe
+  //! pair of node pointers which form the link
   std::pair<std::shared_ptr<pipenetwork::Node>,
             std::shared_ptr<pipenetwork::Node>>
       nodes_;

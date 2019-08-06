@@ -1,6 +1,5 @@
 #include "matrix_assembler.h"
 
-
 // Initialize variable vector
 // 1 to nnode element: nodal head
 // nnode+1 to 2*nnode element: nodal demand
@@ -56,11 +55,11 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
   for (const auto& link : mesh_->links()) {
     Index index_pd = idx + nnodes_;
     // discharge vector
-    variable_vec_->coeffRef(index_pd) = link.second->sim_discharge();
+    variable_vec_->coeffRef(index_pd) = link->sim_discharge();
     // id map
-    link_id_map_.emplace(link.second->id(), idx - nnodes_);
+    link_id_map_.emplace(link->id(), idx - nnodes_);
     // link resistence coefficients for pipes
-    auto info = link.second->link_info();
+    auto info = link->link_info();
     switch (static_cast<int>(info["type"])) {
       case PIPE:
         link_resistance_coeff_vec_[idx - nnodes_] =
@@ -89,28 +88,36 @@ void pipenetwork::MatrixAssembler::assemble_balance_headloss_matrix() {
   update_jacf.reserve(nnodes_ + nlinks_);
 
   for (const auto& link : mesh_->links()) {
-    auto out_node_id = link.second->nodes().first->id();
-    auto in_node_id = link.second->nodes().second->id();
+    auto out_node_id = link->nodes().first->id();
+    auto in_node_id = link->nodes().second->id();
+    auto link_type = link->link_info()["type"];
 
     update_balance.emplace_back(node_id_map_[out_node_id],
-                                link_id_map_[link.second->id()], -1);
+                                link_id_map_[link->id()], -1);
     update_balance.emplace_back(node_id_map_[in_node_id],
-                                link_id_map_[link.second->id()], 1);
+                                link_id_map_[link->id()], 1);
 
     update_jacb.emplace_back(node_id_map_[out_node_id],
-                             link_id_map_[link.second->id()] + 2 * nnodes_, -1);
+                             link_id_map_[link->id()] + 2 * nnodes_, -1);
     update_jacb.emplace_back(node_id_map_[in_node_id],
-                             link_id_map_[link.second->id()] + 2 * nnodes_, 1);
+                             link_id_map_[link->id()] + 2 * nnodes_, 1);
 
-    update_headloss.emplace_back(link_id_map_[link.second->id()],
+    update_headloss.emplace_back(link_id_map_[link->id()],
                                  node_id_map_[out_node_id], 1);
-    update_headloss.emplace_back(link_id_map_[link.second->id()],
+    update_headloss.emplace_back(link_id_map_[link->id()],
                                  node_id_map_[in_node_id], -1);
 
-    update_jacf.emplace_back(link_id_map_[link.second->id()] + 2 * nnodes_,
-                             node_id_map_[out_node_id], -1);
-    update_jacf.emplace_back(link_id_map_[link.second->id()] + 2 * nnodes_,
-                             node_id_map_[in_node_id], 1);
+    double valout = -1, valin = 1;
+
+    if (link_type == HEADPUMP || link_type == POWERPUMP) {
+      valout = 1;
+      valin = -1;
+    }
+
+    update_jacf.emplace_back(link_id_map_[link->id()] + 2 * nnodes_,
+                             node_id_map_[out_node_id], valout);
+    update_jacf.emplace_back(link_id_map_[link->id()] + 2 * nnodes_,
+                             node_id_map_[in_node_id], valin);
   }
 
   node_balance_mat_.resize(nnodes_, nlinks_);
@@ -164,7 +171,8 @@ void pipenetwork::MatrixAssembler::assemble_residual() {
   assemble_demand_head_residual();
 
   // headloss residual
-  assemble_headloss_residual();
+  assemble_headloss_residual_pipe();
+  assemble_headloss_residual_pump();
   // leak residual
   assemble_leak_residual();
 }
@@ -289,8 +297,8 @@ void pipenetwork::MatrixAssembler::assemble_leak_residual() {
 
 // residual for energy conservation equation (Hazen-williams). Piece-wise
 // function for stability concern
-void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
-  auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
+void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
+  auto sign_array = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           //                            return (x < 0) ? -1 : 1;
                           if (x > 0) return 1.0;
@@ -300,7 +308,7 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
 
   // case 1, discharges that exceed the boundary of HW_Q2, use normal
   // hazen-william equation
-  auto case1_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case1_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if (std::abs(x) > HW_Q2) return 1.0;
                           return 0.0;
@@ -308,7 +316,7 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
                         .array();
   // case 2, discharges that fall in between HW_Q1 and HW_Q2, use polynomial
   // approximation
-  auto case2_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case2_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if ((std::abs(x) < HW_Q2) && (std::abs(x) > HW_Q1))
                             return 1.0;
@@ -317,33 +325,98 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual() {
                         .array();
   // case 3, discharges that are smaller than HW_Q1 , approximate 0 headloss in
   // this case
-  auto case3_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case3_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if (std::abs(x) < HW_Q1) return 1.0;
                           return 0.0;
                         })
                         .array();
   auto discharge_abs_array =
-      ((variable_vec_->segment(2 * nnodes_, nlinks_)).array()).abs();
-  auto head_diff_array =
-      (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+      ((variable_vec_->segment(2 * nnodes_, npipes_)).array()).abs();
+  auto head_diff_array = (headloss_mat_ * (variable_vec_->segment(0, nnodes_)))
+                             .segment(0, npipes_)
+                             .array();
 
   auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
 
-  residual_vec_->segment(2 * nnodes_, nlinks_) =
-      case1_bool * (sign_array * link_resistance_coeff_vec_.array() *
-                        discharge_abs_array.pow(1.852) -
-                    head_diff_array)
+  residual_vec_->segment(2 * nnodes_, npipes_) =
+      case1_bool *
+          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               discharge_abs_array.pow(1.852) -
+           head_diff_array)
 
-      + case2_bool *
-            (sign_array * link_resistance_coeff_vec_.array() *
-                 (hw_poly_vec[0] * discharge_abs_array.pow(3) +
-                  hw_poly_vec[1] * discharge_abs_array.pow(2) +
-                  hw_poly_vec[2] * discharge_abs_array + hw_poly_vec[3]) -
-             head_diff_array) +
-      case3_bool * (sign_array * link_resistance_coeff_vec_.array() * HW_M *
-                        discharge_abs_array -
-                    head_diff_array);
+      +
+      case2_bool *
+          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               (hw_poly_vec[0] * discharge_abs_array.pow(3) +
+                hw_poly_vec[1] * discharge_abs_array.pow(2) +
+                hw_poly_vec[2] * discharge_abs_array + hw_poly_vec[3]) -
+           head_diff_array) +
+      case3_bool *
+          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               HW_M * discharge_abs_array -
+           head_diff_array);
+}
+
+// TODO: test pump part
+void pipenetwork::MatrixAssembler::assemble_headloss_residual_pump() {
+  // iterate through all the pumps
+  for (int i = 0; i < npumps_; ++i) {
+    int pump_idx = npipes_ + i;
+    auto link_flow = (*variable_vec_)[2 * nnodes_ + pump_idx];
+
+    auto pump = mesh_->links().at(pump_idx);
+    auto pump_info = pump->link_info();
+    auto nodes = pump->nodes();
+    auto start_node_idx = node_id_map_.at(nodes.first->id());
+    auto end_node_idx = node_id_map_.at(nodes.second->id());
+
+    // head pump
+    if (pump_info["type"] == HEADPUMP) {
+      double pump_headgain;
+      auto pump_curve = curves_info_->pump_curves().at(
+          curves_info_->pump_int_str(pump_info.at("curve_name")));
+      auto curve_coeff = pump_curve.head_curve_coefficients;
+
+      if (curve_coeff[2] > 1) {
+        auto line_coeff = pump_curve.line_param;
+        if (link_flow >= line_coeff[0]) {
+          pump_headgain = curve_coeff[0] -
+                          curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
+
+        }
+
+        else {
+          pump_headgain = PUMP_M * (link_flow - line_coeff[0]) + line_coeff[1];
+        }
+      } else {
+        if (link_flow < PUMP_Q1) {
+          pump_headgain = PUMP_M * link_flow + curve_coeff[0];
+        } else if (link_flow < PUMP_Q2) {
+          auto curve_poly_coeff = pump_curve.poly_coefficients;
+          pump_headgain = curve_poly_coeff[0] * std::pow(link_flow, 3) +
+                          curve_poly_coeff[1] * std::pow(link_flow, 2) +
+                          curve_poly_coeff[2] * link_flow + curve_poly_coeff[3];
+        } else {
+          pump_headgain = curve_coeff[0] -
+                          curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
+        }
+      }
+      residual_vec_->array()[2 * nnodes_ + pump_idx] =
+          pump_headgain - (variable_vec_->array()[end_node_idx] -
+                           variable_vec_->array()[start_node_idx]);
+
+    }
+    // power pump
+    else if (pump_info["type"] == POWERPUMP) {
+      auto head_diff_array =
+          (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+
+      residual_vec_->array()[2 * nnodes_ + pump_idx] =
+          pump_info["power"] +
+          (head_diff_array[pump_idx]) * link_flow * G * 1000.0;
+    }
+  }
 }
 
 // initialize the jacobian matrix, and store sub-jacobian information for quick
@@ -449,8 +522,11 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
 void pipenetwork::MatrixAssembler::update_jacobian() {
   // Jac_d: pressure-demand equation
   update_jac_d();
+  // Jac_f: for power pump only
+  update_jac_f();
   // jac_g: headloss equation (harzen-william)
-  update_jac_g();
+  update_jac_g_pipe();
+  update_jac_g_pump();
   // jac_h: leak equation
   update_jac_h();
 }
@@ -538,9 +614,9 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
 //            for corresponding pipe, \frac{-1.852 \times 10.67 \times
 //            length}{pow(pipe_roughness,1.852) \times pow(2radius,4.8704)}
 //            \times pow(pipe_discharge,0.852).
-void pipenetwork::MatrixAssembler::update_jac_g() {
+void pipenetwork::MatrixAssembler::update_jac_g_pipe() {
 
-  auto sign_array = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto sign_array = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if (x > 0) return 1.0;
                           return -1.0;
@@ -549,7 +625,7 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
 
   // case 1, discharges that exceed the boundary of HW_Q2, use normal
   // hazen-william equation
-  auto case1_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case1_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if (std::abs(x) > HW_Q2) return 1.0;
                           return 0.0;
@@ -557,7 +633,7 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
                         .array();
   // case 2, discharges that fall in between HW_Q1 and HW_Q2, use polynomial
   // approximation
-  auto case2_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case2_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if ((std::abs(x) < HW_Q2) && (std::abs(x) > HW_Q1))
                             return 1.0;
@@ -567,27 +643,93 @@ void pipenetwork::MatrixAssembler::update_jac_g() {
 
   // case 3, discharges that are smaller than HW_Q1 , approximate 0 headloss in
   // this case
-  auto case3_bool = (variable_vec_->segment(2 * nnodes_, nlinks_))
+  auto case3_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           if (std::abs(x) < HW_Q1) return 1.0;
                           return 0.0;
                         })
                         .array();
   auto discharge_abs_array =
-      ((variable_vec_->segment(2 * nnodes_, nlinks_)).array()).abs();
-  auto head_diff_array =
-      (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+      ((variable_vec_->segment(2 * nnodes_, npipes_)).array()).abs();
+  auto head_diff_array = (headloss_mat_ * (variable_vec_->segment(0, nnodes_)))
+                             .segment(0, npipes_)
+                             .array();
   auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
   auto vals =
-      case1_bool * 1.852 * link_resistance_coeff_vec_.array() *
+      case1_bool * 1.852 *
+          link_resistance_coeff_vec_.segment(0, npipes_).array() *
           discharge_abs_array.pow(.852) +
-      case2_bool * link_resistance_coeff_vec_.array() *
+      case2_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
           (3 * hw_poly_vec[0] * discharge_abs_array.pow(2) +
            2 * hw_poly_vec[1] * discharge_abs_array + 1 * hw_poly_vec[2]) +
-      case3_bool * link_resistance_coeff_vec_.array() * HW_M;
+      case3_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+          HW_M;
   auto trip_g = sub_jac_trip_["jac_g"];
-  for (int i = 0; i < nlinks_; ++i) {
+  for (int i = 0; i < npipes_; ++i) {
     jac_->coeffRef(trip_g[i].row(), trip_g[i].col()) = vals[i];
+  }
+}
+// jac_g: Derivative of headloss equation with respect to pipe discharge,
+//            for corresponding pump,
+void pipenetwork::MatrixAssembler::update_jac_g_pump() {
+  auto trip_g = sub_jac_trip_["jac_g"];
+  // iterate through all the pumps
+  for (int i = 0; i < npumps_; ++i) {
+    int pump_idx = npipes_ + i;
+    auto link_flow = (*variable_vec_)[2 * nnodes_ + pump_idx];
+
+    auto pump = mesh_->links().at(pump_idx);
+    auto pump_info = pump->link_info();
+    auto nodes = pump->nodes();
+    auto start_node_idx = node_id_map_.at(nodes.first->id());
+    auto end_node_idx = node_id_map_.at(nodes.second->id());
+
+    // head pump
+    if (pump_info["type"] == HEADPUMP) {
+      double pump_headgain;
+      auto pump_curve = curves_info_->pump_curves().at(
+          curves_info_->pump_int_str(pump_info.at("curve_name")));
+      auto curve_coeff = pump_curve.head_curve_coefficients;
+
+      if (curve_coeff[2] > 1) {
+        auto line_coeff = pump_curve.line_param;
+        if (link_flow >= line_coeff[0]) {
+          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+              -curve_coeff[1] * curve_coeff[2] *
+              std::pow(link_flow, (curve_coeff[2] - 1));
+
+        }
+
+        else {
+          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+              PUMP_M;
+        }
+      } else {
+        if (link_flow < PUMP_Q1) {
+          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+              PUMP_M;
+        } else if (link_flow < PUMP_Q2) {
+          auto curve_poly_coeff = pump_curve.poly_coefficients;
+          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+              3 * curve_poly_coeff[0] * std::pow(link_flow, 2) +
+              2 * curve_poly_coeff[1] * link_flow + curve_poly_coeff[2];
+        } else {
+          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+              -curve_coeff[1] * curve_coeff[2] *
+              std::pow(link_flow, (curve_coeff[2] - 1));
+        }
+      }
+    }
+    // power pump
+    else if (pump_info["type"] == POWERPUMP) {
+
+      auto head_diff_array =
+          (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+
+      jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+          (1000.0 * G * (*variable_vec_)[start_node_idx] -
+           1000.0 * G * (*variable_vec_)[end_node_idx]);
+    }
   }
 }
 
@@ -609,7 +751,8 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
     }
     // case 2, around the boundary, use polynomial approximation
     else if (p < 1e-4) {
-      auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];;
+      auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];
+      ;
       val = -3 * leak_poly_coef[0] * std::pow(p, 2) -
             2 * leak_poly_coef[1] * p - leak_poly_coef[2];
     }
@@ -621,5 +764,24 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
     jac_->coeffRef(trip_h[leak_idx - 2 * nnodes_ - nlinks_].row(),
                    trip_h[leak_idx - 2 * nnodes_ - nlinks_].col()) = val;
     ++leak_idx;
+  }
+}
+// jac_f: Derivative of head-loss equation with respect to nodal head,
+//              modified for powerpump
+void pipenetwork::MatrixAssembler::update_jac_f() {
+  auto trip_f = sub_jac_trip_["jac_f"];
+
+  for (int i = 0; i < npumps_; ++i) {
+    int pump_idx = npipes_ + i;
+    auto link_flow = variable_vec_->array()[2 * nnodes_ + pump_idx];
+
+    auto pump = mesh_->links().at(pump_idx);
+    auto pump_info = pump->link_info();
+    if (pump_info["type"] == POWERPUMP) {
+      jac_->coeffRef(trip_f[2 * pump_idx].row(), trip_f[2 * pump_idx].col()) =
+          1000.0 * G * link_flow;
+      jac_->coeffRef(trip_f[2 * pump_idx + 1].row(),
+                     trip_f[2 * pump_idx + 1].col()) = -1000.0 * G * link_flow;
+    }
   }
 }
