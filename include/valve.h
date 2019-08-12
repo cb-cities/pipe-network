@@ -6,26 +6,29 @@ namespace pipenetwork {
 //! node1 ptr for end node
 //! node2 ptr for end node
 //! type valve type
-//! status, status of the valve (open or close)
+//! setting pressure setting for PRV, PSV, or PBV, flow setting for FCV,  loss
+//! coefficient for TCV,
 struct Valve_prop {
   std::string id;
   std::shared_ptr<pipenetwork::Node> node1{NULL};
   std::shared_ptr<pipenetwork::Node> node2{NULL};
   Link_type valve_type{PRVALVE};
-  Pipe_status status{OPEN};
+  double setting{0};
   double diameter{0.3048};
+  double minor_loss{0};
   std::string node1_id{"None"};
   std::string node2_id{"None"};
 };
 
 class Valve : public Link {
  public:
-  //! Constructor with valve property, which contains all the information for the valve
-  //! \param[in] pipe_prop struct with properties for the pipe
-  Valve(const Valve_prop& valve_prop)
+  //! Constructor with valve property, which contains all the information for
+  //! the valve \param[in] pipe_prop struct with properties for the pipe
+  explicit Valve(const Valve_prop& valve_prop)
       : Link(valve_prop.id, valve_prop.node1, valve_prop.node2) {
     valve_info_["type"] = valve_prop.valve_type;
-    valve_info_["status"] = valve_prop.status;
+    valve_info_["setting"] = valve_prop.setting;
+    valve_info_["minor_loss"] = valve_prop.minor_loss;
     valve_info_["diameter"] = valve_prop.diameter;
   };
 

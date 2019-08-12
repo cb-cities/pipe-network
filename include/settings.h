@@ -21,11 +21,8 @@ const double PDD_SLOPE{1e-11};
 enum Link_type {
   PIPE,
   PRVALVE,
-  PSVALVE,
-  PBVALVE,
   FCVALVE,
   TCVALVE,
-  GPVALVE,
   POWERPUMP,
   HEADPUMP
 };

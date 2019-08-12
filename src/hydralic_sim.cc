@@ -13,7 +13,6 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
 
     assembler_->assemble_residual();
     assembler_->update_jacobian();
-    std::cout<<"herehere"<<std::endl;
 
       if (debug_) {
       // save the initial values into csv files for debugging
@@ -78,23 +77,18 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
 pipenetwork::Hydralic_sim::Hydralic_sim(
     const std::string& filepath, const std::vector<double>& leak_diameters,
     bool pdd_mode, bool debug) {
-  auto IO = std::make_unique<pipenetwork::Input>(filepath);
+  auto IO = std::make_shared<pipenetwork::Input>(filepath);
 
   // Mesh index
   const unsigned meshid = 9999;
   // Creat a mesh
   auto m = std::make_shared<pipenetwork::Mesh>(meshid);
-  m->create_junctions(IO->junction_properties());
-  m->create_reservoirs(IO->reservoir_properties());
-  auto pipe_props = IO->pipe_properties();
-  auto pump_props = IO->pump_properties();
-  m->create_pipes(pipe_props);
-  m->create_pumps(pump_props);
-
+  m->create_mesh_from_inp (IO);
   // initialize discharges
   m->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                   std::placeholders::_1,
                                   init_discharge_));  // initialze discharge
+  // get curves information
   auto curves_info = IO->curve_info ();
   assembler_ = std::make_shared<MatrixAssembler>(m, curves_info, pdd_mode);
   solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,

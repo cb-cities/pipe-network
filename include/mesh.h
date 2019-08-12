@@ -15,6 +15,7 @@
 //#include <tbb/parallel_for.h>
 //#include <tbb/parallel_for_each.h>
 
+#include "input.h"
 #include "junction.h"
 #include "pipe.h"
 #include "pump.h"
@@ -39,6 +40,10 @@ class Mesh {
   //! \retval id_ id of the mesh
   unsigned id() const { return id_; }
 
+  //! Create mesh from input object
+  //! \param[in] IO pointer to the input object
+  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
+
   //! Create junction pointers
   //! \param[in] junc_props vector of junction properties
   void create_junctions(const std::vector<Junction_prop>& junc_props);
@@ -54,6 +59,10 @@ class Mesh {
   //! Create Pump pointers
   //! \param[in]  pump_props vector of pump properties
   void create_pumps(std::vector<Pump_prop>& pump_props);
+
+  //! Create Valve pointers
+  //! \param[in]  valve_props vector of valve properties
+  void create_valve(std::vector<Valve_prop>& valve_props);
 
   //! get all nodes map
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes() const {
@@ -103,9 +112,13 @@ class Mesh {
   //! \retval nnode_ number of pipes in the network
   unsigned npipes() const { return npipes_; }
 
-  //! Return number of pipes in the network
-  //! \retval nnode_ number of pipes in the network
+  //! Return number of pumps in the network
+  //! \retval nnode_ number of pumps in the network
   unsigned npumps() const { return npumps_; }
+
+  //! Return number of valves in the network
+  //! \retval nnode_ number of valves in the network
+  unsigned nvalves() const { return nvalves_; }
 
  private:
   //! mesh id
@@ -115,6 +128,8 @@ class Mesh {
   unsigned npumps_{0};
   //! number of pipes
   unsigned npipes_{0};
+  //! number of valves
+  unsigned nvalves_{0};
   //! nodal id and corresponding nodal pointer
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! nodal id and corresponding nodal pointer
