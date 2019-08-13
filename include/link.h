@@ -19,8 +19,8 @@ class Link {
 
  public:
   Link(std::string link_id, const std::shared_ptr<pipenetwork::Node>& node1,
-       const std::shared_ptr<pipenetwork::Node>& node2)
-      : link_id_{link_id} {
+       const std::shared_ptr<pipenetwork::Node>& node2, Link_status status)
+      : link_id_{link_id}, status_{status} {
     if (!node1 || !node2)
       throw std::invalid_argument(
           "Link can not be constructed due to invalid input node pointers");
@@ -57,6 +57,12 @@ class Link {
   //! Return simulated discharge
   double sim_discharge() const { return sim_demand_; }
 
+  //! Assign link status
+  void update_link_status(Link_status link_status) { status_ = link_status; }
+
+  //! Return link status
+  Link_status link_status() const { return status_; }
+
  private:
   //! link id
   std::string link_id_;
@@ -66,6 +72,7 @@ class Link {
       nodes_;
   //! demand from simulation
   double sim_demand_{0};
+  Link_status status_{OPEN};
 };
 }  // namespace pipenetwork
 ;

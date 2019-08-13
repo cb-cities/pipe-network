@@ -105,7 +105,7 @@ class Input {
   std::vector<double> diameter_;
   std::vector<double> length_;
   std::vector<double> roughness_;
-  std::vector<Pipe_status> pipe_status_;
+  std::vector<Link_status> pipe_status_;
   std::vector<Pipe_prop> pipe_props_;
   std::vector<Pump_prop> pump_props_;
   std::vector<Valve_prop> valve_props_;

@@ -15,6 +15,7 @@ struct Pump_prop {
   std::shared_ptr<pipenetwork::Node> node1{NULL};
   std::shared_ptr<pipenetwork::Node> node2{NULL};
   Link_type pump_type{POWERPUMP};
+  Link_status pump_status{OPEN};
   int curve_name{-1};
   double power{50};
   double speed{1.0};
@@ -28,7 +29,7 @@ class Pump : public Link {
   //! Constructor with pump property, which contains all the information for
   //! the valve \param[in] pipe_prop struct with properties for the pipe
   Pump(const Pump_prop& pump_prop)
-      : Link(pump_prop.id, pump_prop.node1, pump_prop.node2) {
+      : Link(pump_prop.id, pump_prop.node1, pump_prop.node2,pump_prop.pump_status) {
     pump_info_["type"] = pump_prop.pump_type;
     pump_info_["curve_name"] = pump_prop.curve_name;
     pump_info_["power"] = pump_prop.power;

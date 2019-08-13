@@ -80,7 +80,7 @@ class MatrixAssembler {
   //! nodal ids for possible leak nodes
   std::vector<std::string> leak_ids_;
   std::vector<double> leak_area_;
-  //! hazen-williams coefficients for links
+  //! resistence coefficients for links
   Eigen::VectorXd link_resistance_coeff_vec_;
 
   //! node balance matrix

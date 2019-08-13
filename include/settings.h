@@ -26,7 +26,7 @@ enum Link_type {
   POWERPUMP,
   HEADPUMP
 };
-enum Pipe_status { OPEN, CLOSED };
+enum Link_status { OPEN, CLOSED, ACTIVE };
 
 //! constant for modified hazen-williams formula
 const double HW_Q1{0.0002};

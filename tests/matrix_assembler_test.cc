@@ -61,7 +61,7 @@
   const std::vector<double> diameter{0.5588, 0.4572, 0.35559999999999997,
                                      0.254};
   const std::vector<double> roughness{100, 100, 100, 100};
-  const std::vector<pipenetwork::Pipe_status> status{
+  const std::vector<pipenetwork::Link_status> status{
       pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN,
       pipenetwork::OPEN};
 

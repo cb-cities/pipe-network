@@ -58,15 +58,20 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
     variable_vec_->coeffRef(index_pd) = link->sim_discharge();
     // id map
     link_id_map_.emplace(link->id(), idx - nnodes_);
-    // link resistence coefficients for pipes
+
     auto info = link->link_info();
-    switch (static_cast<int>(info["type"])) {
+    double val = 0;
+    switch (static_cast<pipenetwork::Link_type>(info["type"])) {
+        // link resistence coefficients for pipes (Harzan-williams)
       case PIPE:
-        link_resistance_coeff_vec_[idx - nnodes_] =
-            HW_COEFF * std::pow(info["roughness"], -1.852) *
-            std::pow(info["diameter"], -4.871) * info["length"];
+        val = HW_COEFF * std::pow(info["roughness"], -1.852) *
+              std::pow(info["diameter"], -4.871) * info["length"];
+        break;
+      case TCVALVE:
+        val = 8*info["setting"]/(G*std::pow(PI, 2)*std::pow(info["diameter"], 4));
         break;
     }
+    link_resistance_coeff_vec_[idx - nnodes_] = val;
     ++idx;
   }
   // use only part of the original array due to uncertainty of number of leak

@@ -210,40 +210,41 @@ void pipenetwork::Input::construct_pump_info() {
   }
 }
 
-void pipenetwork::Input::construct_valve_info () {
-    // get valve information
-    std::string pid, nid1, nid2, type;
-    double diameter, setting, minorloss{0};
-    for (auto const& line : sections_.at("[VALVES]")) {
-        Valve_prop valve_prop;
-        // skip keys entries
-        if (line[0] == '[' || line[0] == ';') continue;
-        std::istringstream iss(line);
-        if (iss >> pid >> nid1 >> nid2 >> diameter>>type>>setting) {
-            std::transform(type.begin(), type.end(), type.begin(), ::toupper);
-            valve_prop.id = pid;
-            valve_prop.node1_id = nid1;
-            valve_prop.node2_id = nid2;
-            valve_prop.diameter = to_si(diameter, "diameter");
+void pipenetwork::Input::construct_valve_info() {
+  // get valve information
+  std::string pid, nid1, nid2, type;
+  double diameter, setting, minorloss{0};
+  for (auto const& line : sections_.at("[VALVES]")) {
+    Valve_prop valve_prop;
+    // skip keys entries
+    if (line[0] == '[' || line[0] == ';') continue;
+    std::istringstream iss(line);
+    if (iss >> pid >> nid1 >> nid2 >> diameter >> type >> setting) {
+      std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+      valve_prop.id = pid;
+      valve_prop.node1_id = nid1;
+      valve_prop.node2_id = nid2;
+      valve_prop.diameter = to_si(diameter, "diameter");
 
-            if (type == "PRV") {
-                valve_prop.valve_type = PRVALVE;
-                valve_prop.setting = to_si (setting,"pressure");
-            }
-            if (type == "FCV") {
-                valve_prop.valve_type = FCVALVE;
-                valve_prop.setting = to_si (setting,"flow");
-            }
-            if (type == "TCV") {
-                valve_prop.valve_type = TCVALVE;
-                valve_prop.setting = setting;
-            }
-            valve_props_.emplace_back(valve_prop);
-        }
+      if (type == "PRV") {
+        valve_prop.valve_type = PRVALVE;
+        valve_prop.setting = to_si(setting, "pressure");
+      }
+      if (type == "FCV") {
+        valve_prop.valve_type = FCVALVE;
+        valve_prop.setting = to_si(setting, "flow");
+      }
+      if (type == "TCV") {
+        valve_prop.valve_type = TCVALVE;
+        valve_prop.setting = setting;
+      }
+      if (iss >> minorloss) {
+        valve_prop.minor_loss = minorloss;
+      }
+      valve_props_.emplace_back(valve_prop);
     }
+  }
 }
-
-
 
 void pipenetwork::Input::construct_curve_info() {
   // get curve information
@@ -264,20 +265,18 @@ void pipenetwork::Input::construct_curve_info() {
         head_pump_props.emplace_back(pump_curve);
         curve_point.clear();
       }
-      curve_point.emplace_back(std::make_pair(to_si(x, "flow"), to_si(y, "head")));
+      curve_point.emplace_back(
+          std::make_pair(to_si(x, "flow"), to_si(y, "head")));
       id_buff = curve_id;
     }
   }
-  if (!curve_point.empty ()){
-      Pump_curve_prop pump_curve(curve_id, curve_point);
-      head_pump_props.emplace_back(pump_curve);
-      // add pump info to curve object
-      curves_info_->add_pump_curves(head_pump_props);
+  if (!curve_point.empty()) {
+    Pump_curve_prop pump_curve(curve_id, curve_point);
+    head_pump_props.emplace_back(pump_curve);
+    // add pump info to curve object
+    curves_info_->add_pump_curves(head_pump_props);
   }
-
 }
-
-
 
 double pipenetwork::to_si(double val, const std::string& mode) {
   if (mode == "elevation" || mode == "length" || mode == "head") {
@@ -288,10 +287,9 @@ double pipenetwork::to_si(double val, const std::string& mode) {
     return val * 0.0254;  // inch to meter
   } else if (mode == "power") {
     return val * 745.699872;  // hp to W (Nm/s)
-  } else if (mode == "pressure"){
-      return val*(0.3048/0.4333); // psi * (m/ft / psi/ft)
-  }
-  else {
+  } else if (mode == "pressure") {
+    return val * (0.3048 / 0.4333);  // psi * (m/ft / psi/ft)
+  } else {
     throw std::runtime_error("Mode not recognized!");
   }
 }
