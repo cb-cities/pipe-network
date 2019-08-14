@@ -27,6 +27,7 @@ class MatrixAssembler {
     nlinks_ = mesh_->nlinks();
     npumps_ = mesh_->npumps();
     npipes_ = mesh_->npipes();
+    nvalves_ = mesh_->nvalves();
 
     init_variable_vector();
     assemble_balance_headloss_matrix();
@@ -63,6 +64,7 @@ class MatrixAssembler {
   Index nlinks_{0};
   Index npipes_{0};
   Index npumps_{0};
+  Index nvalves_{0};
 
   //! if it is pressure demand simulation mode
   bool pdd_{false};
@@ -82,11 +84,15 @@ class MatrixAssembler {
   std::vector<double> leak_area_;
   //! resistence coefficients for links
   Eigen::VectorXd link_resistance_coeff_vec_;
+  //! minor loss coefficients for links
+  Eigen::VectorXd link_minor_loss_coeff_vec_;
 
   //! node balance matrix
   Eigen::SparseMatrix<double> node_balance_mat_;
   //! link headloss matrix
   Eigen::SparseMatrix<double> headloss_mat_;
+  //! internal connectivity graph
+  Eigen::SparseMatrix<int> internal_graph_;
 
   //! map of for sub-jacobian triplets (row, col, value)
   std::map<std::string, std::vector<Eigen::Triplet<double>>> sub_jac_trip_;
@@ -116,6 +122,12 @@ class MatrixAssembler {
   void assemble_headloss_residual_pipe();
   //! Assemble residual for energy conservation equation (pumps)
   void assemble_headloss_residual_pump();
+  //! Assemble residual for energy conservation equation (valves)
+  void assemble_headloss_residual_valve();
+
+  //! Method to Set the jacobian entries that depend on the network status but
+  //! do not depend on the value of any variable. (status of valves etc.)
+  void set_jac_const();
 
   //! Method to update jacobian d part (pressure-demand equation)
   void update_jac_d();
@@ -124,6 +136,7 @@ class MatrixAssembler {
   //! Method to update jacobian g part (harzen-williams headloss equation)
   void update_jac_g_pipe();
   void update_jac_g_pump();
+  void update_jac_g_valve();
   //! Method to update jacobian h part (leakage equation)
   void update_jac_h();
 

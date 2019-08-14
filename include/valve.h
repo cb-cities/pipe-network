@@ -13,7 +13,7 @@ struct Valve_prop {
   std::shared_ptr<pipenetwork::Node> node1{NULL};
   std::shared_ptr<pipenetwork::Node> node2{NULL};
   Link_type valve_type{PRVALVE};
-  Link_status valve_status{OPEN};
+  Link_status valve_status{ACTIVE};
   double setting{0};
   double diameter{0.3048};
   double minor_loss{0};

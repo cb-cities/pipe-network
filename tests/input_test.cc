@@ -5,15 +5,19 @@
 // Check IO class
 TEST_CASE("Input is checked", "[IO]") {
   double tolerance = 1e-6;
-  // Create a INPUT class object
-  auto IO = std::make_shared<pipenetwork::Input>("../benchmarks/test_net.inp");
-  // Mesh index
-  const unsigned meshid = 101;
-  // Creat a mesh
-  auto mesh = std::make_unique<pipenetwork::Mesh>(meshid);
-  SECTION("Check Parsed pump info") {
+
+  SECTION("Check Parsed valve info") {
+
+    // Create a INPUT class object
+    auto IO = std::make_shared<pipenetwork::Input>(
+        "../benchmarks/test_net_valve.inp");
+    // Mesh index
+    const unsigned meshid = 101;
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+
     auto valve_props = IO->valve_properties();
-    REQUIRE(valve_props.size() == 2);
+    REQUIRE(valve_props.size() == 3);
     REQUIRE(valve_props[0].valve_type == pipenetwork::PRVALVE);
     REQUIRE(valve_props[0].id == "124");
     REQUIRE(valve_props[0].setting == 28.137549042234017);
@@ -22,29 +26,37 @@ TEST_CASE("Input is checked", "[IO]") {
     REQUIRE(valve_props[1].setting == 50);
 
     mesh->create_mesh_from_inp(IO);
-    mesh->print_summary();
+//        mesh->print_summary();
   }
 
-  //  SECTION("Check Parsed pump info") {
-  //    auto pump_props = IO->pump_properties();
-  //    auto curve_info = IO->curve_info();
-  //    REQUIRE(pump_props.size() == 2);
-  //    REQUIRE(curve_info->pump_int_str(pump_props[0].curve_name) == "2");
-  //    REQUIRE(pump_props[0].pump_type == pipenetwork::HEADPUMP);
-  //    REQUIRE(pump_props[0].id == "123");
-  //    REQUIRE(pump_props[1].id == "124");
-  //    REQUIRE(pump_props[1].pump_type == pipenetwork::POWERPUMP);
-  //    REQUIRE(pump_props[1].curve_name == -1);
-  //    REQUIRE(pump_props[1].power == 37284.9936);
-  //    auto junction_props = IO->junction_properties();
-  //    auto reservoir_props = IO->reservoir_properties();
-  //
-  //    mesh->create_junctions (junction_props);
-  //    mesh->create_reservoirs (reservoir_props);
-  //
-  //    mesh->create_pumps (pump_props);
-  ////    mesh->print_summary ();
-  //  }
+  SECTION("Check Parsed pump info") {
+    // Create a INPUT class object
+    auto IO =
+        std::make_shared<pipenetwork::Input>("../benchmarks/test_net_pump.inp");
+    // Mesh index
+    const unsigned meshid = 101;
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+
+    auto pump_props = IO->pump_properties();
+    auto curve_info = IO->curve_info();
+    REQUIRE(pump_props.size() == 2);
+    REQUIRE(curve_info->pump_int_str(pump_props[0].curve_name) == "2");
+    REQUIRE(pump_props[0].pump_type == pipenetwork::HEADPUMP);
+    REQUIRE(pump_props[0].id == "123");
+    REQUIRE(pump_props[1].id == "124");
+    REQUIRE(pump_props[1].pump_type == pipenetwork::POWERPUMP);
+    REQUIRE(pump_props[1].curve_name == -1);
+    REQUIRE(pump_props[1].power == 37284.9936);
+    auto junction_props = IO->junction_properties();
+    auto reservoir_props = IO->reservoir_properties();
+
+    mesh->create_junctions(junction_props);
+    mesh->create_reservoirs(reservoir_props);
+
+    mesh->create_pumps(pump_props);
+    //    mesh->print_summary ();
+  }
   //  SECTION("Check Parsed node info") {
   //
   //    // junctions

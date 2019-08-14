@@ -10,6 +10,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
   demands_heads_vec_.resize(nnodes_);
   elevations_.resize(nnodes_);
   link_resistance_coeff_vec_.resize(nlinks_);
+  link_minor_loss_coeff_vec_.resize(nlinks_);
 
   Index idx = 0, leak_idx = 0;
   for (const auto& node : mesh_->connect_nodes()) {
@@ -61,16 +62,26 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
 
     auto info = link->link_info();
     double val = 0;
-    switch (static_cast<pipenetwork::Link_type>(info["type"])) {
+    double minor_loss_coeff = 0;
+    // construct the energy loss coefficients for pipes and valves
+    if (info["type"] != POWERPUMP && info["type"] != HEADPUMP) {
+      minor_loss_coeff = 8 * info["minor_loss"] /
+                         (G * std::pow(PI, 2) * std::pow(info["diameter"], 4));
+      switch (static_cast<pipenetwork::Link_type>(info["type"])) {
         // link resistence coefficients for pipes (Harzan-williams)
-      case PIPE:
-        val = HW_COEFF * std::pow(info["roughness"], -1.852) *
-              std::pow(info["diameter"], -4.871) * info["length"];
-        break;
-      case TCVALVE:
-        val = 8*info["setting"]/(G*std::pow(PI, 2)*std::pow(info["diameter"], 4));
-        break;
+        case PIPE:
+          val = HW_COEFF * std::pow(info["roughness"], -1.852) *
+                std::pow(info["diameter"], -4.871) * info["length"];
+          break;
+        case TCVALVE:
+          val = 8 * info["setting"] /
+                (G * std::pow(PI, 2) * std::pow(info["diameter"], 4));
+
+          break;
+      }
     }
+
+    link_minor_loss_coeff_vec_[idx - nnodes_] = minor_loss_coeff;
     link_resistance_coeff_vec_[idx - nnodes_] = val;
     ++idx;
   }
@@ -178,6 +189,7 @@ void pipenetwork::MatrixAssembler::assemble_residual() {
   // headloss residual
   assemble_headloss_residual_pipe();
   assemble_headloss_residual_pump();
+  assemble_headloss_residual_valve();
   // leak residual
   assemble_leak_residual();
 }
@@ -363,7 +375,6 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
            head_diff_array);
 }
 
-// TODO: test pump part
 void pipenetwork::MatrixAssembler::assemble_headloss_residual_pump() {
   // iterate through all the pumps
   for (int i = 0; i < npumps_; ++i) {
@@ -421,6 +432,80 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pump() {
           pump_info["power"] +
           (head_diff_array[pump_idx]) * link_flow * G * 1000.0;
     }
+  }
+}
+
+void pipenetwork::MatrixAssembler::assemble_headloss_residual_valve() {
+  auto head_diff_array =
+      (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+
+  // iterate through all the valves
+  for (int i = 0; i < nvalves_; ++i) {
+    int valve_idx = npipes_ + npumps_ + i;
+    auto link_flow = (*variable_vec_)[2 * nnodes_ + valve_idx];
+
+    auto valve = mesh_->links().at(valve_idx);
+    auto valve_info = valve->link_info();
+    auto nodes = valve->nodes();
+    auto start_node_idx = node_id_map_.at(nodes.first->id());
+    auto end_node_idx = node_id_map_.at(nodes.second->id());
+    auto end_node_elevation = nodes.second->nodal_info()["elevation"];
+
+    double val = 0;
+
+    // PRV
+    if (valve_info["type"] == PRVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = link_flow;
+      } else if ((valve->link_status() == ACTIVE)) {
+        val = variable_vec_->array()[end_node_idx] -
+              (valve_info["setting"] + end_node_elevation);
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        auto pipe_headloss = coeff * std::pow(link_flow, 2);
+        if (link_flow < 0) {
+          pipe_headloss = -1 * pipe_headloss;
+        }
+        val = pipe_headloss - head_diff_array[valve_idx];
+      }
+
+    }
+    // FCV
+    else if (valve_info["type"] == FCVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = link_flow;
+      } else if ((valve->link_status() == ACTIVE)) {
+        val = link_flow - valve_info["setting"];
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        auto pipe_headloss = coeff * std::pow(link_flow, 2);
+        if (link_flow < 0) {
+          pipe_headloss = -1 * pipe_headloss;
+        }
+        val = pipe_headloss - head_diff_array[valve_idx];
+      }
+    }
+    // TCV
+    else if (valve_info["type"] == TCVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = link_flow;
+      } else if ((valve->link_status() == ACTIVE)) {
+        auto coeff = link_resistance_coeff_vec_[valve_idx];
+        auto pipe_headloss = coeff * std::pow(link_flow, 2);
+        if (link_flow < 0) {
+          pipe_headloss = -1 * pipe_headloss;
+        }
+        val = pipe_headloss - head_diff_array[valve_idx];
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        auto pipe_headloss = coeff * std::pow(link_flow, 2);
+        if (link_flow < 0) {
+          pipe_headloss = -1 * pipe_headloss;
+        }
+        val = pipe_headloss - head_diff_array[valve_idx];
+      }
+    }
+    residual_vec_->array()[2 * nnodes_ + valve_idx] = val;
   }
 }
 
@@ -525,6 +610,7 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
 
 // update the jacobian matrix from updated variable vector
 void pipenetwork::MatrixAssembler::update_jacobian() {
+  set_jac_const();
   // Jac_d: pressure-demand equation
   update_jac_d();
   // Jac_f: for power pump only
@@ -532,8 +618,30 @@ void pipenetwork::MatrixAssembler::update_jacobian() {
   // jac_g: headloss equation (harzen-william)
   update_jac_g_pipe();
   update_jac_g_pump();
+  update_jac_g_valve();
   // jac_h: leak equation
   update_jac_h();
+}
+
+void pipenetwork::MatrixAssembler::set_jac_const() {
+  auto trip_f = sub_jac_trip_["jac_f"];
+  // iterate through all the valves
+  for (int i = 0; i < nvalves_; ++i) {
+    int valve_idx = npipes_ + npumps_ + i;
+    auto valve = mesh_->links().at(valve_idx);
+    auto valve_info = valve->link_info();
+    if ((valve->link_status() == ACTIVE)) {
+      if (valve_info["type"] == PRVALVE) {
+        jac_->coeffRef(trip_f[2 * valve_idx].row(),
+                       trip_f[2 * valve_idx].col()) = 0;
+      } else if (valve_info["type"] == FCVALVE) {
+        jac_->coeffRef(trip_f[2 * valve_idx].row(),
+                       trip_f[2 * valve_idx].col()) = 0;
+        jac_->coeffRef(trip_f[2 * valve_idx+1].row() ,
+                       trip_f[2 * valve_idx+1].col() ) = 0;
+      }
+    }
+  }
 }
 
 // jac_d: Derivative of demand_pressure equation with respect to nodal head,
@@ -735,6 +843,64 @@ void pipenetwork::MatrixAssembler::update_jac_g_pump() {
           (1000.0 * G * (*variable_vec_)[start_node_idx] -
            1000.0 * G * (*variable_vec_)[end_node_idx]);
     }
+  }
+}
+
+// jac_g: Derivative of headloss equation with respect to pipe discharge,
+//            for corresponding valve,
+void pipenetwork::MatrixAssembler::update_jac_g_valve() {
+  auto head_diff_array =
+      (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+  auto trip_g = sub_jac_trip_["jac_g"];
+  // iterate through all the valves
+  for (int i = 0; i < nvalves_; ++i) {
+    int valve_idx = npipes_ + npumps_ + i;
+    auto link_flow = (*variable_vec_)[2 * nnodes_ + valve_idx];
+
+    auto valve = mesh_->links().at(valve_idx);
+    auto valve_info = valve->link_info();
+    auto nodes = valve->nodes();
+    auto start_node_idx = node_id_map_.at(nodes.first->id());
+    auto end_node_idx = node_id_map_.at(nodes.second->id());
+    auto end_node_elevation = nodes.second->nodal_info()["elevation"];
+
+    double val = 0;
+
+    // PRV
+    if (valve_info["type"] == PRVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = 1;
+      } else if ((valve->link_status() == ACTIVE)) {
+        val = 0;
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        val = 2 * coeff * std::abs(link_flow);
+      }
+    }
+    // FCV
+    else if (valve_info["type"] == FCVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = 1;
+      } else if ((valve->link_status() == ACTIVE)) {
+        val = 1;
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        val = 2 * coeff * std::abs(link_flow);
+      }
+    }
+    // TCV
+    else if (valve_info["type"] == TCVALVE) {
+      if ((valve->link_status() == CLOSED)) {
+        val = link_flow;
+      } else if ((valve->link_status() == ACTIVE)) {
+        auto coeff = link_resistance_coeff_vec_[valve_idx];
+        val = 2 * coeff * std::abs(link_flow);
+      } else if ((valve->link_status() == OPEN)) {
+        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+        val = 2 * coeff * std::abs(link_flow);
+      }
+    }
+    jac_->coeffRef(trip_g[valve_idx].row(), trip_g[valve_idx].col()) = val;
   }
 }
 

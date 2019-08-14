@@ -18,6 +18,7 @@ struct Pipe_prop {
   double length{std::numeric_limits<float>::max()};
   double diameter{std::numeric_limits<float>::max()};
   double roughness{std::numeric_limits<float>::max()};
+  double minor_loss_coeff{0};
   Link_status status{OPEN};
   std::string node1_id{"None"};
   std::string node2_id{"None"};
@@ -33,6 +34,7 @@ class Pipe : public Link {
     pipe_info_["length"] = pipe_prop.length;
     pipe_info_["diameter"] = pipe_prop.diameter;
     pipe_info_["roughness"] = pipe_prop.roughness;
+    pipe_info_["minor_loss"] = pipe_prop.minor_loss_coeff;
   };
 
   //! Virtual destructor
