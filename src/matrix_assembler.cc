@@ -637,8 +637,8 @@ void pipenetwork::MatrixAssembler::set_jac_const() {
       } else if (valve_info["type"] == FCVALVE) {
         jac_->coeffRef(trip_f[2 * valve_idx].row(),
                        trip_f[2 * valve_idx].col()) = 0;
-        jac_->coeffRef(trip_f[2 * valve_idx+1].row() ,
-                       trip_f[2 * valve_idx+1].col() ) = 0;
+        jac_->coeffRef(trip_f[2 * valve_idx + 1].row(),
+                       trip_f[2 * valve_idx + 1].col()) = 0;
       }
     }
   }
@@ -955,4 +955,116 @@ void pipenetwork::MatrixAssembler::update_jac_f() {
                      trip_f[2 * pump_idx + 1].col()) = -1000.0 * G * link_flow;
     }
   }
+}
+
+void pipenetwork::MatrixAssembler::init_internal_graph() {
+
+  std::map<std::pair<int, int>, int> n_links;
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+  int val;
+  // loop through links
+  for (const auto& link : mesh_->links()) {
+    auto nodes = link->nodes();
+    auto start_node_idx = node_id_map_.at(nodes.first->id());
+    auto end_node_idx = node_id_map_.at(nodes.second->id());
+    // construct node link idx map
+    if (node_link_id_map_.find(start_node_idx) == node_link_id_map_.end()) {
+      std::vector<int> link_vec;
+      node_link_id_map_[start_node_idx] = link_vec;
+    }
+    if (node_link_id_map_.find(end_node_idx) == node_link_id_map_.end()) {
+      std::vector<int> link_vec;
+      node_link_id_map_[end_node_idx] = link_vec;
+    }
+    node_link_id_map_[start_node_idx].emplace_back(link_id_map_[link->id()]);
+    node_link_id_map_[end_node_idx].emplace_back(link_id_map_[link->id()]);
+
+    // record number of links
+    if (n_links.find(std::make_pair(start_node_idx, end_node_idx)) ==
+        n_links.end()) {
+      // not found
+      n_links[std::make_pair(start_node_idx, end_node_idx)] = 0;
+      n_links[std::make_pair(end_node_idx, start_node_idx)] = 0;
+    }
+    n_links[std::make_pair(start_node_idx, end_node_idx)] += 1;
+    n_links[std::make_pair(end_node_idx, start_node_idx)] += 1;
+
+    // put connectivity status as triplets
+    val = 1;
+    if (link->link_status() == CLOSED) {
+      val = 0;
+    }
+
+    graph_triplet.emplace_back(start_node_idx, end_node_idx, val);
+    graph_triplet.emplace_back(end_node_idx, start_node_idx, val);
+  }
+  internal_graph_.resize(nnodes_, nnodes_);
+  internal_graph_.setFromTriplets(graph_triplet.begin(), graph_triplet.end());
+
+  // create vector of number of connections
+  nconnections_.resize(nnodes_);
+  for (int i = 0; i < nnodes_; ++i) {
+    nconnections_[i] = internal_graph_.outerIndexPtr()[i + 1] -
+                       internal_graph_.outerIndexPtr()[i];
+  }
+  //    std::cout << internal_graph_ << std::endl;
+  //    for (auto & elem: nconnections_){
+  //        std::cout<<elem<<std::endl;
+  //    }
+}
+
+Eigen::VectorXd pipenetwork::MatrixAssembler::explore_nodes(int node_idx) {
+  Eigen::VectorXd check_result(nnodes_);
+  check_result.setZero(nnodes_);
+
+  std::set<int> nodes_to_explore;
+  check_result[node_idx] = 1;
+  nodes_to_explore.emplace(node_idx);
+  auto indptr = internal_graph_.outerIndexPtr();
+  auto indices = internal_graph_.innerIndexPtr();
+  auto data = internal_graph_.valuePtr();
+
+  while (!nodes_to_explore.empty()) {
+    auto node_being_explored = *nodes_to_explore.begin();
+    nodes_to_explore.erase(nodes_to_explore.begin());
+
+    int nconnections = nconnections_[node_being_explored];
+    int ndx = indptr[node_being_explored];
+    // for all the connected nodes, set result to 1 and place them into the
+    // searching queue
+    for (int i = 0; i < nconnections; ++i) {
+      if (data[ndx + i] == 1 && check_result[indices[ndx + i]] == 0) {
+        check_result[indices[ndx + i]] = 1;
+        nodes_to_explore.emplace(indices[ndx + i]);
+      }
+    }
+  }
+  return check_result;
+}
+
+std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
+  Eigen::VectorXd check_result(nnodes_);
+  check_result.setZero(nnodes_);
+  std::vector<int> isolated_nodes;
+  for (const auto& source_idx : source_idx_) {
+    check_result += explore_nodes(source_idx);
+  }
+
+  for (int i = 0; i < nnodes_; ++i) {
+    if (check_result[i] == 0) {
+      isolated_nodes.emplace_back(i);
+    }
+  }
+
+  return isolated_nodes;
+}
+
+std::vector<int> pipenetwork::MatrixAssembler::get_isolated_links(const std::vector<int> & isolated_nodes) {
+    std::vector<int> isolated_links;
+    for (const auto & node: isolated_nodes){
+        for (const auto & link: node_link_id_map_[node]){
+            isolated_links.emplace_back (link);
+        }
+    }
+    return isolated_links;
 }

@@ -383,7 +383,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
     auto curve_info = IO->curve_info();
 
     mesh->create_mesh_from_inp(IO);
-    mesh->print_summary();
+    //    mesh->print_summary();
 
     double init_discharge = 1e-3;
 
@@ -440,7 +440,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
     auto curve_info = IO->curve_info();
 
     mesh->create_mesh_from_inp(IO);
-    mesh->print_summary();
+    //    mesh->print_summary();
 
     double init_discharge = 1e-3;
 
@@ -485,6 +485,76 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
           outFile2 << std::setprecision(12) << it.row() << "," << it.col()
                    << "," << it.value() << "\n";
         }
+    }
+  }
+  SECTION("Broken Net TEST") {
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+
+    auto IO = std::make_shared<pipenetwork::Input>(
+        "../benchmarks/test_net_broken.inp");
+
+    auto curve_info = IO->curve_info();
+
+    mesh->create_mesh_from_inp(IO);
+    mesh->print_summary();
+
+    double init_discharge = 1e-3;
+
+    mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
+                                       std::placeholders::_1,
+                                       init_discharge));  // initialze discharge
+
+    SECTION("DD MODE") {
+      bool pdd_mode = false;
+      auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+          mesh, curve_info, pdd_mode);
+
+      auto isolate_node = assembler->get_isolated_nodes();
+      for (const auto& elem : isolate_node) {
+        std::cout << elem << std::endl;
+      }
+
+      auto isolate_link = assembler->get_isolated_links(isolate_node);
+      for (const auto& elem : isolate_link) {
+        std::cout << elem << std::endl;
+      }
+
+      assembler->assemble_residual();
+
+      assembler->update_jacobian();
+
+      auto variable_vec = (assembler->variable_vector());
+
+      auto residual_vec = assembler->residual_vector();
+      auto jac = assembler->jac_matrix();
+
+      //      std::ofstream outFile("../benchmarks/init_var_res_valve.csv");
+      //      std::ofstream outFile2("../benchmarks/init_jacob_valve.csv");
+      //
+      //      outFile << "variables"
+      //              << ","
+      //              << "residuals"
+      //              << "\n";
+      //      for (int i = 0; i < (*residual_vec).size(); ++i) {
+      //        outFile << std::setprecision(12) << (*variable_vec).coeff(i) <<
+      //        ","
+      //                << (*residual_vec).coeff(i) << "\n";
+      //      }
+      //      outFile2 << "row"
+      //               << ","
+      //               << "col"
+      //               << ","
+      //               << "val"
+      //               << "\n";
+      //      for (int k = 0; k < (*jac).outerSize(); ++k)
+      //        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator
+      //        it(
+      //                 (*jac), k);
+      //             it; ++it) {
+      //          outFile2 << std::setprecision(12) << it.row() << "," <<
+      //          it.col()
+      //                   << "," << it.value() << "\n";
     }
   }
 }

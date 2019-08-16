@@ -94,7 +94,7 @@ SET(test_src
         tests/node_test.cc
         tests/link_test.cc
         tests/matrix_assembler_test.cc
-        tests/hydraulic_sim_test.cc
+#        tests/hydraulic_sim_test.cc
         tests/input_test.cc
         tests/curve_test.cc
         tests/solver_test.cc

@@ -30,6 +30,7 @@ class MatrixAssembler {
     nvalves_ = mesh_->nvalves();
 
     init_variable_vector();
+    init_internal_graph();
     assemble_balance_headloss_matrix();
     initialize_jacobian();
   }
@@ -53,6 +54,13 @@ class MatrixAssembler {
       const {
     return jac_;
   }
+  //! method to get the idx (position in assembled matrix) for isolated nodes
+  //! \retval vector of isolated nodes indices
+  std::vector<int> get_isolated_nodes();
+  //! method to get the idx (position in assembled matrix) for isolated links
+  //! \param[in] isolated_nodes vector of isolated nodes indices
+  //! \retval vector of isolated links indices
+  std::vector<int> get_isolated_links(const std::vector<int>& isolated_nodes);
 
  private:
   //! the mesh ptr
@@ -92,7 +100,11 @@ class MatrixAssembler {
   //! link headloss matrix
   Eigen::SparseMatrix<double> headloss_mat_;
   //! internal connectivity graph
-  Eigen::SparseMatrix<int> internal_graph_;
+  Eigen::SparseMatrix<int, Eigen::RowMajor> internal_graph_;
+  //! vector for number of connections for each node
+  std::vector<int> nconnections_;
+  //! map for node idx to link idx vector
+  std::map<int, std::vector<int>> node_link_id_map_;
 
   //! map of for sub-jacobian triplets (row, col, value)
   std::map<std::string, std::vector<Eigen::Triplet<double>>> sub_jac_trip_;
@@ -109,6 +121,13 @@ class MatrixAssembler {
 
   //! Initialize variable vector
   void init_variable_vector();
+  //! Initialize internal graph (for connectivity check)
+  void init_internal_graph();
+
+  //! Explore all the connected nodes for a given node
+  //! \param[in]  node_idx the node index that need to be explored
+  //! \retval  check_result results of the connectivity for all the nodes
+  Eigen::VectorXd explore_nodes(int node_idx);
 
   //! Initialize matrices that contain information about node balance and link
   //! headloss (include sub_jacobian_b and sub_jacobian_f)

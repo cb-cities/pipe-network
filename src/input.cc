@@ -149,12 +149,14 @@ void pipenetwork::Input::construct_pipe_info() {
     // parsing lines for pipe
     if (iss >> pid >> nid1 >> nid2 >> length >> diameter >> roughness >> loss >>
         status) {
+      std::transform(status.begin(), status.end(), status.begin(), ::toupper);
       pipe_ids_.emplace_back(pid);
       nodeids_.emplace_back(std::make_pair(nid1, nid2));
       diameter_.emplace_back(to_si(diameter, "diameter"));
       length_.emplace_back(to_si(length, "length"));
       roughness_.emplace_back(roughness);
-      if (status == "Open") {
+
+      if (status == "OPEN") {
         pipe_status_.emplace_back(OPEN);
       } else {
         pipe_status_.emplace_back(CLOSED);
