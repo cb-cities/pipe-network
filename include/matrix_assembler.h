@@ -54,13 +54,11 @@ class MatrixAssembler {
       const {
     return jac_;
   }
-  //! method to get the idx (position in assembled matrix) for isolated nodes
-  //! \retval vector of isolated nodes indices
-  std::vector<int> get_isolated_nodes();
-  //! method to get the idx (position in assembled matrix) for isolated links
-  //! \param[in] isolated_nodes vector of isolated nodes indices
-  //! \retval vector of isolated links indices
-  std::vector<int> get_isolated_links(const std::vector<int>& isolated_nodes);
+
+  //! method to get the node index-name map
+  std::map<Index, std::string> node_idx_map() const {return node_idx_map_;}
+    //! method to get the link index-name map
+    std::map<Index, std::string> link_idx_map() const {return link_idx_map_;}
 
  private:
   //! the mesh ptr
@@ -78,8 +76,10 @@ class MatrixAssembler {
   bool pdd_{false};
   //! nodal id to corresponding matrix entry number (0-nnodes_)
   std::map<std::string, Index> node_id_map_;
+  std::map<Index, std::string> node_idx_map_;
   //! link id to corresponding matrix entry number (0-nlinks_)
   std::map<std::string, Index> link_id_map_;
+    std::map<Index, std::string> link_idx_map_;
 
   //! demand (for junction) and heads (for sources) of nodes
   Eigen::VectorXd demands_heads_vec_;
@@ -94,6 +94,14 @@ class MatrixAssembler {
   Eigen::VectorXd link_resistance_coeff_vec_;
   //! minor loss coefficients for links
   Eigen::VectorXd link_minor_loss_coeff_vec_;
+  //! isolated junctions vector (boolean mask purpose)
+  Eigen::VectorXd iso_junctions_;
+  //! connected junctions vector (boolean mask purpose)
+  Eigen::VectorXd connect_junctions_;
+  //! isolated/closed links vector (boolean mask purpose)
+  Eigen::VectorXd iso_links_;
+  //! connected links vector (boolean mask purpose)
+  Eigen::VectorXd connect_links_;
 
   //! node balance matrix
   Eigen::SparseMatrix<double> node_balance_mat_;
@@ -128,6 +136,13 @@ class MatrixAssembler {
   //! \param[in]  node_idx the node index that need to be explored
   //! \retval  check_result results of the connectivity for all the nodes
   Eigen::VectorXd explore_nodes(int node_idx);
+  //! method to get the idx (position in assembled matrix) for isolated nodes
+  //! \retval vector of isolated nodes indices
+  std::vector<int> get_isolated_nodes();
+  //! method to get the idx (position in assembled matrix) for isolated links
+  //! \param[in] isolated_nodes vector of isolated nodes indices
+  //! \retval vector of isolated links indices
+  std::vector<int> get_isolated_links(const std::vector<int>& isolated_nodes);
 
   //! Initialize matrices that contain information about node balance and link
   //! headloss (include sub_jacobian_b and sub_jacobian_f)

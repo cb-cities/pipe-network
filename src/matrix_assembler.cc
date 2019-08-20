@@ -13,7 +13,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
   link_minor_loss_coeff_vec_.resize(nlinks_);
 
   Index idx = 0, leak_idx = 0;
-  for (const auto& node : mesh_->connect_nodes()) {
+  for (const auto& node : mesh_->nodes ()) {
     Index index_nd = idx + nnodes_;
     Index index_nl = leak_idx + 2 * nnodes_ + nlinks_;
 
@@ -48,6 +48,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
     variable_vec_->coeffRef(index_nd) = node.second->sim_demand();
     // id map
     node_id_map_.emplace(node.second->id(), idx);
+    node_idx_map_.emplace(idx, node.second->id());
 
     ++idx;
   }
@@ -59,6 +60,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
     variable_vec_->coeffRef(index_pd) = link->sim_discharge();
     // id map
     link_id_map_.emplace(link->id(), idx - nnodes_);
+    link_idx_map_.emplace(idx - nnodes_,link->id());
 
     auto info = link->link_info();
     double val = 0;
@@ -199,7 +201,10 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
   if (!pdd_) {
     // demand for junctions
     residual_vec_->segment(nnodes_, nnodes_) =
-        variable_vec_->segment(nnodes_, nnodes_) - demands_heads_vec_;
+        iso_junctions_.array() * variable_vec_->segment(0, nnodes_).array() +
+        connect_junctions_.array() *
+            (variable_vec_->segment(nnodes_, nnodes_) - demands_heads_vec_)
+                .array();
 
   } else {
     auto pressure = (variable_vec_->segment(0, nnodes_) - elevations_);
@@ -251,33 +256,43 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     auto pdd2_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC2"];
 
     residual_vec_->segment(nnodes_, nnodes_) =
-        case1_bool * (variable_vec_->segment(nnodes_, nnodes_).array()) +
-        case2_bool *
-            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-             demands_heads_vec_.array() *
-                 (pdd1_poly_vec[0] * pressure.array().pow(3) +
-                  pdd1_poly_vec[1] * pressure.array().pow(2) +
-                  pdd1_poly_vec[2] * pressure.array() + pdd1_poly_vec[3])) +
-        case3_bool *
-            ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-             demands_heads_vec_.array() *
-                 (pdd2_poly_vec[0] * pressure.array().pow(3) +
-                  pdd2_poly_vec[1] * pressure.array().pow(2) +
-                  pdd2_poly_vec[2] * pressure.array() + pdd2_poly_vec[3])) +
-        case4_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-                      demands_heads_vec_.array()) +
-        case5_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
-                      demands_heads_vec_.array() *
-                          ((pressure.array().abs() - MIN_PRESSURE) /
-                           (NORMAL_PRESSURE - MIN_PRESSURE))
-                              .pow(0.5));
-    //    std::cout<<pressure.array() <<std::endl;
+        iso_junctions_.array() * variable_vec_->segment(0, nnodes_).array() +
+        connect_junctions_.array() *
+            (case1_bool * (variable_vec_->segment(nnodes_, nnodes_).array() -
+                           demands_heads_vec_.array() * PDD_SLOPE *
+                               (pressure.array() - MIN_PRESSURE)) +
+             case2_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                           demands_heads_vec_.array() *
+                               (pdd1_poly_vec[0] * pressure.array().pow(3) +
+                                pdd1_poly_vec[1] * pressure.array().pow(2) +
+                                pdd1_poly_vec[2] * pressure.array() +
+                                pdd1_poly_vec[3])) +
+             case3_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                           demands_heads_vec_.array() *
+                               (pdd2_poly_vec[0] * pressure.array().pow(3) +
+                                pdd2_poly_vec[1] * pressure.array().pow(2) +
+                                pdd2_poly_vec[2] * pressure.array() +
+                                pdd2_poly_vec[3])) +
+             case4_bool *
+                 ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                  demands_heads_vec_.array() *
+                      (PDD_SLOPE * (pressure.array() - NORMAL_PRESSURE) + 1)) +
+             case5_bool * ((variable_vec_->segment(nnodes_, nnodes_).array()) -
+                           demands_heads_vec_.array() *
+                               ((pressure.array().abs() - MIN_PRESSURE) /
+                                (NORMAL_PRESSURE - MIN_PRESSURE))
+                                   .abs()
+                                   .pow(0.5)));
+
   }
   // correct residuals for sources (head for reservoir/tanks)
   for (const auto& idx : source_idx_) {
     (*residual_vec_)[idx + nnodes_] =
         (*variable_vec_)[idx] - demands_heads_vec_[idx];
   }
+    std::cout << "====================================" << std::endl;
+    std::cout << residual_vec_->segment(nnodes_, nnodes_).norm() << std::endl;
+
 }
 
 // Residual for leak from holes. piece-wise function, use for loop... (number of
@@ -288,33 +303,38 @@ void pipenetwork::MatrixAssembler::assemble_leak_residual() {
   for (const auto& leak_id : leak_ids_) {
     auto i = leak_idx - 2 * nnodes_ - nlinks_;
     auto idx = node_id_map_[leak_id];
-    auto p = (*variable_vec_)[idx] - elevations_[idx];
+    if (iso_junctions_[idx] == 1) {
+      residual_vec_->coeffRef(leak_idx) = (*variable_vec_)[leak_idx];
+    } else {
+      auto p = (*variable_vec_)[idx] - elevations_[idx];
 
-    // case 1, no pressure no leak
-    if (p < m) {
-      residual_vec_->coeffRef(leak_idx) = (*variable_vec_)[leak_idx] - m * p;
+      // case 1, no pressure no leak
+      if (p < m) {
+        residual_vec_->coeffRef(leak_idx) = (*variable_vec_)[leak_idx] - m * p;
+      }
+      // case 2, around the boundary, use polynomial approximation
+      else if (p < 1e-4) {
+        auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];
+        residual_vec_->coeffRef(leak_idx) =
+            (*variable_vec_)[leak_idx] - leak_poly_coef[0] * std::pow(p, 3) -
+            leak_poly_coef[1] * std::pow(p, 2) - leak_poly_coef[2] * p -
+            leak_poly_coef[3];
+      }
+      // case 3, normal leak equation
+      else {
+        residual_vec_->coeffRef(leak_idx) =
+            (*variable_vec_)[leak_idx] -
+            LEAK_COEFF * leak_area_[i] * std::sqrt(2 * G * p);
+      }
+      ++leak_idx;
     }
-    // case 2, around the boundary, use polynomial approximation
-    else if (p < 1e-4) {
-      auto leak_poly_coef = curves_info_->poly_coeffs()[leak_id];
-      residual_vec_->coeffRef(leak_idx) =
-          (*variable_vec_)[leak_idx] - leak_poly_coef[0] * std::pow(p, 3) -
-          leak_poly_coef[1] * std::pow(p, 2) - leak_poly_coef[2] * p -
-          leak_poly_coef[3];
-    }
-    // case 3, normal leak equation
-    else {
-      residual_vec_->coeffRef(leak_idx) =
-          (*variable_vec_)[leak_idx] -
-          LEAK_COEFF * leak_area_[i] * std::sqrt(2 * G * p);
-    }
-    ++leak_idx;
   }
 }
 
 // residual for energy conservation equation (Hazen-williams). Piece-wise
 // function for stability concern
 void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
+
   auto sign_array = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           //                            return (x < 0) ? -1 : 1;
@@ -322,7 +342,6 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
                           return -1.0;
                         })
                         .array();  // get the sign of discharges
-
   // case 1, discharges that exceed the boundary of HW_Q2, use normal
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
@@ -357,22 +376,27 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
   auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
 
   residual_vec_->segment(2 * nnodes_, npipes_) =
-      case1_bool *
-          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
-               discharge_abs_array.pow(1.852) -
-           head_diff_array)
+      (iso_links_.segment(0, npipes_).array() *
+       variable_vec_->segment(2 * nnodes_, npipes_).array()) +
+      connect_links_.segment(0, npipes_).array() *
+          (case1_bool *
+               (sign_array *
+                    link_resistance_coeff_vec_.segment(0, npipes_).array() *
+                    discharge_abs_array.pow(1.852) -
+                head_diff_array)
 
-      +
-      case2_bool *
-          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
-               (hw_poly_vec[0] * discharge_abs_array.pow(3) +
-                hw_poly_vec[1] * discharge_abs_array.pow(2) +
-                hw_poly_vec[2] * discharge_abs_array + hw_poly_vec[3]) -
-           head_diff_array) +
-      case3_bool *
-          (sign_array * link_resistance_coeff_vec_.segment(0, npipes_).array() *
-               HW_M * discharge_abs_array -
-           head_diff_array);
+           + case2_bool *
+                 (sign_array *
+                      link_resistance_coeff_vec_.segment(0, npipes_).array() *
+                      (hw_poly_vec[0] * discharge_abs_array.pow(3) +
+                       hw_poly_vec[1] * discharge_abs_array.pow(2) +
+                       hw_poly_vec[2] * discharge_abs_array + hw_poly_vec[3]) -
+                  head_diff_array) +
+           case3_bool *
+               (sign_array *
+                    link_resistance_coeff_vec_.segment(0, npipes_).array() *
+                    HW_M * discharge_abs_array -
+                head_diff_array));
 }
 
 void pipenetwork::MatrixAssembler::assemble_headloss_residual_pump() {
@@ -380,57 +404,64 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pump() {
   for (int i = 0; i < npumps_; ++i) {
     int pump_idx = npipes_ + i;
     auto link_flow = (*variable_vec_)[2 * nnodes_ + pump_idx];
+    if (iso_links_[pump_idx] == 1) {
+      residual_vec_->array()[2 * nnodes_ + pump_idx] = link_flow;
+    } else {
+      auto pump = mesh_->links().at(pump_idx);
+      auto pump_info = pump->link_info();
+      auto nodes = pump->nodes();
+      auto start_node_idx = node_id_map_.at(nodes.first->id());
+      auto end_node_idx = node_id_map_.at(nodes.second->id());
 
-    auto pump = mesh_->links().at(pump_idx);
-    auto pump_info = pump->link_info();
-    auto nodes = pump->nodes();
-    auto start_node_idx = node_id_map_.at(nodes.first->id());
-    auto end_node_idx = node_id_map_.at(nodes.second->id());
+      // head pump
+      if (pump_info["type"] == HEADPUMP) {
+        double pump_headgain;
+        auto pump_curve = curves_info_->pump_curves().at(
+            curves_info_->pump_int_str(pump_info.at("curve_name")));
+        auto curve_coeff = pump_curve.head_curve_coefficients;
 
-    // head pump
-    if (pump_info["type"] == HEADPUMP) {
-      double pump_headgain;
-      auto pump_curve = curves_info_->pump_curves().at(
-          curves_info_->pump_int_str(pump_info.at("curve_name")));
-      auto curve_coeff = pump_curve.head_curve_coefficients;
+        if (curve_coeff[2] > 1) {
+          auto line_coeff = pump_curve.line_param;
+          if (link_flow >= line_coeff[0]) {
+            pump_headgain =
+                curve_coeff[0] -
+                curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
 
-      if (curve_coeff[2] > 1) {
-        auto line_coeff = pump_curve.line_param;
-        if (link_flow >= line_coeff[0]) {
-          pump_headgain = curve_coeff[0] -
-                          curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
+          }
 
-        }
-
-        else {
-          pump_headgain = PUMP_M * (link_flow - line_coeff[0]) + line_coeff[1];
-        }
-      } else {
-        if (link_flow < PUMP_Q1) {
-          pump_headgain = PUMP_M * link_flow + curve_coeff[0];
-        } else if (link_flow < PUMP_Q2) {
-          auto curve_poly_coeff = pump_curve.poly_coefficients;
-          pump_headgain = curve_poly_coeff[0] * std::pow(link_flow, 3) +
-                          curve_poly_coeff[1] * std::pow(link_flow, 2) +
-                          curve_poly_coeff[2] * link_flow + curve_poly_coeff[3];
+          else {
+            pump_headgain =
+                PUMP_M * (link_flow - line_coeff[0]) + line_coeff[1];
+          }
         } else {
-          pump_headgain = curve_coeff[0] -
-                          curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
+          if (link_flow < PUMP_Q1) {
+            pump_headgain = PUMP_M * link_flow + curve_coeff[0];
+          } else if (link_flow < PUMP_Q2) {
+            auto curve_poly_coeff = pump_curve.poly_coefficients;
+            pump_headgain = curve_poly_coeff[0] * std::pow(link_flow, 3) +
+                            curve_poly_coeff[1] * std::pow(link_flow, 2) +
+                            curve_poly_coeff[2] * link_flow +
+                            curve_poly_coeff[3];
+          } else {
+            pump_headgain =
+                curve_coeff[0] -
+                curve_coeff[1] * std::pow(link_flow, curve_coeff[2]);
+          }
         }
+        residual_vec_->array()[2 * nnodes_ + pump_idx] =
+            pump_headgain - (variable_vec_->array()[end_node_idx] -
+                             variable_vec_->array()[start_node_idx]);
+
       }
-      residual_vec_->array()[2 * nnodes_ + pump_idx] =
-          pump_headgain - (variable_vec_->array()[end_node_idx] -
-                           variable_vec_->array()[start_node_idx]);
+      // power pump
+      else if (pump_info["type"] == POWERPUMP) {
+        auto head_diff_array =
+            (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
 
-    }
-    // power pump
-    else if (pump_info["type"] == POWERPUMP) {
-      auto head_diff_array =
-          (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
-
-      residual_vec_->array()[2 * nnodes_ + pump_idx] =
-          pump_info["power"] +
-          (head_diff_array[pump_idx]) * link_flow * G * 1000.0;
+        residual_vec_->array()[2 * nnodes_ + pump_idx] =
+            pump_info["power"] +
+            (head_diff_array[pump_idx]) * link_flow * G * 1000.0;
+      }
     }
   }
 }
@@ -443,69 +474,73 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_valve() {
   for (int i = 0; i < nvalves_; ++i) {
     int valve_idx = npipes_ + npumps_ + i;
     auto link_flow = (*variable_vec_)[2 * nnodes_ + valve_idx];
+    if (iso_links_[valve_idx] == 1) {
+      residual_vec_->array()[2 * nnodes_ + valve_idx] = link_flow;
+    } else {
 
-    auto valve = mesh_->links().at(valve_idx);
-    auto valve_info = valve->link_info();
-    auto nodes = valve->nodes();
-    auto start_node_idx = node_id_map_.at(nodes.first->id());
-    auto end_node_idx = node_id_map_.at(nodes.second->id());
-    auto end_node_elevation = nodes.second->nodal_info()["elevation"];
+      auto valve = mesh_->links().at(valve_idx);
+      auto valve_info = valve->link_info();
+      auto nodes = valve->nodes();
+      auto start_node_idx = node_id_map_.at(nodes.first->id());
+      auto end_node_idx = node_id_map_.at(nodes.second->id());
+      auto end_node_elevation = nodes.second->nodal_info()["elevation"];
 
-    double val = 0;
+      double val = 0;
 
-    // PRV
-    if (valve_info["type"] == PRVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = link_flow;
-      } else if ((valve->link_status() == ACTIVE)) {
-        val = variable_vec_->array()[end_node_idx] -
-              (valve_info["setting"] + end_node_elevation);
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        auto pipe_headloss = coeff * std::pow(link_flow, 2);
-        if (link_flow < 0) {
-          pipe_headloss = -1 * pipe_headloss;
+      // PRV
+      if (valve_info["type"] == PRVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = link_flow;
+        } else if ((valve->link_status() == ACTIVE)) {
+          val = variable_vec_->array()[end_node_idx] -
+                (valve_info["setting"] + end_node_elevation);
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          auto pipe_headloss = coeff * std::pow(link_flow, 2);
+          if (link_flow < 0) {
+            pipe_headloss = -1 * pipe_headloss;
+          }
+          val = pipe_headloss - head_diff_array[valve_idx];
         }
-        val = pipe_headloss - head_diff_array[valve_idx];
+
       }
-
-    }
-    // FCV
-    else if (valve_info["type"] == FCVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = link_flow;
-      } else if ((valve->link_status() == ACTIVE)) {
-        val = link_flow - valve_info["setting"];
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        auto pipe_headloss = coeff * std::pow(link_flow, 2);
-        if (link_flow < 0) {
-          pipe_headloss = -1 * pipe_headloss;
+      // FCV
+      else if (valve_info["type"] == FCVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = link_flow;
+        } else if ((valve->link_status() == ACTIVE)) {
+          val = link_flow - valve_info["setting"];
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          auto pipe_headloss = coeff * std::pow(link_flow, 2);
+          if (link_flow < 0) {
+            pipe_headloss = -1 * pipe_headloss;
+          }
+          val = pipe_headloss - head_diff_array[valve_idx];
         }
-        val = pipe_headloss - head_diff_array[valve_idx];
       }
-    }
-    // TCV
-    else if (valve_info["type"] == TCVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = link_flow;
-      } else if ((valve->link_status() == ACTIVE)) {
-        auto coeff = link_resistance_coeff_vec_[valve_idx];
-        auto pipe_headloss = coeff * std::pow(link_flow, 2);
-        if (link_flow < 0) {
-          pipe_headloss = -1 * pipe_headloss;
+      // TCV
+      else if (valve_info["type"] == TCVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = link_flow;
+        } else if ((valve->link_status() == ACTIVE)) {
+          auto coeff = link_resistance_coeff_vec_[valve_idx];
+          auto pipe_headloss = coeff * std::pow(link_flow, 2);
+          if (link_flow < 0) {
+            pipe_headloss = -1 * pipe_headloss;
+          }
+          val = pipe_headloss - head_diff_array[valve_idx];
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          auto pipe_headloss = coeff * std::pow(link_flow, 2);
+          if (link_flow < 0) {
+            pipe_headloss = -1 * pipe_headloss;
+          }
+          val = pipe_headloss - head_diff_array[valve_idx];
         }
-        val = pipe_headloss - head_diff_array[valve_idx];
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        auto pipe_headloss = coeff * std::pow(link_flow, 2);
-        if (link_flow < 0) {
-          pipe_headloss = -1 * pipe_headloss;
-        }
-        val = pipe_headloss - head_diff_array[valve_idx];
       }
+      residual_vec_->array()[2 * nnodes_ + valve_idx] = val;
     }
-    residual_vec_->array()[2 * nnodes_ + valve_idx] = val;
   }
 }
 
@@ -624,8 +659,37 @@ void pipenetwork::MatrixAssembler::update_jacobian() {
 }
 
 void pipenetwork::MatrixAssembler::set_jac_const() {
+  // get trip f and isolated junctions+sources
   auto trip_f = sub_jac_trip_["jac_f"];
-  // iterate through all the valves
+  auto iso_junc_src = iso_junctions_;
+  auto connect_junc_no_src = connect_junctions_;
+  for (const auto& src : source_idx_) {
+    iso_junc_src[src] = 1;
+    connect_junc_no_src[src] = 0;
+  }
+
+  // change jacobian matrix entries based on connection status
+  int count = 0;
+  if (!pdd_) {
+    for (const auto& trip_d : sub_jac_trip_["jac_d"]) {
+      jac_->coeffRef(trip_d.row(), trip_d.col()) = iso_junc_src[count];
+      ++count;
+    }
+  }
+  count = 0;
+  for (const auto& trip_e : sub_jac_trip_["jac_e"]) {
+    jac_->coeffRef(trip_e.row(), trip_e.col()) = connect_junc_no_src[count];
+    ++count;
+  }
+
+  for (int i = 0; i < nlinks_; ++i) {
+    jac_->coeffRef(trip_f[2 * i].row(), trip_f[2 * i].col()) =
+        connect_links_[i] * trip_f[2 * i].value();
+    jac_->coeffRef(trip_f[2 * i + 1].row(), trip_f[2 * i + 1].col()) =
+        connect_links_[i] * trip_f[2 * i + 1].value();
+  }
+
+  // iterate through all the valves for jac_f corrections
   for (int i = 0; i < nvalves_; ++i) {
     int valve_idx = npipes_ + npumps_ + i;
     auto valve = mesh_->links().at(valve_idx);
@@ -698,27 +762,57 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
     auto pdd2_poly_vec = curves_info_->poly_coeffs()["PDD_POLY_VEC2"];
 
     auto vals =
-        case1_bool *
-            (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
-        case2_bool * (-demands_heads_vec_.array() *
-                      (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
-                       2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
-                       pdd1_poly_vec[2])) +
-        case3_bool * (-demands_heads_vec_.array() *
-                      (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
-                       2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
-                       pdd2_poly_vec[2])) +
-        case4_bool *
-            (-PDD_SLOPE * variable_vec_->segment(nnodes_, nnodes_).array()) +
-        case5_bool * (-0.5 * demands_heads_vec_.array() *
-                      ((pressure.array().abs() - MIN_PRESSURE) /
-                       (NORMAL_PRESSURE - MIN_PRESSURE))
-                          .pow(-0.5));
+        iso_junctions_.array() +
+        connect_junctions_.array() *
+            (case1_bool * (-PDD_SLOPE * demands_heads_vec_.array() *
+                           variable_vec_->segment(0, nnodes_).array()) +
+             case2_bool * (-demands_heads_vec_.array() *
+                           (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
+                            2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
+                            pdd1_poly_vec[2])) +
+             case3_bool * (-demands_heads_vec_.array() *
+                           (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
+                            2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
+                            pdd2_poly_vec[2])) +
+             case4_bool * (-PDD_SLOPE * demands_heads_vec_.array() *
+                           variable_vec_->segment(0, nnodes_).array()) +
+             case5_bool * (-0.5 * demands_heads_vec_.array() /
+                           (NORMAL_PRESSURE - MIN_PRESSURE) *
+                           ((pressure.array().abs() - MIN_PRESSURE) /
+                            (NORMAL_PRESSURE - MIN_PRESSURE))
+                               .abs()
+                               .pow(-0.5)));
+    std::cout << "====================================" << std::endl;
+    std::cout << iso_junctions_.sum() << std::endl;
+    std::cout <<case1_bool.sum()<<" "<< case2_bool.sum()<<" "<< case3_bool.sum()<<" "<< case4_bool.sum()<<" "<<case5_bool.sum()<<" " << std::endl;
+    std::cout << vals.sum() << std::endl;
 
     auto trip_d = sub_jac_trip_["jac_d"];
     for (int i = 0; i < nnodes_; ++i) {
       if (trip_d[i].value() == 0)
         jac_->coeffRef(trip_d[i].row(), trip_d[i].col()) = vals[i];
+    }
+  }
+}
+
+// jac_f: Derivative of head-loss equation with respect to nodal head,
+//              modified for powerpump
+void pipenetwork::MatrixAssembler::update_jac_f() {
+  auto trip_f = sub_jac_trip_["jac_f"];
+
+  for (int i = 0; i < npumps_; ++i) {
+    int pump_idx = npipes_ + i;
+    auto link_flow = variable_vec_->array()[2 * nnodes_ + pump_idx];
+    if (iso_links_[pump_idx] == 0) {
+      auto pump = mesh_->links().at(pump_idx);
+      auto pump_info = pump->link_info();
+      if (pump_info["type"] == POWERPUMP) {
+        jac_->coeffRef(trip_f[2 * pump_idx].row(), trip_f[2 * pump_idx].col()) =
+            1000.0 * G * link_flow;
+        jac_->coeffRef(trip_f[2 * pump_idx + 1].row(),
+                       trip_f[2 * pump_idx + 1].col()) =
+            -1000.0 * G * link_flow;
+      }
     }
   }
 }
@@ -769,14 +863,16 @@ void pipenetwork::MatrixAssembler::update_jac_g_pipe() {
                              .array();
   auto hw_poly_vec = curves_info_->poly_coeffs()["HW_POLY_VEC"];
   auto vals =
-      case1_bool * 1.852 *
-          link_resistance_coeff_vec_.segment(0, npipes_).array() *
-          discharge_abs_array.pow(.852) +
-      case2_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
-          (3 * hw_poly_vec[0] * discharge_abs_array.pow(2) +
-           2 * hw_poly_vec[1] * discharge_abs_array + 1 * hw_poly_vec[2]) +
-      case3_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
-          HW_M;
+      (iso_links_.segment(0, npipes_)).array() +
+      connect_links_.segment(0, npipes_).array() *
+          (case1_bool * 1.852 *
+               link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               discharge_abs_array.pow(.852) +
+           case2_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               (3 * hw_poly_vec[0] * discharge_abs_array.pow(2) +
+                2 * hw_poly_vec[1] * discharge_abs_array + 1 * hw_poly_vec[2]) +
+           case3_bool * link_resistance_coeff_vec_.segment(0, npipes_).array() *
+               HW_M);
   auto trip_g = sub_jac_trip_["jac_g"];
   for (int i = 0; i < npipes_; ++i) {
     jac_->coeffRef(trip_g[i].row(), trip_g[i].col()) = vals[i];
@@ -790,58 +886,61 @@ void pipenetwork::MatrixAssembler::update_jac_g_pump() {
   for (int i = 0; i < npumps_; ++i) {
     int pump_idx = npipes_ + i;
     auto link_flow = (*variable_vec_)[2 * nnodes_ + pump_idx];
+    if (iso_links_[pump_idx] == 1) {
+      jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) = 1;
+    } else {
+      auto pump = mesh_->links().at(pump_idx);
+      auto pump_info = pump->link_info();
+      auto nodes = pump->nodes();
+      auto start_node_idx = node_id_map_.at(nodes.first->id());
+      auto end_node_idx = node_id_map_.at(nodes.second->id());
 
-    auto pump = mesh_->links().at(pump_idx);
-    auto pump_info = pump->link_info();
-    auto nodes = pump->nodes();
-    auto start_node_idx = node_id_map_.at(nodes.first->id());
-    auto end_node_idx = node_id_map_.at(nodes.second->id());
+      // head pump
+      if (pump_info["type"] == HEADPUMP) {
+        double pump_headgain;
+        auto pump_curve = curves_info_->pump_curves().at(
+            curves_info_->pump_int_str(pump_info.at("curve_name")));
+        auto curve_coeff = pump_curve.head_curve_coefficients;
 
-    // head pump
-    if (pump_info["type"] == HEADPUMP) {
-      double pump_headgain;
-      auto pump_curve = curves_info_->pump_curves().at(
-          curves_info_->pump_int_str(pump_info.at("curve_name")));
-      auto curve_coeff = pump_curve.head_curve_coefficients;
+        if (curve_coeff[2] > 1) {
+          auto line_coeff = pump_curve.line_param;
+          if (link_flow >= line_coeff[0]) {
+            jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+                -curve_coeff[1] * curve_coeff[2] *
+                std::pow(link_flow, (curve_coeff[2] - 1));
 
-      if (curve_coeff[2] > 1) {
-        auto line_coeff = pump_curve.line_param;
-        if (link_flow >= line_coeff[0]) {
-          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-              -curve_coeff[1] * curve_coeff[2] *
-              std::pow(link_flow, (curve_coeff[2] - 1));
+          }
 
-        }
-
-        else {
-          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-              PUMP_M;
-        }
-      } else {
-        if (link_flow < PUMP_Q1) {
-          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-              PUMP_M;
-        } else if (link_flow < PUMP_Q2) {
-          auto curve_poly_coeff = pump_curve.poly_coefficients;
-          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-              3 * curve_poly_coeff[0] * std::pow(link_flow, 2) +
-              2 * curve_poly_coeff[1] * link_flow + curve_poly_coeff[2];
+          else {
+            jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+                PUMP_M;
+          }
         } else {
-          jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-              -curve_coeff[1] * curve_coeff[2] *
-              std::pow(link_flow, (curve_coeff[2] - 1));
+          if (link_flow < PUMP_Q1) {
+            jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+                PUMP_M;
+          } else if (link_flow < PUMP_Q2) {
+            auto curve_poly_coeff = pump_curve.poly_coefficients;
+            jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+                3 * curve_poly_coeff[0] * std::pow(link_flow, 2) +
+                2 * curve_poly_coeff[1] * link_flow + curve_poly_coeff[2];
+          } else {
+            jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+                -curve_coeff[1] * curve_coeff[2] *
+                std::pow(link_flow, (curve_coeff[2] - 1));
+          }
         }
       }
-    }
-    // power pump
-    else if (pump_info["type"] == POWERPUMP) {
+      // power pump
+      else if (pump_info["type"] == POWERPUMP) {
 
-      auto head_diff_array =
-          (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
+        auto head_diff_array =
+            (headloss_mat_ * (variable_vec_->segment(0, nnodes_))).array();
 
-      jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
-          (1000.0 * G * (*variable_vec_)[start_node_idx] -
-           1000.0 * G * (*variable_vec_)[end_node_idx]);
+        jac_->coeffRef(trip_g[pump_idx].row(), trip_g[pump_idx].col()) =
+            (1000.0 * G * (*variable_vec_)[start_node_idx] -
+             1000.0 * G * (*variable_vec_)[end_node_idx]);
+      }
     }
   }
 }
@@ -857,50 +956,52 @@ void pipenetwork::MatrixAssembler::update_jac_g_valve() {
     int valve_idx = npipes_ + npumps_ + i;
     auto link_flow = (*variable_vec_)[2 * nnodes_ + valve_idx];
 
-    auto valve = mesh_->links().at(valve_idx);
-    auto valve_info = valve->link_info();
-    auto nodes = valve->nodes();
-    auto start_node_idx = node_id_map_.at(nodes.first->id());
-    auto end_node_idx = node_id_map_.at(nodes.second->id());
-    auto end_node_elevation = nodes.second->nodal_info()["elevation"];
+    if (iso_links_[valve_idx] == 1) {
+      jac_->coeffRef(trip_g[valve_idx].row(), trip_g[valve_idx].col()) = 1;
+    } else {
 
-    double val = 0;
+      auto valve = mesh_->links().at(valve_idx);
+      auto valve_info = valve->link_info();
+      auto nodes = valve->nodes();
 
-    // PRV
-    if (valve_info["type"] == PRVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = 1;
-      } else if ((valve->link_status() == ACTIVE)) {
-        val = 0;
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        val = 2 * coeff * std::abs(link_flow);
+      double val = 0;
+
+      // PRV
+      if (valve_info["type"] == PRVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = 1;
+        } else if ((valve->link_status() == ACTIVE)) {
+          val = 0;
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          val = 2 * coeff * std::abs(link_flow);
+        }
       }
-    }
-    // FCV
-    else if (valve_info["type"] == FCVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = 1;
-      } else if ((valve->link_status() == ACTIVE)) {
-        val = 1;
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        val = 2 * coeff * std::abs(link_flow);
+      // FCV
+      else if (valve_info["type"] == FCVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = 1;
+        } else if ((valve->link_status() == ACTIVE)) {
+          val = 1;
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          val = 2 * coeff * std::abs(link_flow);
+        }
       }
-    }
-    // TCV
-    else if (valve_info["type"] == TCVALVE) {
-      if ((valve->link_status() == CLOSED)) {
-        val = link_flow;
-      } else if ((valve->link_status() == ACTIVE)) {
-        auto coeff = link_resistance_coeff_vec_[valve_idx];
-        val = 2 * coeff * std::abs(link_flow);
-      } else if ((valve->link_status() == OPEN)) {
-        auto coeff = link_minor_loss_coeff_vec_[valve_idx];
-        val = 2 * coeff * std::abs(link_flow);
+      // TCV
+      else if (valve_info["type"] == TCVALVE) {
+        if ((valve->link_status() == CLOSED)) {
+          val = link_flow;
+        } else if ((valve->link_status() == ACTIVE)) {
+          auto coeff = link_resistance_coeff_vec_[valve_idx];
+          val = 2 * coeff * std::abs(link_flow);
+        } else if ((valve->link_status() == OPEN)) {
+          auto coeff = link_minor_loss_coeff_vec_[valve_idx];
+          val = 2 * coeff * std::abs(link_flow);
+        }
       }
+      jac_->coeffRef(trip_g[valve_idx].row(), trip_g[valve_idx].col()) = val;
     }
-    jac_->coeffRef(trip_g[valve_idx].row(), trip_g[valve_idx].col()) = val;
   }
 }
 
@@ -935,25 +1036,6 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
     jac_->coeffRef(trip_h[leak_idx - 2 * nnodes_ - nlinks_].row(),
                    trip_h[leak_idx - 2 * nnodes_ - nlinks_].col()) = val;
     ++leak_idx;
-  }
-}
-// jac_f: Derivative of head-loss equation with respect to nodal head,
-//              modified for powerpump
-void pipenetwork::MatrixAssembler::update_jac_f() {
-  auto trip_f = sub_jac_trip_["jac_f"];
-
-  for (int i = 0; i < npumps_; ++i) {
-    int pump_idx = npipes_ + i;
-    auto link_flow = variable_vec_->array()[2 * nnodes_ + pump_idx];
-
-    auto pump = mesh_->links().at(pump_idx);
-    auto pump_info = pump->link_info();
-    if (pump_info["type"] == POWERPUMP) {
-      jac_->coeffRef(trip_f[2 * pump_idx].row(), trip_f[2 * pump_idx].col()) =
-          1000.0 * G * link_flow;
-      jac_->coeffRef(trip_f[2 * pump_idx + 1].row(),
-                     trip_f[2 * pump_idx + 1].col()) = -1000.0 * G * link_flow;
-    }
   }
 }
 
@@ -1007,10 +1089,24 @@ void pipenetwork::MatrixAssembler::init_internal_graph() {
     nconnections_[i] = internal_graph_.outerIndexPtr()[i + 1] -
                        internal_graph_.outerIndexPtr()[i];
   }
-  //    std::cout << internal_graph_ << std::endl;
-  //    for (auto & elem: nconnections_){
-  //        std::cout<<elem<<std::endl;
-  //    }
+
+  // init isolated junction and links arrays
+  auto iso_nodes = get_isolated_nodes();
+  auto iso_links = get_isolated_links(iso_nodes);
+  iso_junctions_.setZero(nnodes_);
+  iso_links_.setZero(nlinks_);
+  for (auto& n : iso_nodes) {
+    iso_junctions_[n] = 1;
+  }
+  for (auto& l : iso_links) {
+    iso_links_[l] = 1;
+  }
+  Eigen::VectorXd ones_link;
+  Eigen::VectorXd ones_nodes;
+  ones_link.setOnes(nlinks_);
+  ones_nodes.setOnes(nnodes_);
+  connect_junctions_ = ones_nodes - iso_junctions_;
+  connect_links_ = ones_link - iso_links_;
 }
 
 Eigen::VectorXd pipenetwork::MatrixAssembler::explore_nodes(int node_idx) {
@@ -1046,6 +1142,7 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
   Eigen::VectorXd check_result(nnodes_);
   check_result.setZero(nnodes_);
   std::vector<int> isolated_nodes;
+//  std::cout<<"souce number "<<source_idx_.size ()<<std::endl;
   for (const auto& source_idx : source_idx_) {
     check_result += explore_nodes(source_idx);
   }
@@ -1059,12 +1156,13 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
   return isolated_nodes;
 }
 
-std::vector<int> pipenetwork::MatrixAssembler::get_isolated_links(const std::vector<int> & isolated_nodes) {
-    std::vector<int> isolated_links;
-    for (const auto & node: isolated_nodes){
-        for (const auto & link: node_link_id_map_[node]){
-            isolated_links.emplace_back (link);
-        }
+std::vector<int> pipenetwork::MatrixAssembler::get_isolated_links(
+    const std::vector<int>& isolated_nodes) {
+  std::vector<int> isolated_links;
+  for (const auto& node : isolated_nodes) {
+    for (const auto& link : node_link_id_map_[node]) {
+      isolated_links.emplace_back(link);
     }
-    return isolated_links;
+  }
+  return isolated_links;
 }

@@ -102,7 +102,7 @@ class Mesh {
 
   //! Return number of nodes in the network
   //! \retval nnode_ number of nodes in the network
-  unsigned nnodes() const { return connected_nodes_.size(); }
+  unsigned nnodes() const { return nodes_.size(); }
 
   //! Return number of links in the network
   //! \retval nnode_ number of pipes in the network

@@ -101,9 +101,9 @@ system changes over time.
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
  999           	220.0       	                	;
-  1               	131.9       	;
- 2               	116.5       	        	                	;
- 3               	129.0       	         	                	;
+  1               	50.9       	;
+ 2               	80.5       	        	                	;
+ 3               	100.0       	         	                	;
 
 [TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve

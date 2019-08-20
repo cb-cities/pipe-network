@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iomanip>
 
+#include "curves.h"
 #include "input.h"
 #include "matrix_assembler.h"
 
@@ -497,7 +498,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
     auto curve_info = IO->curve_info();
 
     mesh->create_mesh_from_inp(IO);
-    mesh->print_summary();
+    //    mesh->print_summary();
 
     double init_discharge = 1e-3;
 
@@ -510,16 +511,6 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
           mesh, curve_info, pdd_mode);
 
-      auto isolate_node = assembler->get_isolated_nodes();
-      for (const auto& elem : isolate_node) {
-        std::cout << elem << std::endl;
-      }
-
-      auto isolate_link = assembler->get_isolated_links(isolate_node);
-      for (const auto& elem : isolate_link) {
-        std::cout << elem << std::endl;
-      }
-
       assembler->assemble_residual();
 
       assembler->update_jacobian();
@@ -529,32 +520,137 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
       auto residual_vec = assembler->residual_vector();
       auto jac = assembler->jac_matrix();
 
-      //      std::ofstream outFile("../benchmarks/init_var_res_valve.csv");
-      //      std::ofstream outFile2("../benchmarks/init_jacob_valve.csv");
-      //
-      //      outFile << "variables"
-      //              << ","
-      //              << "residuals"
-      //              << "\n";
-      //      for (int i = 0; i < (*residual_vec).size(); ++i) {
-      //        outFile << std::setprecision(12) << (*variable_vec).coeff(i) <<
-      //        ","
-      //                << (*residual_vec).coeff(i) << "\n";
-      //      }
-      //      outFile2 << "row"
-      //               << ","
-      //               << "col"
-      //               << ","
-      //               << "val"
-      //               << "\n";
-      //      for (int k = 0; k < (*jac).outerSize(); ++k)
-      //        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator
-      //        it(
-      //                 (*jac), k);
-      //             it; ++it) {
-      //          outFile2 << std::setprecision(12) << it.row() << "," <<
-      //          it.col()
-      //                   << "," << it.value() << "\n";
+      std::ofstream outFile("../benchmarks/init_var_res_broke.csv");
+      std::ofstream outFile2("../benchmarks/init_jacob_broke.csv");
+
+      outFile << "variables"
+              << ","
+              << "residuals"
+              << "\n";
+      for (int i = 0; i < (*residual_vec).size(); ++i) {
+        outFile << std::setprecision(12) << (*variable_vec).coeff(i) << ","
+                << (*residual_vec).coeff(i) << "\n";
+      }
+      outFile2 << "row"
+               << ","
+               << "col"
+               << ","
+               << "val"
+               << "\n";
+      for (int k = 0; k < (*jac).outerSize(); ++k)
+        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
+                 (*jac), k);
+             it; ++it) {
+          outFile2 << std::setprecision(12) << it.row() << "," << it.col()
+                   << "," << it.value() << "\n";
+        }
     }
+  }
+  SECTION("Check PDD") {
+
+    Eigen::VectorXd pressure(5), head(5), demands_heads_vec(5), demand(5);
+    double MIN_PRESSURE, NORMAL_PRESSURE, PDD_DELTA, PDD_SLOPE;
+    pressure << 5, 10.5, 19.5, 25, 15;
+    head << 1, 2, 3, 4, 5;
+    demand << 1, 1, 1, 1, 1;
+    demands_heads_vec << 1, 2, 3, 4, 5;
+
+    MIN_PRESSURE = 10;
+    NORMAL_PRESSURE = 20;
+    PDD_DELTA = 1;
+    PDD_SLOPE = 1e-10;
+    pipenetwork::Curves curve_info = pipenetwork::Curves();
+
+    auto pdd1_poly_vec = curve_info.poly_coeffs()["PDD_POLY_VEC1"];
+    auto pdd2_poly_vec = curve_info.poly_coeffs()["PDD_POLY_VEC2"];
+
+    // case 1, pressure smaller than min pressure, no water
+    auto case1_bool = pressure
+                          .unaryExpr([=](double x) {
+                            if (x < MIN_PRESSURE) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 2, pressure larger than min pressure but in a small range, use
+    // polynomial approximation
+    auto case2_bool =
+        pressure
+            .unaryExpr([=](double x) {
+              if ((x > MIN_PRESSURE) && (x < (MIN_PRESSURE + PDD_DELTA)))
+                return 1.0;
+              return 0.0;
+            })
+            .array();
+    // case 3, pressure close to normal pressure, use polynomial approximation
+    auto case3_bool = pressure
+                          .unaryExpr([=](double x) {
+                            if ((x > (NORMAL_PRESSURE - PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 4, pressure above normal pressure, demand can be met
+    auto case4_bool = pressure
+                          .unaryExpr([=](double x) {
+                            if ((x > NORMAL_PRESSURE)) return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+    // case 5, pressure falls in between min pressure and normal pressure, use
+    // pressure-demand equation
+    auto case5_bool = pressure
+                          .unaryExpr([=](double x) {
+                            if ((x > (MIN_PRESSURE + PDD_DELTA)) &&
+                                (x < (NORMAL_PRESSURE - PDD_DELTA)))
+                              return 1.0;
+                            return 0.0;
+                          })
+                          .array();
+
+    auto res =
+        (case1_bool * (demand.array() - demands_heads_vec.array() * PDD_SLOPE *
+                                            (pressure.array() - MIN_PRESSURE)) +
+         case2_bool *
+             ((demand.array()) -
+              demands_heads_vec.array() *
+                  (pdd1_poly_vec[0] * pressure.array().pow(3) +
+                   pdd1_poly_vec[1] * pressure.array().pow(2) +
+                   pdd1_poly_vec[2] * pressure.array() + pdd1_poly_vec[3])) +
+         case3_bool *
+             ((demand.array()) -
+              demands_heads_vec.array() *
+                  (pdd2_poly_vec[0] * pressure.array().pow(3) +
+                   pdd2_poly_vec[1] * pressure.array().pow(2) +
+                   pdd2_poly_vec[2] * pressure.array() + pdd2_poly_vec[3])) +
+         case4_bool *
+             ((demand.array()) -
+              demands_heads_vec.array() *
+                  (PDD_SLOPE * (pressure.array() - NORMAL_PRESSURE) + 1)) +
+         case5_bool *
+             ((demand.array()) - demands_heads_vec.array() *
+                                     ((pressure.array().abs() - MIN_PRESSURE) /
+                                      (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
+                                         .pow(0.5)));
+      auto vals =
+              (case1_bool * (-PDD_SLOPE * demands_heads_vec.array() *
+                             head.array()) +
+               case2_bool * (-demands_heads_vec.array() *
+                             (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
+                              2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
+                              pdd1_poly_vec[2])) +
+               case3_bool * (-demands_heads_vec.array() *
+                             (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
+                              2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
+                              pdd2_poly_vec[2])) +
+               case4_bool * (-PDD_SLOPE * demands_heads_vec.array() *
+                             head.array()) +
+               case5_bool * (-0.5 * demands_heads_vec.array() /
+                             (NORMAL_PRESSURE - MIN_PRESSURE) *
+                             ((pressure.array().abs() - MIN_PRESSURE) /
+                              (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
+                                     .pow(-0.5)));
+    std::cout << res << std::endl;
+      std::cout << vals << std::endl;
   }
 }
