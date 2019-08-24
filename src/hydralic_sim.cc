@@ -2,7 +2,8 @@
 #include <iomanip>
 
 bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
-                                               int max_nr_steps) {
+                                               int max_nr_steps,
+                                               std::string output_path) {
 
   auto residual_vec = assembler_->residual_vector();
   auto variable_vec = assembler_->variable_vector();
@@ -43,60 +44,68 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-      //                        std::cout << "Jac = " << std::endl
-      //                                  << (*jac) << std::endl
-      //                                  << std::endl
-      //                                  << "residual = " << std::endl
-      //                                  << (*residual_vec) << std::endl
-      //                                  << std::endl
-      //                                  << "variable = " << std::endl
-      //                                  << (*variable_vec) << std::endl
-      //                                  << std::endl;
+      //                              std::cout << "Jac = " << std::endl
+      //                                        << (*jac) << std::endl
+      //                                        << std::endl
+      //                                        << "residual = " << std::endl
+      //                                        << (*residual_vec) << std::endl
+      //                                        << std::endl
+      //                                        << "variable = " << std::endl
+      //                                        << (*variable_vec) << std::endl
+      //                                        << std::endl;
     }
 
-    bool issolved = solver_->solve();
+    solver_->solve();
 
     residual_norm_ = residual_vec->norm();
     if (residual_vec->norm() < NR_tolerance) {
-      if (debug_) {
-        std::ofstream outFile3("../benchmarks/final_var.csv");
-        outFile3 << "variables"
-                 << "\n";
-        for (int i = 0; i < (*variable_vec).size(); ++i) {
-          outFile3 << std::setprecision(12) << (*variable_vec).coeff(i) << "\n";
-        }
-        //        std::cout << "Final vairables " << (*variable_vec) <<
-        //        std::endl;
-      }
-      std::string out_out_name = "../benchmarks/final_res";
-      write_final_result(out_out_name, (*variable_vec));
-
+      auto path_name = output_path + mesh_->id();
+      write_final_result(path_name, (*variable_vec));
       return true;
     }
   }
   return false;
 }
 
-pipenetwork::Hydralic_sim::Hydralic_sim(
-    const std::string& filepath, const std::vector<double>& leak_diameters,
-    bool pdd_mode, bool debug) {
+pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
+                                        bool pdd_mode, bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(filepath);
-
-  // Mesh index
-  const unsigned meshid = 9999;
   // Creat a mesh
-  mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
-    mesh_->create_mesh_from_inp(IO);
+  std::string mesh_id = filepath;
+  mesh_ = std::make_shared<pipenetwork::Mesh>(mesh_id);
+  mesh_->create_mesh_from_inp(IO);
   // initialize discharges
-    mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
-                                  std::placeholders::_1,
-                                  init_discharge_));  // initialze discharge
+  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
+                                      std::placeholders::_1,
+                                      init_discharge_));  // initialze discharge
   // get curves information
   auto curves_info = IO->curve_info();
   assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
-  solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
-                                            inner_solver_tolerance_);
+  solver_ = std::make_shared<Pardiso_unsym>();
   debug_ = debug;
+  // print mesh summary if on debug mode
+  if (debug_) mesh_->print_summary();
+}
+
+pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
+                                        bool debug) {
+  auto IO = std::make_shared<pipenetwork::Input>(syn_size);
+
+  // Mesh index
+  std::string meshid = "syn_net_" + std::to_string(syn_size);
+  // Creat a mesh
+  mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
+  mesh_->create_mesh_from_inp(IO);
+  // initialize discharges
+  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
+                                      std::placeholders::_1,
+                                      init_discharge_));  // initialze discharge
+  // get curves information
+  auto curves_info = IO->curve_info();
+  assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
+  solver_ = std::make_shared<Pardiso_unsym>();
+  debug_ = debug;
+  mesh_->print_summary();
   // print mesh summary if on debug mode
   if (debug_) mesh_->print_summary();
 }
@@ -117,8 +126,8 @@ void pipenetwork::Hydralic_sim::write_final_result(
           << "\n";
   auto node_map = assembler_->node_idx_map();
   auto link_map = assembler_->link_idx_map();
-  auto nnodes = mesh_->nnodes ();
-  auto nlinks = mesh_->nlinks ();
+  auto nnodes = mesh_->nnodes();
+  auto nlinks = mesh_->nlinks();
 
   std::string node_id, link_id;
   int demand_idx;

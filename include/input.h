@@ -27,6 +27,8 @@ namespace pipenetwork {
 //! \param[in] mode type of the input value (length, elevation, etc.)
 double to_si(double val, const std::string&);
 
+double rand_number(double l, double h);
+
 //! function check the existance of a file
 //! \param[in] name path of the file
 inline bool file_exists(const std::string& name) {
@@ -39,8 +41,15 @@ inline bool file_exists(const std::string& name) {
 class Input {
  public:
   //! constructor
+  Input(int n) {
+    auto junction_nodes = construct_synthesis_junctions(n);
+    construct_synthesis_pipes(junction_nodes);
+    create_sources(n);
+  };
+
+  //! constructor
   //! \param[in] filename path of the .inp file
-  explicit Input(const std::string& filename) : filename_(filename) {
+  Input(const std::string& filename) : filename_(filename) {
     if (!file_exists(filename)) {
       throw std::runtime_error(
           "Input file does not exist, please check the path!");
@@ -82,32 +91,20 @@ class Input {
   std::set<std::string> section_keys_{"[JUNCTIONS]", "[RESERVOIRS]",  "[TANKS]",
                                       "[PIPES]",     "[COORDINATES]", "[PUMPS]",
                                       "[CURVES]",    "[VALVES]"};
-  //! number of attribute of the graph
-  Index njunction_{0}, nresvoir_{0}, ntank_{0}, npipe_{0};
 
   //! Map of sections and its corresponding lines
   std::map<std::string, std::vector<std::string>> sections_;
 
-  //! info for node constructions
-  std::vector<std::pair<std::string, Eigen::Vector3d>> node_coords_;
-  std::vector<std::string> junction_ids_;
-  std::vector<double> junction_elevations_;
-  std::vector<double> junction_demands_;
+  //! Vector of parsed junction properties
   std::vector<pipenetwork::Junction_prop> junc_props_;
-
-  std::vector<std::string> reservoir_ids_;
-  std::vector<double> reservoir_heads_;
+  //! Vector of parsed reservoir properties
   std::vector<pipenetwork::Reservoir_prop> res_props_;
 
-  //! info for pipe constructions
-  std::vector<std::string> pipe_ids_;
-  std::vector<std::pair<std::string, std::string>> nodeids_;
-  std::vector<double> diameter_;
-  std::vector<double> length_;
-  std::vector<double> roughness_;
-  std::vector<Link_status> pipe_status_;
+  //! Vector of parsed pipe properties
   std::vector<Pipe_prop> pipe_props_;
+  //! Vector of parsed pump properties
   std::vector<Pump_prop> pump_props_;
+  //! Vector of parsed valve properties
   std::vector<Valve_prop> valve_props_;
 
   //! Parse information to each section from the input file
@@ -115,11 +112,6 @@ class Input {
 
   //! Construct node info that is used for pipeline-mesh
   void construct_node_info();
-
-  //  void construct_node_coord();
-  void construct_node_elevation_head();
-  void construct_node_demand();
-
   //! Construct pipe info that is used for pipeline-mesh
   void construct_pipe_info();
   //! Construct curve info that is used for pipeline-mesh and matrix assembler
@@ -128,6 +120,16 @@ class Input {
   void construct_pump_info();
   //! Construct valve info that is used for pipeline-mesh
   void construct_valve_info();
+
+  std::vector<std::vector<std::string>> construct_synthesis_junctions(int n);
+  void construct_synthesis_pipes(
+      const std::vector<std::vector<std::string>>& junction_names);
+  void create_vertical_pipes(const std::vector<std::string>& junction_names,
+                             int col_num, bool rand = false);
+  void create_horizontal_pipes(const std::vector<std::string>& l_junc,
+                               const std::vector<std::string>& r_junc,
+                               int col_num, bool rand = true);
+  void create_sources(int n);
 
   //! Parse elevation, head or demand from a given node section
   //! \param[in] an opened file

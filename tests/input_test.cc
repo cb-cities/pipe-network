@@ -12,7 +12,7 @@ TEST_CASE("Input is checked", "[IO]") {
     auto IO = std::make_shared<pipenetwork::Input>(
         "../benchmarks/test_net_valve.inp");
     // Mesh index
-    const unsigned meshid = 101;
+    std::string meshid = "IO_test_mesh";
     // Creat a mesh
     auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
@@ -26,7 +26,7 @@ TEST_CASE("Input is checked", "[IO]") {
     REQUIRE(valve_props[1].setting == 50);
 
     mesh->create_mesh_from_inp(IO);
-//        mesh->print_summary();
+    //        mesh->print_summary();
   }
 
   SECTION("Check Parsed pump info") {
@@ -34,7 +34,7 @@ TEST_CASE("Input is checked", "[IO]") {
     auto IO =
         std::make_shared<pipenetwork::Input>("../benchmarks/test_net_pump.inp");
     // Mesh index
-    const unsigned meshid = 101;
+    std::string meshid = "IO_test_mesh";
     // Creat a mesh
     auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
@@ -57,6 +57,23 @@ TEST_CASE("Input is checked", "[IO]") {
     mesh->create_pumps(pump_props);
     //    mesh->print_summary ();
   }
+
+  SECTION("Check Synthetic Net") {
+    // Create a INPUT class object
+    auto IO = std::make_shared<pipenetwork::Input>(10);
+    auto junction_props = IO->junction_properties();
+    //    for (int i=0;i<100;++i){
+    //        std::cout<<junction_props[i].elevation<<std::endl;
+    //        std::cout<<junction_props[i].demand<<std::endl;
+    //    }
+    std::string meshid = "IO_test_mesh";
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+
+    mesh->create_mesh_from_inp(IO);
+    //    mesh->print_summary();
+  }
+
   //  SECTION("Check Parsed node info") {
   //
   //    // junctions

@@ -13,7 +13,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   const double tolerance = 1.e-6;
 
   // Mesh index
-  const unsigned meshid = 101;
+  std::string meshid = "Matrix test mesh";
 
   // Creat a mesh
   auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
@@ -372,7 +372,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
   const double tolerance = 1.e-6;
 
   // Mesh index
-  const unsigned meshid = 111;
+  std::string meshid = "Matrix_Assembler_test_mesh";
 
   SECTION("PUMP TEST") {
     // Creat a mesh
@@ -546,7 +546,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
         }
     }
   }
-  SECTION("Check PDD") {
+  SECTION("Check PDD Calculation") {
 
     Eigen::VectorXd pressure(5), head(5), demands_heads_vec(5), demand(5);
     double MIN_PRESSURE, NORMAL_PRESSURE, PDD_DELTA, PDD_SLOPE;
@@ -650,7 +650,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
                              ((pressure.array().abs() - MIN_PRESSURE) /
                               (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
                                      .pow(-0.5)));
-    std::cout << res << std::endl;
-      std::cout << vals << std::endl;
+//    std::cout << res << std::endl;
+//      std::cout << vals << std::endl;
   }
 }

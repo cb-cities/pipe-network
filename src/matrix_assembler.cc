@@ -212,7 +212,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([](double x) {
-                            if (x < MIN_PRESSURE) return 1.0;
+                            if (x <= MIN_PRESSURE) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -290,8 +290,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     (*residual_vec_)[idx + nnodes_] =
         (*variable_vec_)[idx] - demands_heads_vec_[idx];
   }
-    std::cout << "====================================" << std::endl;
-    std::cout << residual_vec_->segment(nnodes_, nnodes_).norm() << std::endl;
+//  std::cout<<"demand_residual" << residual_vec_->segment(nnodes_, nnodes_).norm()<<std::endl;
 
 }
 
@@ -717,7 +716,7 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([](double x) {
-                            if (x < MIN_PRESSURE) return 1.0;
+                            if (x <= MIN_PRESSURE) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -785,11 +784,10 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
     std::cout << "====================================" << std::endl;
     std::cout << iso_junctions_.sum() << std::endl;
     std::cout <<case1_bool.sum()<<" "<< case2_bool.sum()<<" "<< case3_bool.sum()<<" "<< case4_bool.sum()<<" "<<case5_bool.sum()<<" " << std::endl;
-    std::cout << vals.sum() << std::endl;
+    std::cout << vals.segment(0,nnodes_-source_idx_.size ()).sum() << std::endl;
 
     auto trip_d = sub_jac_trip_["jac_d"];
-    for (int i = 0; i < nnodes_; ++i) {
-      if (trip_d[i].value() == 0)
+    for (int i = 0; i < nnodes_-source_idx_.size (); ++i) {
         jac_->coeffRef(trip_d[i].row(), trip_d[i].col()) = vals[i];
     }
   }
@@ -1123,13 +1121,14 @@ Eigen::VectorXd pipenetwork::MatrixAssembler::explore_nodes(int node_idx) {
   while (!nodes_to_explore.empty()) {
     auto node_being_explored = *nodes_to_explore.begin();
     nodes_to_explore.erase(nodes_to_explore.begin());
+//    std::cout<<"nodes being explore: "<<node_being_explored <<" "<< node_idx_map_[node_being_explored] <<std::endl;
 
     int nconnections = nconnections_[node_being_explored];
     int ndx = indptr[node_being_explored];
     // for all the connected nodes, set result to 1 and place them into the
     // searching queue
     for (int i = 0; i < nconnections; ++i) {
-      if (data[ndx + i] == 1 && check_result[indices[ndx + i]] == 0) {
+      if (data[ndx + i] != 0 && check_result[indices[ndx + i]] == 0) {
         check_result[indices[ndx + i]] = 1;
         nodes_to_explore.emplace(indices[ndx + i]);
       }
@@ -1150,8 +1149,10 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
   for (int i = 0; i < nnodes_; ++i) {
     if (check_result[i] == 0) {
       isolated_nodes.emplace_back(i);
+      std::cout<< "iso node: "<< i << " " << node_idx_map_[i] <<std::endl;
     }
   }
+    std::cout<<"iso junctions number "<<isolated_nodes.size ()<<std::endl;
 
   return isolated_nodes;
 }

@@ -10,7 +10,9 @@ namespace pipenetwork {
 //! \brief Base class for the pipe network solver
 class Solver {
  public:
-  //! Constructor with max iterations and tolerance
+  //! Default constructor for noniterative solver
+  Solver() = default;
+  //! Constructor with max iterations and tolerance for iterative solvers
   Solver(unsigned max_iter, double tolerance)
       : max_iter_{max_iter}, tolerance_{tolerance} {}
 
@@ -47,9 +49,9 @@ class Solver {
 
  protected:
   //! Maximum number of iterations
-  unsigned max_iter_;
+  unsigned max_iter_{1000};
   //! Tolerance
-  double tolerance_;
+  double tolerance_{1E-6};
   //! Displacement restraint
   Eigen::VectorXd vrestraints_;
   //! Iterations
@@ -64,11 +66,11 @@ class Solver {
   std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a_;
 
   //! Row index for csr format matrix
-  int* ia_;
+  int* ia_{NULL};
   //! Column index for csr format matrix
-  int* ja_;
+  int* ja_{NULL};
   //! Matrix values for csr format matrix
-  double* a_;
+  double* a_{NULL};
 };
 }  // namespace pipenetwork
 

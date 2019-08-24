@@ -17,21 +17,24 @@ namespace pipenetwork {
 //! \brief Class for pipenetwork hydraulic simulation
 class Hydralic_sim {
  public:
-  explicit Hydralic_sim(const std::shared_ptr<Mesh>& mesh,
-                        std::shared_ptr<Curves>& curves_info,
-                        bool pdd_mode = false, bool debug = false) {
+  //! Constructor with mesh input
+  Hydralic_sim(const std::shared_ptr<Mesh>& mesh,
+               std::shared_ptr<Curves>& curves_info, bool pdd_mode = false,
+               bool debug = false) {
     mesh_ = mesh;
     assembler_ = std::make_shared<MatrixAssembler>(mesh, curves_info, pdd_mode);
-    solver_ = std::make_shared<Pardiso_unsym>(max_solver_steps_,
-                                              inner_solver_tolerance_);
+    solver_ = std::make_shared<Pardiso_unsym>();
     debug_ = debug;
   };
-  Hydralic_sim(const std::string& filepath,
-               const std::vector<double>& leak_diameters, bool pdd_mode = false,
-               bool debug = false);
+  //! Constructor with .inp file path
+  explicit Hydralic_sim(const std::string& filepath, bool pdd_mode = false,
+                        bool debug = false);
+  //! Constructor for synthetic net as input
+  Hydralic_sim(int syn_size, bool pdd_mode, bool debug = false);
 
   //! run simulation
-  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000);
+  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000,
+                      std::string output_path = "../benchmarks/res_");
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
 

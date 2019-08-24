@@ -5,6 +5,7 @@ void pipenetwork::Mesh::create_junctions(
   for (const auto& junc_prop : junc_props) {
     nodes_.emplace(junc_prop.id,
                    std::make_shared<pipenetwork::Junction>(junc_prop));
+    ++njunctions_;
   }
 }
 
@@ -13,6 +14,7 @@ void pipenetwork::Mesh::create_reservoirs(
   for (const auto& res_prop : res_props) {
     nodes_.emplace(res_prop.id,
                    std::make_shared<pipenetwork::Reservoir>(res_prop));
+    ++nsrcs_;
   }
 }
 
@@ -20,8 +22,6 @@ void pipenetwork::Mesh::create_pipes(std::vector<Pipe_prop>& pipe_props) {
   for (auto& pipe_prop : pipe_props) {
     auto node1id = pipe_prop.node1_id;
     auto node2id = pipe_prop.node2_id;
-    connected_nodes_.emplace(node1id, nodes_.at(node1id));
-    connected_nodes_.emplace(node2id, nodes_.at(node2id));
 
     pipe_prop.node1 = nodes_.at(node1id);
     pipe_prop.node2 = nodes_.at(node2id);
@@ -32,29 +32,30 @@ void pipenetwork::Mesh::create_pipes(std::vector<Pipe_prop>& pipe_props) {
 }
 
 void pipenetwork::Mesh::print_summary() {
-  auto nnode = nodes_.size();
 
-  std::cout << "number of nodes: " << nnode << " ;number of links: " << nlinks()
-            << " ;number of connected nodes: " << nnodes()
+  std::cout << "number of nodes: " << nnodes()
+            << " ;number of links: " << nlinks()
             << " ;number of pipes: " << npipes()
             << " ;number of pumps: " << npumps()
-            << " ;number of valves: "<< nvalves()<< std::endl;
+            << " ;number of valves: " << nvalves()
+            << " ;number of junctions: " << njunctions_
+            << " ;number of sources: " << nsrcs_ << std::endl;
 
-  std::cout
-      << "======================= CONNECTED NODE INFO ======================="
-      << std::endl;
-
-  for (auto const& x : connected_nodes_) {
-    std::cout << "node id: " << x.second->id() << std::endl;
-  }
-
-  std::cout << "======================= LINK INFO ======================="
-            << std::endl;
-  for (auto const& x : links_) {
-    std::cout << "link id: " << x->id()
-              << "; node1 id: " << x->nodes().first->id()
-              << "; node2 id: " << x->nodes().second->id() << std::endl;
-  }
+//  std::cout
+//      << "======================= NODES INFO ======================="
+//      << std::endl;
+//
+//  for (auto const& x : nodes_) {
+//    std::cout << "node id: " << x.second->id() << std::endl;
+//  }
+//
+//  std::cout << "======================= LINKS INFO ======================="
+//            << std::endl;
+//  for (auto const& x : links_) {
+//    std::cout << "link id: " << x->id()
+//              << "; node1 id: " << x->nodes().first->id()
+//              << "; node2 id: " << x->nodes().second->id() << std::endl;
+//  }
 }
 
 void pipenetwork::Mesh::create_pumps(
@@ -62,8 +63,6 @@ void pipenetwork::Mesh::create_pumps(
   for (auto& pump_prop : pump_props) {
     auto node1id = pump_prop.node1_id;
     auto node2id = pump_prop.node2_id;
-    connected_nodes_.emplace(node1id, nodes_.at(node1id));
-    connected_nodes_.emplace(node2id, nodes_.at(node2id));
 
     pump_prop.node1 = nodes_.at(node1id);
     pump_prop.node2 = nodes_.at(node2id);
@@ -78,9 +77,6 @@ void pipenetwork::Mesh::create_valve(
   for (auto& valve_prop : valve_props) {
     auto node1id = valve_prop.node1_id;
     auto node2id = valve_prop.node2_id;
-
-    connected_nodes_.emplace(node1id, nodes_.at(node1id));
-    connected_nodes_.emplace(node2id, nodes_.at(node2id));
 
     valve_prop.node1 = nodes_.at(node1id);
     valve_prop.node2 = nodes_.at(node2id);
@@ -106,6 +102,6 @@ void pipenetwork::Mesh::create_mesh_from_inp(
     create_pumps(pump_props);
   }
   if (!valve_props.empty()) {
-    create_valve (valve_props);
+    create_valve(valve_props);
   }
 }

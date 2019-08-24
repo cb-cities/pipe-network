@@ -12,7 +12,7 @@ const double G{9.81};
 const double HW_COEFF{10.666829500036352};
 const double LEAK_COEFF{0.75};
 //! pdd settings
-const double MIN_PRESSURE{-1e-12};
+const double MIN_PRESSURE{1e-14};
 const double NORMAL_PRESSURE{20};
 const double PDD_DELTA{0.2};
 const double PDD_SLOPE{1e-11};

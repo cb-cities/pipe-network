@@ -31,14 +31,14 @@ class Mesh {
  public:
   //! Constructor with id
   //! \param[in] id mesh id
-  explicit Mesh(unsigned id) : id_{id} {};
+  explicit Mesh(std::string & id) : id_{id} {};
 
   //! Destructor
   ~Mesh() = default;
 
   //! Return id
   //! \retval id_ id of the mesh
-  unsigned id() const { return id_; }
+  std::string id() const { return id_; }
 
   //! Create mesh from input object
   //! \param[in] IO pointer to the input object
@@ -68,11 +68,6 @@ class Mesh {
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes() const {
     return nodes_;
   }
-  //! get connected nodes map
-  std::map<std::string, std::shared_ptr<pipenetwork::Node>> connect_nodes()
-      const {
-    return connected_nodes_;
-  }
   //! get links map
   std::vector<std::shared_ptr<pipenetwork::Link>> links() const {
     return links_;
@@ -83,7 +78,7 @@ class Mesh {
   template <typename Toper>
   void iterate_over_nodes(Toper oper) {
     std::for_each(
-        connected_nodes_.cbegin(), connected_nodes_.cend(),
+        nodes_.cbegin(), nodes_.cend(),
         [=](std::pair<std::string, std::shared_ptr<pipenetwork::Node>> node) {
           oper(node.second);
         });
@@ -122,7 +117,7 @@ class Mesh {
 
  private:
   //! mesh id
-  unsigned id_{std::numeric_limits<unsigned>::max()};
+  std::string id_;
 
   //! number of pumps
   unsigned npumps_{0};
@@ -130,10 +125,12 @@ class Mesh {
   unsigned npipes_{0};
   //! number of valves
   unsigned nvalves_{0};
+  //! number of junctions
+  unsigned njunctions_{0};
+  //! number of sources
+  unsigned nsrcs_{0};
   //! nodal id and corresponding nodal pointer
   std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
-  //! nodal id and corresponding nodal pointer
-  std::map<std::string, std::shared_ptr<pipenetwork::Node>> connected_nodes_;
   //! vector of links
   std::vector<std::shared_ptr<pipenetwork::Link>> links_;
 };

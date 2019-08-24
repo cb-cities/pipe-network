@@ -11,7 +11,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const double tolerance = 1.e-12;
 
   // Mesh index
-  const unsigned meshid = 101;
+  std::string meshid = "Testing Net";
 
   // Creat a mesh
   auto mesh = std::make_unique<pipenetwork::Mesh>(meshid);

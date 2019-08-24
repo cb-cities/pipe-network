@@ -15,10 +15,8 @@ extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*,
                                    double*, int*);
 
-pipenetwork::Pardiso_unsym::Pardiso_unsym(unsigned max_iter, double tolerance)
-    : Solver(max_iter, tolerance) {
+pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   // configure pardiso
-
   /* Auxiliary variables. */
   char* var;
 
