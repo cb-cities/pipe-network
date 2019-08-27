@@ -141,8 +141,8 @@ void pipenetwork::Input::construct_pipe_info() {
       pipenetwork::Pipe_prop pipe_prop;
       std::transform(status.begin(), status.end(), status.begin(), ::toupper);
       pipe_prop.id = pid;
-      pipe_prop.length = length;
-      pipe_prop.diameter = diameter;
+      pipe_prop.length = to_si(length,"length");
+      pipe_prop.diameter = to_si(diameter,"diameter");
       pipe_prop.roughness = roughness;
       pipe_prop.node1_id = nid1;
       pipe_prop.node2_id = nid2;
@@ -273,7 +273,7 @@ std::vector<std::vector<std::string>>
       junction_name = "J-" + std::to_string(i * n + j);
       // elevation and demand
       elevation = rand_number(400, 900);
-      demand = rand_number(0, 3);
+      demand = rand_number(0, 5);
       // add to junction array
       junc_prop.id = junction_name;
       junc_prop.elevation = to_si(elevation, "elevation");

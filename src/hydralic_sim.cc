@@ -44,15 +44,15 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residual_vec->norm() << std::endl;
-      //                              std::cout << "Jac = " << std::endl
-      //                                        << (*jac) << std::endl
-      //                                        << std::endl
-      //                                        << "residual = " << std::endl
-      //                                        << (*residual_vec) << std::endl
-      //                                        << std::endl
-      //                                        << "variable = " << std::endl
-      //                                        << (*variable_vec) << std::endl
-      //                                        << std::endl;
+//                                    std::cout << "Jac = " << std::endl
+//                                              << (*jac) << std::endl
+//                                              << std::endl
+//                                              << "residual = " << std::endl
+//                                              << (*residual_vec) << std::endl
+//                                              << std::endl
+//                                              << "variable = " << std::endl
+//                                              << (*variable_vec) << std::endl
+//                                              << std::endl;
     }
 
     solver_->solve();
@@ -60,6 +60,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     residual_norm_ = residual_vec->norm();
     if (residual_vec->norm() < NR_tolerance) {
       auto path_name = output_path + mesh_->id();
+      std::cout<<path_name<<std::endl;
       write_final_result(path_name, (*variable_vec));
       return true;
     }
@@ -67,11 +68,11 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
   return false;
 }
 
-pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
+pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath, const std::string& mesh_name,
                                         bool pdd_mode, bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(filepath);
   // Creat a mesh
-  std::string mesh_id = filepath;
+  std::string mesh_id = mesh_name;
   mesh_ = std::make_shared<pipenetwork::Mesh>(mesh_id);
   mesh_->create_mesh_from_inp(IO);
   // initialize discharges
@@ -96,6 +97,8 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   // Creat a mesh
   mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
   mesh_->create_mesh_from_inp(IO);
+  auto Output = std::make_shared<pipenetwork::Output>(
+          mesh_, "../benchmarks/write_test_large.inp");
   // initialize discharges
   mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                       std::placeholders::_1,

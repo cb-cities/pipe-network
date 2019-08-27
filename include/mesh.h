@@ -31,7 +31,7 @@ class Mesh {
  public:
   //! Constructor with id
   //! \param[in] id mesh id
-  explicit Mesh(std::string & id) : id_{id} {};
+  explicit Mesh(std::string& id) : id_{id} {};
 
   //! Destructor
   ~Mesh() = default;
@@ -114,6 +114,14 @@ class Mesh {
   //! Return number of valves in the network
   //! \retval nnode_ number of valves in the network
   unsigned nvalves() const { return nvalves_; }
+
+  //! Return number of junctions in the network
+  //! \retval nnode_ number of valves in the network
+  unsigned njunctions() const { return njunctions_; }
+
+  //! Return number of sources in the network
+  //! \retval nnode_ number of valves in the network
+  unsigned nsources() const { return nsrcs_; }
 
  private:
   //! mesh id

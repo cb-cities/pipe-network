@@ -11,6 +11,7 @@
 #include "matrix_assembler.h"
 #include "pardiso_unsym.h"
 #include "settings.h"
+#include "output.h"
 
 namespace pipenetwork {
 //! Hydraulic Simulation class
@@ -27,7 +28,7 @@ class Hydralic_sim {
     debug_ = debug;
   };
   //! Constructor with .inp file path
-  explicit Hydralic_sim(const std::string& filepath, bool pdd_mode = false,
+  explicit Hydralic_sim(const std::string& filepath, const std::string& mesh_name, bool pdd_mode = false,
                         bool debug = false);
   //! Constructor for synthetic net as input
   Hydralic_sim(int syn_size, bool pdd_mode, bool debug = false);

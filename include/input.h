@@ -41,7 +41,7 @@ inline bool file_exists(const std::string& name) {
 class Input {
  public:
   //! constructor
-  Input(int n) {
+  explicit Input(int n) {
     auto junction_nodes = construct_synthesis_junctions(n);
     construct_synthesis_pipes(junction_nodes);
     create_sources(n);
@@ -49,7 +49,7 @@ class Input {
 
   //! constructor
   //! \param[in] filename path of the .inp file
-  Input(const std::string& filename) : filename_(filename) {
+  explicit Input(const std::string& filename) : filename_(filename) {
     if (!file_exists(filename)) {
       throw std::runtime_error(
           "Input file does not exist, please check the path!");
