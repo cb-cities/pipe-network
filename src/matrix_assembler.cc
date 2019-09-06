@@ -781,10 +781,10 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
                             (NORMAL_PRESSURE - MIN_PRESSURE))
                                .abs()
                                .pow(-0.5)));
-    std::cout << "====================================" << std::endl;
-    std::cout << iso_junctions_.sum() << std::endl;
-    std::cout <<case1_bool.sum()<<" "<< case2_bool.sum()<<" "<< case3_bool.sum()<<" "<< case4_bool.sum()<<" "<<case5_bool.sum()<<" " << std::endl;
-    std::cout << vals.segment(0,nnodes_-source_idx_.size ()).sum() << std::endl;
+//    std::cout << "====================================" << std::endl;
+//    std::cout << iso_junctions_.sum() << std::endl;
+//    std::cout <<case1_bool.sum()<<" "<< case2_bool.sum()<<" "<< case3_bool.sum()<<" "<< case4_bool.sum()<<" "<<case5_bool.sum()<<" " << std::endl;
+//    std::cout << vals.segment(0,nnodes_-source_idx_.size ()).sum() << std::endl;
 
     auto trip_d = sub_jac_trip_["jac_d"];
     for (int i = 0; i < nnodes_-source_idx_.size (); ++i) {
@@ -1149,10 +1149,10 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
   for (int i = 0; i < nnodes_; ++i) {
     if (check_result[i] == 0) {
       isolated_nodes.emplace_back(i);
-      std::cout<< "iso node: "<< i << " " << node_idx_map_[i] <<std::endl;
+//      std::cout<< "iso node: "<< i << " " << node_idx_map_[i] <<std::endl;
     }
   }
-    std::cout<<"iso junctions number "<<isolated_nodes.size ()<<std::endl;
+//    std::cout<<"iso junctions number "<<isolated_nodes.size ()<<std::endl;
 
   return isolated_nodes;
 }

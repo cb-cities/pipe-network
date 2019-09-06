@@ -39,26 +39,28 @@ class MatrixAssembler {
   ~MatrixAssembler() = default;
 
   //! get the variable vector
-  std::shared_ptr<Eigen::VectorXd> variable_vector() const {
+  std::shared_ptr<Eigen::VectorXd> variable_vector() {
     return variable_vec_;
   }
 
   //! Method to assemble residual from the variable vector
   void assemble_residual();
+  //! Method to get residual vector
   std::shared_ptr<Eigen::VectorXd> residual_vector() const {
     return residual_vec_;
   }
   //! Method to update jacobian matrix from the variable vector
   void update_jacobian();
+  //! Method to get jacobian matrix
   std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> jac_matrix()
       const {
     return jac_;
   }
 
   //! method to get the node index-name map
-  std::map<Index, std::string> node_idx_map() const {return node_idx_map_;}
-    //! method to get the link index-name map
-    std::map<Index, std::string> link_idx_map() const {return link_idx_map_;}
+  std::map<Index, std::string> node_idx_map() const { return node_idx_map_; }
+  //! method to get the link index-name map
+  std::map<Index, std::string> link_idx_map() const { return link_idx_map_; }
 
  private:
   //! the mesh ptr
@@ -79,7 +81,7 @@ class MatrixAssembler {
   std::map<Index, std::string> node_idx_map_;
   //! link id to corresponding matrix entry number (0-nlinks_)
   std::map<std::string, Index> link_id_map_;
-    std::map<Index, std::string> link_idx_map_;
+  std::map<Index, std::string> link_idx_map_;
 
   //! demand (for junction) and heads (for sources) of nodes
   Eigen::VectorXd demands_heads_vec_;

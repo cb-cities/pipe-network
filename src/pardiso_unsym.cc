@@ -65,7 +65,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   iparm_[6] = 0;   /* Not in use */
   iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
   iparm_[8] = 0;   /* Not in use */
-  iparm_[9] = 13;  /* Perturb the pivot elements with 1E-13 */
+  iparm_[9] = 8;   /* Perturb the pivot elements with 1E-8 */
   iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
   iparm_[11] = 0;  /* Not in use */
   iparm_[12] = 0;  /* Not in use */
@@ -82,7 +82,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   error_ = 0;      /* Initialize error flag */
 }
 
-bool pipenetwork::Pardiso_unsym::solve() {
+Eigen::VectorXd pipenetwork::Pardiso_unsym::solve() {
   // configure matrix
   int n = vec_b_->size();
   double* vec_b = vec_b_->data();
@@ -205,10 +205,11 @@ bool pipenetwork::Pardiso_unsym::solve() {
   pardiso(pt_, &maxfct_, &mnum_, &mtype_, &phase_, &n, &ddum_, ia_, ja_, &idum_,
           &nrhs_, iparm_, &msglvl_, &ddum_, &ddum_, &error_, dparm_);
 
-  // update x
+  // return x_diff
+  Eigen::VectorXd x_diff_vec(n);
   for (int i = 0; i < n; i++) {
-    (*vec_x_)[i] -= x_diff[i];
+    x_diff_vec[i] = x_diff[i];
   }
 
-  return true;
+  return x_diff_vec;
 }

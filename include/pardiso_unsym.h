@@ -22,7 +22,7 @@ class Pardiso_unsym : public Solver {
   Pardiso_unsym();
   //! Call Pardiso Unsymmetric solver
   //! \retval status Return status of the solver
-  bool solve() override;
+  Eigen::VectorXd solve() override;
 
  protected:
   //! Vector x
@@ -42,6 +42,8 @@ class Pardiso_unsym : public Solver {
   std::string assembler_type() const override { return "Pardiso_Unsym"; }
 
  private:
+  Eigen::VectorXd x_diff_;
+
   int mtype_ = 11; /* Real unsymmetric matrix */
   /* RHS and solution vectors. */
   int nrhs_ = 1; /* Number of right hand sides. */

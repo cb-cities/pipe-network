@@ -38,7 +38,7 @@ class Solver {
   }
 
   //! Solve
-  virtual bool solve() = 0;
+  virtual Eigen::VectorXd solve() = 0;
   virtual std::string assembler_type() const = 0;
 
   //! number of iterations
