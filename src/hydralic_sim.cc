@@ -60,15 +60,14 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
       //                                              std::endl
       //                                              << std::endl;
     }
-//    std::cout << "start solving" << std::endl;
+    //    std::cout << "start solving" << std::endl;
     auto x_diff = solver_->solve();
 
-
-//    std::cout << "start line search" << std::endl;
+    //    std::cout << "start line search" << std::endl;
     if (line_search) {
       line_search_func(x_diff);
-    } else{
-        (*variables_) = original_variable_.array() - x_diff.array ();
+    } else {
+      (*variables_) = original_variable_.array() - x_diff.array();
     }
     residual_norm_ = residuals_->norm();
     if (residuals_->norm() < NR_tolerance) {
@@ -98,7 +97,9 @@ void pipenetwork::Hydralic_sim::line_search_func(
 
 pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
                                         const std::string& mesh_name,
-                                        bool pdd_mode, bool debug) {
+                                        bool pdd_mode,
+                                        const std::string& solver_name,
+                                        bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(filepath);
   // Creat a mesh
   std::string mesh_id = mesh_name;
@@ -111,13 +112,18 @@ pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
   // get curves information
   auto curves_info = IO->curve_info();
   assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
-  solver_ = std::make_shared<Mkl_unsym>();
+
+  //  solver_ = std::make_shared<Mkl_unsym>();
+  std::shared_ptr<Solver> solve_ptr(
+      Factory<Solver>::instance()->create(solver_name));
+  solver_ = solve_ptr;
   debug_ = debug;
   // print mesh summary if on debug mode
   if (debug_) mesh_->print_summary();
 }
 
 pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
+                                        const std::string& solver_name,
                                         bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(syn_size);
 
@@ -135,7 +141,9 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   // get curves information
   auto curves_info = IO->curve_info();
   assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
-  solver_ = std::make_shared<Mkl_unsym>();
+  std::shared_ptr<Solver> solve_ptr(
+      Factory<Solver>::instance()->create(solver_name));
+  solver_ = solve_ptr;
   debug_ = debug;
   // print mesh summary if on debug mode
   if (debug_) mesh_->print_summary();

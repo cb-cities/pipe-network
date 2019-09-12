@@ -1,7 +1,8 @@
 #include "mkl_unsym.h"
-
+#include "factory.h"
 using namespace std;
 
+static Register<pipenetwork::Solver, pipenetwork::Mkl_unsym> registry("mkl_pardiso");
 
 pipenetwork::Mkl_unsym::Mkl_unsym () : Solver() {
     // configure pardiso

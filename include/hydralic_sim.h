@@ -7,12 +7,13 @@
 //#include "eigen_cg.h"
 //#include "eigen_cg_lem.h"
 //#include "eigen_gmres.h"
+#include "factory.h"
 #include "input.h"
 #include "matrix_assembler.h"
-#include "pardiso_unsym.h"
 #include "mkl_unsym.h"
-#include "settings.h"
 #include "output.h"
+#include "pardiso_unsym.h"
+#include "settings.h"
 
 namespace pipenetwork {
 //! Hydraulic Simulation class
@@ -22,36 +23,44 @@ class Hydralic_sim {
   //! Constructor with mesh input
   Hydralic_sim(const std::shared_ptr<Mesh>& mesh,
                std::shared_ptr<Curves>& curves_info, bool pdd_mode = false,
+               const std::string& solver_name = "mkl_pardiso",
                bool debug = false) {
     mesh_ = mesh;
     assembler_ = std::make_shared<MatrixAssembler>(mesh, curves_info, pdd_mode);
-    solver_ = std::make_shared<Mkl_unsym>();
+    std::shared_ptr<Solver> solve_ptr(
+              Factory<Solver>::instance()->create(solver_name));
+    solver_ = solve_ptr;
     debug_ = debug;
   };
   //! Constructor with .inp file path
-  explicit Hydralic_sim(const std::string& filepath, const std::string& mesh_name, bool pdd_mode = false,
+  explicit Hydralic_sim(const std::string& filepath,
+                        const std::string& mesh_name, bool pdd_mode = false,
+                        const std::string& solver_name = "mkl_pardiso",
                         bool debug = false);
   //! Constructor for synthetic net as input
-  Hydralic_sim(int syn_size, bool pdd_mode, bool debug = false);
+  Hydralic_sim(int syn_size, bool pdd_mode,
+               const std::string& solver_name = "mkl_pardiso",
+               bool debug = false);
 
   //! run simulation
-  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000, bool line_search = true,
+  bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000,
+                      bool line_search = true,
                       std::string output_path = "../benchmarks/res_");
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
 
   //! line search
-  void line_search_func(const Eigen::VectorXd & x_diff);
+  void line_search_func(const Eigen::VectorXd& x_diff);
 
  private:
-    //! original variable vector (for line search
-    Eigen::VectorXd original_variable_;
+  //! original variable vector (for line search
+  Eigen::VectorXd original_variable_;
   //! the mesh ptr
   std::shared_ptr<Mesh> mesh_;
   //! the assember ptr
   std::shared_ptr<MatrixAssembler> assembler_;
   //! the solver ptr
-  std::shared_ptr<Mkl_unsym> solver_;
+  std::shared_ptr<Solver> solver_;
   //! variable vector
   std::shared_ptr<Eigen::VectorXd> variables_;
   //! residual vector

@@ -83,50 +83,51 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
                                      std::placeholders::_1,
                                      init_discharge));  // initialze discharge
   auto curves_info = std::make_shared<pipenetwork::Curves>();
-//  SECTION("DD SIM TEST CASE 1: MESH INPUT") {
-//    bool pdd_mode = false;
-//    bool debug = true;
-//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(mesh, curves_info,
-//                                                           pdd_mode, debug);
-//    REQUIRE(sim->run_simulation());
-//    REQUIRE(sim->sim_residual_norm() < tolerance);
-//    // pressure test for stability
-//    //      REQUIRE(!sim->run_simulation(1e-30, 1000));
-//    //      REQUIRE(sim->sim_residual_norm() < tolerance);
-//  }
+  //  SECTION("DD SIM TEST CASE 1: MESH INPUT") {
+  //    bool pdd_mode = false;
+  //    bool debug = true;
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(mesh,
+  //    curves_info,
+  //                                                           pdd_mode, debug);
+  //    REQUIRE(sim->run_simulation());
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //    // pressure test for stability
+  //    //      REQUIRE(!sim->run_simulation(1e-30, 1000));
+  //    //      REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
   //
-//      SECTION("DD SIM TEST CASE 2: Small .INP FILE INPUT") {
-//        bool pdd_mode = false;
-//        bool debug = true;
-//        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//            "../benchmarks/Net_small.inp", "NETSMALL", pdd_mode, debug);
-//        REQUIRE(sim->run_simulation(1e-12, 10));
-//        REQUIRE(sim->sim_residual_norm() < tolerance);
-//      }
+  //      SECTION("DD SIM TEST CASE 2: Small .INP FILE INPUT") {
+  //        bool pdd_mode = false;
+  //        bool debug = true;
+  //        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //            "../benchmarks/Net_small.inp", "NETSMALL", pdd_mode, debug);
+  //        REQUIRE(sim->run_simulation(1e-12, 10));
+  //        REQUIRE(sim->sim_residual_norm() < tolerance);
+  //      }
   //
-//      SECTION("DD SIM TEST CASE 3: Medium .INP FILE INPUT") {
-//        bool pdd_mode = false;
-//        bool debug = true;
-//        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//            "../benchmarks/Net_m.inp", pdd_mode, debug);
-//        REQUIRE(sim->run_simulation());
-//        REQUIRE(sim->sim_residual_norm() < tolerance);
-//      }
-//    SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
-//      bool pdd_mode = false;
-//      bool debug = false;
-//      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//          "../benchmarks/ky10_c.inp", pdd_mode, debug);
-//      auto start = high_resolution_clock::now();
-//
-//      //    REQUIRE(sim->run_simulation());
-//      sim->run_simulation(1e-8, 100);
-//      auto stop = high_resolution_clock::now();
-//      auto duration = duration_cast<seconds>(stop - start);
-//
-//      //    std::cout << duration.count() << std::endl;
-//      REQUIRE(sim->sim_residual_norm() < tolerance);
-//    }
+  //      SECTION("DD SIM TEST CASE 3: Medium .INP FILE INPUT") {
+  //        bool pdd_mode = false;
+  //        bool debug = true;
+  //        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //            "../benchmarks/Net_m.inp", pdd_mode, debug);
+  //        REQUIRE(sim->run_simulation());
+  //        REQUIRE(sim->sim_residual_norm() < tolerance);
+  //      }
+  //    SECTION("DD SIM TEST CASE 4: Large .INP FILE INPUT") {
+  //      bool pdd_mode = false;
+  //      bool debug = false;
+  //      auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //          "../benchmarks/ky10_c.inp", pdd_mode, debug);
+  //      auto start = high_resolution_clock::now();
+  //
+  //      //    REQUIRE(sim->run_simulation());
+  //      sim->run_simulation(1e-8, 100);
+  //      auto stop = high_resolution_clock::now();
+  //      auto duration = duration_cast<seconds>(stop - start);
+  //
+  //      //    std::cout << duration.count() << std::endl;
+  //      REQUIRE(sim->sim_residual_norm() < tolerance);
+  //    }
   //
   //  SECTION("DD SIM TEST CASE 5: PUMP .INP FILE INPUT") {
   //    bool pdd_mode = false;
@@ -195,42 +196,46 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   //      std::cout << duration.count() << std::endl;
   //      REQUIRE(sim->sim_residual_norm() < tolerance);
   //    }
-//      SECTION("DD SIM TEST CASE 9: Large Synthetic Network") {
-//        bool pdd_mode = false;
-//        bool debug = true;
-//        auto start = high_resolution_clock::now();
-//        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//            400, pdd_mode,
-//            debug);
-//        //    REQUIRE(sim->run_simulation());
-//        sim->run_simulation(1e-8, 30);
-//        auto stop = high_resolution_clock::now();
-//        auto duration = duration_cast<milliseconds>(stop - start);
+  //        SECTION("DD SIM TEST CASE 9: Large Synthetic Network") {
+  //          bool pdd_mode = false;
+  //          bool debug = true;
+  //          std::string solver_name = "mkl_pardiso";
+  //          auto start = high_resolution_clock::now();
+  //          auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //              400, pdd_mode,solver_name,
+  //              debug);
+  //          //    REQUIRE(sim->run_simulation());
+  //          sim->run_simulation(1e-8, 30);
+  //          auto stop = high_resolution_clock::now();
+  //          auto duration = duration_cast<milliseconds>(stop - start);
+  //
+  //          std::cout << duration.count() << std::endl;
+  //          REQUIRE(sim->sim_residual_norm() < tolerance);
+  //        }
+//  SECTION("DD SIM TEST CASE 9: Saved Synthetic Network") {
+//    bool pdd_mode = true;
+//    bool debug = false;
+//    std::string solver_name = "mkl_pardiso";
+//    auto start = high_resolution_clock::now();
+//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+//        "../benchmarks/synthetic_400.inp", "synthetic_400", pdd_mode,
+//        solver_name, debug);
+//    //    REQUIRE(sim->run_simulation());
+//    sim->run_simulation(1e-8, 100);
+//    auto stop = high_resolution_clock::now();
+//    auto duration = duration_cast<milliseconds>(stop - start);
 //
-//        std::cout << duration.count() << std::endl;
-//        REQUIRE(sim->sim_residual_norm() < tolerance);
-//      }
-      SECTION("DD SIM TEST CASE 9: Saved Synthetic Network") {
-          bool pdd_mode = true;
-          bool debug = false;
-          auto start = high_resolution_clock::now();
-          auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-                  "../benchmarks/synthetic_400.inp", "synthetic_400",
-                  pdd_mode, debug);
-          //    REQUIRE(sim->run_simulation());
-          sim->run_simulation(1e-8, 100);
-          auto stop = high_resolution_clock::now();
-          auto duration = duration_cast<milliseconds>(stop - start);
-
-          std::cout << duration.count() << std::endl;
-          REQUIRE(sim->sim_residual_norm() < tolerance);
-      }
+//    std::cout << duration.count() << std::endl;
+//    REQUIRE(sim->sim_residual_norm() < tolerance);
+//  }
 
   //  SECTION("PDD SIM TEST CASE 1: Small .INP FILE INPUT") {
   //    bool pdd_mode = true;
   //    bool debug = true;
+  //    std::string solver_name = "pardiso";
   //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-  //        "../benchmarks/test_net_pdd.inp",  pdd_mode, debug);
+  //        "../benchmarks/test_net_pdd.inp","pdd_test", pdd_mode, solver_name,
+  //        debug);
   //    REQUIRE(sim->run_simulation());
   //    REQUIRE(sim->sim_residual_norm() < tolerance);
   //  }
@@ -250,12 +255,13 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
   //    std::cout << duration.count() << std::endl;
   //    REQUIRE(sim->sim_residual_norm() < tolerance);
   //  }
-//      SECTION("PDD SIM TEST CASE 2: Large .INP FILE INPUT") {
-//        bool pdd_mode = true;
-//        bool debug = true;
-//        auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//            "../benchmarks/ky9.inp","KY9", pdd_mode, debug);
-//        REQUIRE(sim->run_simulation(1e-8, 30));
-//        REQUIRE(sim->sim_residual_norm() < tolerance);
-//      }
+          SECTION("PDD SIM TEST CASE 2: Large .INP FILE INPUT") {
+            bool pdd_mode = true;
+            bool debug = false;
+            std::string solver_name = "mkl_pardiso";
+            auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+                "../benchmarks/ky1.inp","KY1", pdd_mode,solver_name, debug);
+            REQUIRE(sim->run_simulation(1e-8, 30));
+            REQUIRE(sim->sim_residual_norm() < tolerance);
+          }
 }

@@ -1,9 +1,9 @@
 #include "pardiso_unsym.h"
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "factory.h"
+
 
 using namespace std;
+static Register<pipenetwork::Solver, pipenetwork::Pardiso_unsym> registry("pardiso");
 
 /* PARDISO prototype. */
 extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
