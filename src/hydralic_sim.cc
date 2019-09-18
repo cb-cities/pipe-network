@@ -20,8 +20,8 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     if (debug_) {
       // save the initial values into csv files for debugging
       if (nr_iter < 1) {
-        std::ofstream outFile("../benchmarks/init_var_res.csv");
-        std::ofstream outFile2("../benchmarks/init_jacob.csv");
+        std::ofstream outFile("../results/init_var_res.csv");
+        std::ofstream outFile2("../results/init_jacob.csv");
         outFile << "variables"
                 << ","
                 << "residuals"
@@ -132,8 +132,6 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   // Creat a mesh
   mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
   mesh_->create_mesh_from_inp(IO);
-  auto Output = std::make_shared<pipenetwork::Output>(
-      mesh_, "../benchmarks/write_test_large.inp");
   // initialize discharges
   mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                       std::placeholders::_1,

@@ -66,11 +66,11 @@ class Solver {
   std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a_;
 
   //! Row index for csr format matrix
-  int* ia_{NULL};
+  int* ia_{nullptr};
   //! Column index for csr format matrix
-  int* ja_{NULL};
+  int* ja_{nullptr};
   //! Matrix values for csr format matrix
-  double* a_{NULL};
+  double* a_{nullptr};
 };
 }  // namespace pipenetwork
 

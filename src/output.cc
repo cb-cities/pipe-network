@@ -1,4 +1,3 @@
-
 #include "output.h"
 
 void pipenetwork::Output::write_junctions() {

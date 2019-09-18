@@ -12,8 +12,8 @@
 
 namespace pipenetwork {
 
-//! Pipe network Eigen GMRES class
-//! \brief Eigen GMRES solver class using Eigen
+//! Pipe network pardiso 6 unsymmetric matrix solver class
+//! \brief pardiso 6 solver class for unsymmetric matrix solver
 class Pardiso_unsym : public Solver {
  public:
   //! Constructor with tolerance, precision and iterations

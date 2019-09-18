@@ -24,7 +24,8 @@ struct Valve_prop {
 class Valve : public Link {
  public:
   //! Constructor with valve property, which contains all the information for
-  //! the valve \param[in] pipe_prop struct with properties for the pipe
+  //! the valve
+  //! \param[in] pipe_prop struct with properties for the pipe
   explicit Valve(const Valve_prop& valve_prop)
       : Link(valve_prop.id, valve_prop.node1, valve_prop.node2,valve_prop.valve_status) {
     valve_info_["type"] = valve_prop.valve_type;

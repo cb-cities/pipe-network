@@ -18,14 +18,7 @@ const double PDD_DELTA{0.2};
 const double PDD_SLOPE{1e-11};
 
 //! link settings
-enum Link_type {
-  PIPE,
-  PRVALVE,
-  FCVALVE,
-  TCVALVE,
-  POWERPUMP,
-  HEADPUMP
-};
+enum Link_type { PIPE, PRVALVE, FCVALVE, TCVALVE, POWERPUMP, HEADPUMP };
 enum Link_status { OPEN, CLOSED, ACTIVE };
 
 //! constant for modified hazen-williams formula

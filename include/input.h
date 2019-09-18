@@ -1,3 +1,6 @@
+#ifndef PIPE_NETWORK_INPUT_H
+#define PIPE_NETWORK_INPUT_H
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cctype>
@@ -18,15 +21,15 @@
 #include "settings.h"
 #include "valve.h"
 
-#ifndef PIPE_NETWORK_INPUT_H
-#define PIPE_NETWORK_INPUT_H
-
 namespace pipenetwork {
-//! function converts input value to standard unit for hydraulic simulation
+//! function to convert input value to standard unit for hydraulic simulation
 //! \param[in] val the value need to be converted
 //! \param[in] mode type of the input value (length, elevation, etc.)
 double to_si(double val, const std::string&);
 
+//! function to generate uniformly distributed random number
+//! \param[in] l min value boundary for the random number domain
+//! \param[in] r max value boundary for the random number domain
 double rand_number(double l, double h);
 
 //! function check the existance of a file
@@ -40,14 +43,15 @@ inline bool file_exists(const std::string& name) {
 //! \brief Base class for parsing input data using .inp file
 class Input {
  public:
-  //! constructor
+  //! constructor to create synthetic mesh
+  //! \param[in] n number of the mesh dimension (n*n)
   explicit Input(int n) {
     auto junction_nodes = construct_synthesis_junctions(n);
     construct_synthesis_pipes(junction_nodes);
     create_sources(n);
   };
 
-  //! constructor
+  //! constructor to create mesh from .inp file
   //! \param[in] filename path of the .inp file
   explicit Input(const std::string& filename) : filename_(filename) {
     if (!file_exists(filename)) {
@@ -121,14 +125,30 @@ class Input {
   //! Construct valve info that is used for pipeline-mesh
   void construct_valve_info();
 
+  //! Construct synthesis junctions
+  //! \param[in] n number of the mesh dimension (n*n)
   std::vector<std::vector<std::string>> construct_synthesis_junctions(int n);
+
+  //! Construct synthesis pipes
+  //! \param[in] junction_names names for junctions
   void construct_synthesis_pipes(
       const std::vector<std::vector<std::string>>& junction_names);
+  //! Construct pipes by linking junctions vertically
+  //! \param[in] junction_names names for junctions
+  //! \param[in] col_num current column number
+  //! \param[in] rand random connection or not
   void create_vertical_pipes(const std::vector<std::string>& junction_names,
                              int col_num, bool rand = false);
+  //! Construct pipes by linking junctions horizontally
+  //! \param[in] l_junc names for left sided junctions
+  //! \param[in] r_junc names for right sided junctions
+  //! \param[in] col_num current column number
+  //! \param[in] rand random connection or not
   void create_horizontal_pipes(const std::vector<std::string>& l_junc,
                                const std::vector<std::string>& r_junc,
                                int col_num, bool rand = true);
+  //! Create sources for synthetic network
+  //! \param[in] n number of sources for the synthetic network
   void create_sources(int n);
 
   //! Parse elevation, head or demand from a given node section

@@ -405,8 +405,8 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
       auto residual_vec = assembler->residual_vector();
       auto jac = assembler->jac_matrix();
 
-      std::ofstream outFile("../benchmarks/init_var_res_pump.csv");
-      std::ofstream outFile2("../benchmarks/init_jacob_pump.csv");
+      std::ofstream outFile("../results/init_var_res_pump.csv");
+      std::ofstream outFile2("../results/init_jacob_pump.csv");
 
       outFile << "variables"
               << ","
@@ -462,8 +462,8 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
       auto residual_vec = assembler->residual_vector();
       auto jac = assembler->jac_matrix();
 
-      std::ofstream outFile("../benchmarks/init_var_res_valve.csv");
-      std::ofstream outFile2("../benchmarks/init_jacob_valve.csv");
+      std::ofstream outFile("../results/init_var_res_valve.csv");
+      std::ofstream outFile2("../results/init_jacob_valve.csv");
 
       outFile << "variables"
               << ","
@@ -520,8 +520,8 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
       auto residual_vec = assembler->residual_vector();
       auto jac = assembler->jac_matrix();
 
-      std::ofstream outFile("../benchmarks/init_var_res_broke.csv");
-      std::ofstream outFile2("../benchmarks/init_jacob_broke.csv");
+      std::ofstream outFile("../results/init_var_res_broke.csv");
+      std::ofstream outFile2("../results/init_jacob_broke.csv");
 
       outFile << "variables"
               << ","
@@ -650,7 +650,5 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
                              ((pressure.array().abs() - MIN_PRESSURE) /
                               (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
                                      .pow(-0.5)));
-//    std::cout << res << std::endl;
-//      std::cout << vals << std::endl;
   }
 }

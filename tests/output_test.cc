@@ -16,5 +16,5 @@ TEST_CASE("Output is checked", "[Output]") {
   mesh->create_mesh_from_inp(Input);
 
   auto Output = std::make_shared<pipenetwork::Output>(
-      mesh, "../benchmarks/write_test_large.inp");
+      mesh, "../results/write_large_test.inp");
 }

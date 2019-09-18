@@ -61,13 +61,11 @@ link_directories(${pipe_network_SOURCE_DIR}/external/)
 
 # pipe_network executable
 SET(pipe_network_src
-#        src/main.cc
-#        src/mesh.cc
-#        src/matrix_assembler.cc
-#        src/eigen_cg.cc
-#        src/hydralic_sim.cc
-#        src/eigen_gmres.cc
-#        src/pardiso_unsym.cc
+        src/main.cc
+        src/mesh.cc
+        src/matrix_assembler.cc
+        src/hydralic_sim.cc
+        src/pardiso_unsym.cc
         src/pardiso_unsym.cpp)
 #        src/input.cc)
 add_executable(pipe_network
@@ -85,10 +83,7 @@ SET(test_src
         src/mesh.cc
         src/matrix_assembler.cc
         src/hydralic_sim.cc
-#        src/eigen_gmres.cc
         src/input.cc
-#        src/eigen_cg.cc
-#        src/eigen_cg_lem.cc
         src/pardiso_unsym.cc
         src/mkl_unsym.cc
         src/curves.cc
@@ -101,7 +96,6 @@ SET(test_src
         tests/hydraulic_sim_test.cc
         tests/input_test.cc
         tests/curve_test.cc
-#        tests/solver_test.cc
         tests/test.cc
         )
 add_executable(pipe_network_test

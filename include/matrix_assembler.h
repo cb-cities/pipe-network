@@ -19,6 +19,10 @@ class MatrixAssembler {
 
  public:
   //! Constructor
+  //! \param[in] mesh the mesh pointer
+  //! \param[in] curves_info the curve information pointer
+  //! \param[in] pdd_mode if simulation type is pressure demand driven or demand
+  //! driven
   explicit MatrixAssembler(const std::shared_ptr<Mesh>& mesh,
                            std::shared_ptr<Curves>& curves_info,
                            bool pdd_mode = false)
@@ -39,9 +43,7 @@ class MatrixAssembler {
   ~MatrixAssembler() = default;
 
   //! get the variable vector
-  std::shared_ptr<Eigen::VectorXd> variable_vector() {
-    return variable_vec_;
-  }
+  std::shared_ptr<Eigen::VectorXd> variable_vector() { return variable_vec_; }
 
   //! Method to assemble residual from the variable vector
   void assemble_residual();
@@ -67,11 +69,15 @@ class MatrixAssembler {
   std::shared_ptr<Mesh> mesh_;
   //! the curves info ptr
   std::shared_ptr<Curves> curves_info_;
-  //! basic info from mesh for matrix assembling
+  //! number of nodes in the mesh
   Index nnodes_{0};
+  //! number of links in the mesh
   Index nlinks_{0};
+  //! number of pipes in the mesh
   Index npipes_{0};
+  //! number of pumps in the mesh
   Index npumps_{0};
+  //! number of valves in the mesh
   Index nvalves_{0};
 
   //! if it is pressure demand simulation mode
