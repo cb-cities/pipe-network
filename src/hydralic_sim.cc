@@ -79,7 +79,7 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
   return false;
 }
 void pipenetwork::Hydralic_sim::line_search_func(
-    const Eigen::VectorXd &x_diff) {
+    const Eigen::VectorXd& x_diff) {
   double alpha = 1.0;
   auto old_res = residuals_->norm();
   for (int bt_iter = 0; bt_iter < bt_max_iter_; ++bt_iter) {
@@ -95,10 +95,10 @@ void pipenetwork::Hydralic_sim::line_search_func(
   //  throw std::runtime_error("Line search failed!");
 }
 
-pipenetwork::Hydralic_sim::Hydralic_sim(const std::string &filepath,
-                                        const std::string &mesh_name,
+pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
+                                        const std::string& mesh_name,
                                         bool pdd_mode,
-                                        const std::string &solver_name,
+                                        const std::string& solver_name,
                                         bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(filepath);
   // Creat a mesh
@@ -108,7 +108,7 @@ pipenetwork::Hydralic_sim::Hydralic_sim(const std::string &filepath,
   // initialize discharges
   mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                       std::placeholders::_1,
-                                      init_discharge_)); // initialze discharge
+                                      init_discharge_));  // initialze discharge
   // get curves information
   auto curves_info = IO->curve_info();
   assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
@@ -119,12 +119,11 @@ pipenetwork::Hydralic_sim::Hydralic_sim(const std::string &filepath,
   solver_ = solve_ptr;
   debug_ = debug;
   // print mesh summary if on debug mode
-  if (debug_)
-    mesh_->print_summary();
+  if (debug_) mesh_->print_summary();
 }
 
 pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
-                                        const std::string &solver_name,
+                                        const std::string& solver_name,
                                         bool debug) {
   auto IO = std::make_shared<pipenetwork::Input>(syn_size);
 
@@ -136,7 +135,7 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   // initialize discharges
   mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                       std::placeholders::_1,
-                                      init_discharge_)); // initialze discharge
+                                      init_discharge_));  // initialze discharge
   // get curves information
   auto curves_info = IO->curve_info();
   assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
@@ -145,12 +144,11 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   solver_ = solve_ptr;
   debug_ = debug;
   // print mesh summary if on debug mode
-  if (debug_)
-    mesh_->print_summary();
+  if (debug_) mesh_->print_summary();
 }
 
 void pipenetwork::Hydralic_sim::write_final_result(
-    const std::string &output_path, const Eigen::VectorXd &var) {
+    const std::string& output_path, const Eigen::VectorXd& var) {
   std::ofstream outnode(output_path + "_nodes.csv");
   std::ofstream outlink(output_path + "_links.csv");
   outnode << "node_id"

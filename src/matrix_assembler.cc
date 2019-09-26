@@ -13,7 +13,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
   link_minor_loss_coeff_vec_.resize(nlinks_);
 
   Index idx = 0, leak_idx = 0;
-  for (const auto &node : mesh_->nodes()) {
+  for (const auto& node : mesh_->nodes()) {
     Index index_nd = idx + nnodes_;
     Index index_nl = leak_idx + 2 * nnodes_ + nlinks_;
 
@@ -21,25 +21,25 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
     // heads vector
     auto info = node.second->nodal_info();
     switch (static_cast<int>(info["type"])) {
-    case JUNCTION:
-      demands_heads_vec_[idx] = info["demand"];
-      elevations_[idx] = info["elevation"];
-      // leak information
-      if (info["leak_area"] > 0) {
-        std::string leak_node_name = node.second->id();
-        double leak_area = info["leak_area"];
-        leak_ids_.emplace_back(leak_node_name);
-        leak_area_.emplace_back(leak_area);
-        // register leak pdd curve
-        curves_info_->add_leak_poly_vec(leak_node_name, leak_area);
-        // nodal leak discharge vector
-        variable_vec_->coeffRef(index_nl) = node.second->sim_leak();
-        ++leak_idx;
-      }
-      break;
-    default:
-      demands_heads_vec_[idx] = info["head"];
-      source_idx_.emplace_back(idx);
+      case JUNCTION:
+        demands_heads_vec_[idx] = info["demand"];
+        elevations_[idx] = info["elevation"];
+        // leak information
+        if (info["leak_area"] > 0) {
+          std::string leak_node_name = node.second->id();
+          double leak_area = info["leak_area"];
+          leak_ids_.emplace_back(leak_node_name);
+          leak_area_.emplace_back(leak_area);
+          // register leak pdd curve
+          curves_info_->add_leak_poly_vec(leak_node_name, leak_area);
+          // nodal leak discharge vector
+          variable_vec_->coeffRef(index_nl) = node.second->sim_leak();
+          ++leak_idx;
+        }
+        break;
+      default:
+        demands_heads_vec_[idx] = info["head"];
+        source_idx_.emplace_back(idx);
     }
 
     // nodal head vector
@@ -54,7 +54,7 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
   }
 
   // loop through links
-  for (const auto &link : mesh_->links()) {
+  for (const auto& link : mesh_->links()) {
     Index index_pd = idx + nnodes_;
     // discharge vector
     variable_vec_->coeffRef(index_pd) = link->sim_discharge();
@@ -70,16 +70,16 @@ void pipenetwork::MatrixAssembler::init_variable_vector() {
       minor_loss_coeff = 8 * info["minor_loss"] /
                          (G * std::pow(PI, 2) * std::pow(info["diameter"], 4));
       switch (static_cast<pipenetwork::Link_type>(info["type"])) {
-      // link resistence coefficients for pipes (Harzan-williams)
-      case PIPE:
-        val = HW_COEFF * std::pow(info["roughness"], -1.852) *
-              std::pow(info["diameter"], -4.871) * info["length"];
-        break;
-      case TCVALVE:
-        val = 8 * info["setting"] /
-              (G * std::pow(PI, 2) * std::pow(info["diameter"], 4));
+        // link resistence coefficients for pipes (Harzan-williams)
+        case PIPE:
+          val = HW_COEFF * std::pow(info["roughness"], -1.852) *
+                std::pow(info["diameter"], -4.871) * info["length"];
+          break;
+        case TCVALVE:
+          val = 8 * info["setting"] /
+                (G * std::pow(PI, 2) * std::pow(info["diameter"], 4));
 
-        break;
+          break;
       }
     }
 
@@ -105,7 +105,7 @@ void pipenetwork::MatrixAssembler::assemble_balance_headloss_matrix() {
   update_jacb.reserve(nnodes_ + nlinks_);
   update_jacf.reserve(nnodes_ + nlinks_);
 
-  for (const auto &link : mesh_->links()) {
+  for (const auto& link : mesh_->links()) {
     auto out_node_id = link->nodes().first->id();
     auto in_node_id = link->nodes().second->id();
     auto link_type = link->link_info()["type"];
@@ -178,7 +178,7 @@ void pipenetwork::MatrixAssembler::assemble_residual() {
 
   // get leak effect
   int leak_count = 0;
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto idx = node_id_map_[leak_id];
     residual_vec_->coeffRef(idx) -=
         variable_vec_->coeffRef(2 * nnodes_ + nlinks_ + leak_count);
@@ -212,8 +212,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([](double x) {
-                            if (x <= MIN_PRESSURE)
-                              return 1.0;
+                            if (x <= MIN_PRESSURE) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -239,8 +238,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
     // case 4, pressure above normal pressure, demand can be met
     auto case4_bool = pressure
                           .unaryExpr([](double x) {
-                            if ((x > NORMAL_PRESSURE))
-                              return 1.0;
+                            if ((x > NORMAL_PRESSURE)) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -287,7 +285,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
                                    .pow(0.5)));
   }
   // correct residuals for sources (head for reservoir/tanks)
-  for (const auto &idx : source_idx_) {
+  for (const auto& idx : source_idx_) {
     (*residual_vec_)[idx + nnodes_] =
         (*variable_vec_)[idx] - demands_heads_vec_[idx];
   }
@@ -300,7 +298,7 @@ void pipenetwork::MatrixAssembler::assemble_demand_head_residual() {
 void pipenetwork::MatrixAssembler::assemble_leak_residual() {
   double m = 1e-11;
   Index leak_idx = 2 * nnodes_ + nlinks_;
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto i = leak_idx - 2 * nnodes_ - nlinks_;
     auto idx = node_id_map_[leak_id];
     if (iso_junctions_[idx] == 1) {
@@ -338,17 +336,15 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
   auto sign_array = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
                           //                            return (x < 0) ? -1 : 1;
-                          if (x > 0)
-                            return 1.0;
+                          if (x > 0) return 1.0;
                           return -1.0;
                         })
-                        .array(); // get the sign of discharges
+                        .array();  // get the sign of discharges
   // case 1, discharges that exceed the boundary of HW_Q2, use normal
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
-                          if (std::abs(x) > HW_Q2)
-                            return 1.0;
+                          if (std::abs(x) > HW_Q2) return 1.0;
                           return 0.0;
                         })
                         .array();
@@ -365,8 +361,7 @@ void pipenetwork::MatrixAssembler::assemble_headloss_residual_pipe() {
   // this case
   auto case3_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
-                          if (std::abs(x) < HW_Q1)
-                            return 1.0;
+                          if (std::abs(x) < HW_Q1) return 1.0;
                           return 0.0;
                         })
                         .array();
@@ -564,7 +559,7 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
 
   // JacC
   Index idx = 0;
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto row_idx = node_id_map_[leak_id];
     auto col_idx = 2 * nnodes_ + nlinks_ + idx;
     update.emplace_back(row_idx, col_idx, -1);
@@ -611,7 +606,7 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
 
   // JacH
   idx = 0;
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto col_idx = node_id_map_[leak_id];
     auto row_idx = 2 * nnodes_ + nlinks_ + idx;
     update.emplace_back(row_idx, col_idx, 0);
@@ -622,7 +617,7 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
 
   // JacI
   idx = 0;
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto col_idx = 2 * nnodes_ + nlinks_ + idx;
     auto row_idx = 2 * nnodes_ + nlinks_ + idx;
     update.emplace_back(row_idx, col_idx, 1);
@@ -637,7 +632,7 @@ void pipenetwork::MatrixAssembler::initialize_jacobian() {
                2 * nnodes_ + nlinks_ + leak_ids_.size());
   std::vector<Eigen::Triplet<double>> jac_triplet;
   jac_triplet.reserve(10 * nnodes_);
-  for (auto const &x : sub_jac_trip_) {
+  for (auto const& x : sub_jac_trip_) {
     //    std::cout << x.first  // string (key)
     //              << std::endl;
     jac_triplet.insert(std::end(jac_triplet), std::begin(x.second),
@@ -666,7 +661,7 @@ void pipenetwork::MatrixAssembler::set_jac_const() {
   auto trip_f = sub_jac_trip_["jac_f"];
   auto iso_junc_src = iso_junctions_;
   auto connect_junc_no_src = connect_junctions_;
-  for (const auto &src : source_idx_) {
+  for (const auto& src : source_idx_) {
     iso_junc_src[src] = 1;
     connect_junc_no_src[src] = 0;
   }
@@ -674,13 +669,13 @@ void pipenetwork::MatrixAssembler::set_jac_const() {
   // change jacobian matrix entries based on connection status
   int count = 0;
   if (!pdd_) {
-    for (const auto &trip_d : sub_jac_trip_["jac_d"]) {
+    for (const auto& trip_d : sub_jac_trip_["jac_d"]) {
       jac_->coeffRef(trip_d.row(), trip_d.col()) = iso_junc_src[count];
       ++count;
     }
   }
   count = 0;
-  for (const auto &trip_e : sub_jac_trip_["jac_e"]) {
+  for (const auto& trip_e : sub_jac_trip_["jac_e"]) {
     jac_->coeffRef(trip_e.row(), trip_e.col()) = connect_junc_no_src[count];
     ++count;
   }
@@ -720,8 +715,7 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([](double x) {
-                            if (x <= MIN_PRESSURE)
-                              return 1.0;
+                            if (x <= MIN_PRESSURE) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -747,8 +741,7 @@ void pipenetwork::MatrixAssembler::update_jac_d() {
     // case 4, pressure above normal pressure, demand can be met
     auto case4_bool = pressure
                           .unaryExpr([](double x) {
-                            if ((x > NORMAL_PRESSURE))
-                              return 1.0;
+                            if ((x > NORMAL_PRESSURE)) return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -831,18 +824,16 @@ void pipenetwork::MatrixAssembler::update_jac_g_pipe() {
 
   auto sign_array = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
-                          if (x > 0)
-                            return 1.0;
+                          if (x > 0) return 1.0;
                           return -1.0;
                         })
-                        .array(); // get the sign of discharges
+                        .array();  // get the sign of discharges
 
   // case 1, discharges that exceed the boundary of HW_Q2, use normal
   // hazen-william equation
   auto case1_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
-                          if (std::abs(x) > HW_Q2)
-                            return 1.0;
+                          if (std::abs(x) > HW_Q2) return 1.0;
                           return 0.0;
                         })
                         .array();
@@ -860,8 +851,7 @@ void pipenetwork::MatrixAssembler::update_jac_g_pipe() {
   // this case
   auto case3_bool = (variable_vec_->segment(2 * nnodes_, npipes_))
                         .unaryExpr([](double x) {
-                          if (std::abs(x) < HW_Q1)
-                            return 1.0;
+                          if (std::abs(x) < HW_Q1) return 1.0;
                           return 0.0;
                         })
                         .array();
@@ -1021,7 +1011,7 @@ void pipenetwork::MatrixAssembler::update_jac_h() {
   Index leak_idx = 2 * nnodes_ + nlinks_;
   double val;
   auto trip_h = sub_jac_trip_["jac_h"];
-  for (const auto &leak_id : leak_ids_) {
+  for (const auto& leak_id : leak_ids_) {
     auto i = leak_idx - 2 * nnodes_ - nlinks_;
     auto idx = node_id_map_[leak_id];
     auto p = (*variable_vec_)[idx] - elevations_[idx];
@@ -1054,7 +1044,7 @@ void pipenetwork::MatrixAssembler::init_internal_graph() {
   std::vector<Eigen::Triplet<double>> graph_triplet;
   int val;
   // loop through links
-  for (const auto &link : mesh_->links()) {
+  for (const auto& link : mesh_->links()) {
     auto nodes = link->nodes();
     auto start_node_idx = node_id_map_.at(nodes.first->id());
     auto end_node_idx = node_id_map_.at(nodes.second->id());
@@ -1104,10 +1094,10 @@ void pipenetwork::MatrixAssembler::init_internal_graph() {
   auto iso_links = get_isolated_links(iso_nodes);
   iso_junctions_.setZero(nnodes_);
   iso_links_.setZero(nlinks_);
-  for (auto &n : iso_nodes) {
+  for (auto& n : iso_nodes) {
     iso_junctions_[n] = 1;
   }
-  for (auto &l : iso_links) {
+  for (auto& l : iso_links) {
     iso_links_[l] = 1;
   }
   Eigen::VectorXd ones_link;
@@ -1154,7 +1144,7 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
   check_result.setZero(nnodes_);
   std::vector<int> isolated_nodes;
   //  std::cout<<"souce number "<<source_idx_.size ()<<std::endl;
-  for (const auto &source_idx : source_idx_) {
+  for (const auto& source_idx : source_idx_) {
     check_result += explore_nodes(source_idx);
   }
 
@@ -1171,10 +1161,10 @@ std::vector<int> pipenetwork::MatrixAssembler::get_isolated_nodes() {
 }
 
 std::vector<int> pipenetwork::MatrixAssembler::get_isolated_links(
-    const std::vector<int> &isolated_nodes) {
+    const std::vector<int>& isolated_nodes) {
   std::vector<int> isolated_links;
-  for (const auto &node : isolated_nodes) {
-    for (const auto &link : node_link_id_map_[node]) {
+  for (const auto& node : isolated_nodes) {
+    for (const auto& link : node_link_id_map_[node]) {
       isolated_links.emplace_back(link);
     }
   }

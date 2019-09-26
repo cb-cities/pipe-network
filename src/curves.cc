@@ -27,8 +27,8 @@
 //
 // Multi point curves are currently not supported
 pipenetwork::Pump_curve_prop::Pump_curve_prop(
-    std::string &curve_name,
-    std::vector<std::pair<double, double>> &curve_point)
+    std::string& curve_name,
+    std::vector<std::pair<double, double>>& curve_point)
     : name{curve_name}, points{curve_point} {
   num_points = points.size();
   double A = 0.;
@@ -95,10 +95,9 @@ Eigen::Vector2d pipenetwork::Pump_curve_prop::get_pump_line_params() {
   return {q_bar, h_bar};
 }
 
-Eigen::Vector4d
-pipenetwork::compute_poly_coefficients(const std::array<double, 2> &x,
-                                       const std::array<double, 2> &f,
-                                       const std::array<double, 2> &df) {
+Eigen::Vector4d pipenetwork::compute_poly_coefficients(
+    const std::array<double, 2>& x, const std::array<double, 2>& f,
+    const std::array<double, 2>& df) {
   Eigen::Vector4d ret;
   double a =
       (2 * (f[0] - f[1]) - (x[0] - x[1]) * (df[1] + df[0])) /
@@ -113,9 +112,9 @@ pipenetwork::compute_poly_coefficients(const std::array<double, 2> &x,
 }
 
 void pipenetwork::Curves::add_pump_curves(
-    const std::vector<Pump_curve_prop> &head_pump_props) {
+    const std::vector<Pump_curve_prop>& head_pump_props) {
   int count = 0;
-  for (const auto &pump_prop : head_pump_props) {
+  for (const auto& pump_prop : head_pump_props) {
     head_pump_curves_[pump_prop.name] = pump_prop;
     pump_str_int_[pump_prop.name] = count;
     pump_int_str_[count] = pump_prop.name;

@@ -1,13 +1,13 @@
 #include "mkl_unsym.h"
 #include "factory.h"
 
-static Register<pipenetwork::Solver, pipenetwork::Mkl_unsym>
-    registry("mkl_pardiso");
+static Register<pipenetwork::Solver, pipenetwork::Mkl_unsym> registry(
+    "mkl_pardiso");
 
 pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
-  char *var;
+  char* var;
 
   mtype_ = 11; /* Real unsymmetric matrix */
   /* RHS and solution vectors. */
@@ -64,7 +64,7 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
 Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
   // configure matrix
   int n = vec_b_->size();
-  double *vec_b = vec_b_->data();
+  double* vec_b = vec_b_->data();
   double x_diff[n];
   int nnz = ia_[n];
 

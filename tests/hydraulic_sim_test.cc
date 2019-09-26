@@ -81,7 +81,7 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
   mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                      std::placeholders::_1,
-                                     init_discharge)); // initialze discharge
+                                     init_discharge));  // initialze discharge
   auto curves_info = std::make_shared<pipenetwork::Curves>();
   SECTION("DD SIM TEST CASE 1: MESH INPUT") {
     bool pdd_mode = false;
