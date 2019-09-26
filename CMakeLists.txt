@@ -96,7 +96,7 @@ target_link_libraries(pipe_network lpipe_network)
 
 if(PIPE_NETWORK_TEST_BUILD_TESTING)
   # Unit test
-  SET(test_src
+  SET(pipe_network_test_src
     tests/mesh_test.cc
     tests/node_test.cc
     tests/link_test.cc
@@ -105,9 +105,8 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
     tests/hydraulic_sim_test.cc
     tests/input_test.cc
     tests/curve_test.cc
-    tests/test.cc
     )
-  add_executable(pipe_network_test ${test_src})
+  add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)
   add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
   enable_testing()
@@ -116,6 +115,6 @@ endif()
 # Coverage
 find_package(codecov)
 if(ENABLE_COVERAGE)
-  add_coverage(pipe_network)
-  add_coverage(pipe_network_test)
+  add_executable(pipe_network_test_coverage tests/main_test.cc ${pipe_network_src} ${pipe_network_test_src})
+  add_coverage(pipe_network_test_coverage)
 endif()
