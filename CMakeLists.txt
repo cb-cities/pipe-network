@@ -38,7 +38,17 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Pthreads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+find_package (Threads)
+link_libraries (${CMAKE_THREAD_LIBS_INIT})
+
+# OpenMP
+find_package(OpenMP)
+if (OPENMP_FOUND)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  endif()
+endif()
 
 # TBB
 #find_package(TBB REQUIRED)
@@ -51,6 +61,13 @@ find_package(MKL REQUIRED)
 include_directories(${MKL_INCLUDE_DIR})
 link_libraries(${MKL_LIBRARIES})
 
+# BLAS Math Libraries
+find_package(BLAS REQUIRED)
+link_libraries(${BLAS_LIBRARIES})
+  
+find_package(LAPACK REQUIRED)
+link_libraries(${LAPACK_LIBRARIES})
+
 # Include directories
 include_directories(
   ${pipe_network_SOURCE_DIR}/include/
@@ -61,57 +78,44 @@ link_directories(${pipe_network_SOURCE_DIR}/external/)
 
 # pipe_network executable
 SET(pipe_network_src
-        src/main.cc
-        src/mesh.cc
-        src/matrix_assembler.cc
-        src/hydralic_sim.cc
-        src/pardiso_unsym.cc
-        )
-#        src/input.cc)
-add_executable(pipe_network
-  ${pipe_network_src}
-)
-
-find_package(OpenMP REQUIRED)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
+  src/curves.cc
+  src/hydralic_sim.cc
+  src/input.cc
+  src/matrix_assembler.cc
+  src/mesh.cc
+  src/mkl_unsym.cc
+  src/pardiso_unsym.cc
+  src/output.cc
+  )
 
 
+add_library(lpipe_network SHARED ${pipe_network_src})
 
-# Unit test
-SET(test_src
-        src/mesh.cc
-        src/matrix_assembler.cc
-        src/hydralic_sim.cc
-        src/input.cc
-        src/pardiso_unsym.cc
-        src/mkl_unsym.cc
-        src/curves.cc
-        src/output.cc
-        tests/mesh_test.cc
-        tests/node_test.cc
-        tests/link_test.cc
-        tests/matrix_assembler_test.cc
-        tests/output_test.cc
-        tests/hydraulic_sim_test.cc
-        tests/input_test.cc
-        tests/curve_test.cc
-        tests/test.cc
-        )
-add_executable(pipe_network_test
-  ${test_src}
-)
+add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
+target_link_libraries(pipe_network lpipe_network)
 
-set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-
-target_link_libraries(pipe_network_test ${lapackblas_libraries})
-target_link_libraries(pipe_network_test OpenMP::OpenMP_CXX)
-target_link_libraries(pipe_network_test Threads::Threads)
-
-add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
-enable_testing()
+if(PIPE_NETWORK_TEST_BUILD_TESTING)
+  # Unit test
+  SET(test_src
+    tests/mesh_test.cc
+    tests/node_test.cc
+    tests/link_test.cc
+    tests/matrix_assembler_test.cc
+    tests/output_test.cc
+    tests/hydraulic_sim_test.cc
+    tests/input_test.cc
+    tests/curve_test.cc
+    tests/test.cc
+    )
+  add_executable(pipe_network_test ${test_src})
+  target_link_libraries(pipe_network_test lpipe_network)
+  add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
+  enable_testing()
+endif()
 
 # Coverage
 find_package(codecov)
-add_coverage(pipe_network)
-add_coverage(pipe_network_test)
+if(ENABLE_COVERAGE)
+  add_coverage(pipe_network)
+  add_coverage(pipe_network_test)
+endif()
