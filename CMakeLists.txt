@@ -24,6 +24,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -pthread")
 endif()
 
+# CMake seems to have no way to enable/disable testing per subproject,
+# so we provide an option similar to BUILD_TESTING, but just for CITYSCAPE.
+option(PIPE_NETWORK_TEST_BUILD_TESTING "enable testing for cityscape" ON)
+
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
