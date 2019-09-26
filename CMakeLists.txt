@@ -66,7 +66,7 @@ SET(pipe_network_src
         src/matrix_assembler.cc
         src/hydralic_sim.cc
         src/pardiso_unsym.cc
-        src/pardiso_unsym.cpp)
+        )
 #        src/input.cc)
 add_executable(pipe_network
   ${pipe_network_src}
@@ -107,8 +107,6 @@ set(lapackblas_libraries ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries(pipe_network_test ${lapackblas_libraries})
 target_link_libraries(pipe_network_test OpenMP::OpenMP_CXX)
 target_link_libraries(pipe_network_test Threads::Threads)
-target_link_libraries(pipe_network_test libpardiso600-MACOS-X86-64.dylib)
-target_link_libraries(pipe_network_test libgfortran.dylib)
 
 add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)
 enable_testing()
