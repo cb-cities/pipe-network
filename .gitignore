@@ -58,3 +58,4 @@ configure.scan
 *install-sh
 *missing
 *stamp-h1
+benchmarks/*
