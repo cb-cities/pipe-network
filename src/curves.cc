@@ -31,7 +31,9 @@ pipenetwork::Pump_curve_prop::Pump_curve_prop(
     std::string& curve_name, std::vector<std::pair<double, double>>& curve_point)
     : name{curve_name}, points{curve_point} {
   num_points = points.size();
-  double A, B, C;
+  double A = 0.;
+  double B = 0.;
+  double C = 0.;
   if (num_points == 1) {
     auto Q_1 = points[0].first;
     auto H_1 = points[0].second;
