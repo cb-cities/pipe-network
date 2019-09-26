@@ -88,7 +88,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
 
   mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                      std::placeholders::_1,
-                                     init_discharge));  // initialze discharge
+                                     init_discharge)); // initialze discharge
   SECTION("DD MODE") {
     bool pdd_mode = false;
     auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
@@ -201,7 +201,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       double init_discharge = 0.0003;
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
-          init_discharge));  // initialze discharge
+          init_discharge)); // initialze discharge
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
           mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
@@ -236,7 +236,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       double init_discharge = 0.0001;
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
-          init_discharge));  // initialze discharge
+          init_discharge)); // initialze discharge
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
           mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
@@ -271,7 +271,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       double init_discharge = -1e-3;
       mesh->iterate_over_links(std::bind(
           &pipenetwork::Link::update_sim_discharge, std::placeholders::_1,
-          init_discharge));  // initialze discharge
+          init_discharge)); // initialze discharge
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
           mesh, curves_info, pdd_mode);
       auto jac_matrix = assembler->jac_matrix();
@@ -390,7 +390,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
 
     mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                        std::placeholders::_1,
-                                       init_discharge));  // initialze discharge
+                                       init_discharge)); // initialze discharge
     SECTION("DD MODE") {
       bool pdd_mode = false;
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
@@ -447,7 +447,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
 
     mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                        std::placeholders::_1,
-                                       init_discharge));  // initialze discharge
+                                       init_discharge)); // initialze discharge
     SECTION("DD MODE") {
       bool pdd_mode = false;
       auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
@@ -504,7 +504,7 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
 
     mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                        std::placeholders::_1,
-                                       init_discharge));  // initialze discharge
+                                       init_discharge)); // initialze discharge
 
     SECTION("DD MODE") {
       bool pdd_mode = false;
@@ -567,7 +567,8 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
     // case 1, pressure smaller than min pressure, no water
     auto case1_bool = pressure
                           .unaryExpr([=](double x) {
-                            if (x < MIN_PRESSURE) return 1.0;
+                            if (x < MIN_PRESSURE)
+                              return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -593,7 +594,8 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
     // case 4, pressure above normal pressure, demand can be met
     auto case4_bool = pressure
                           .unaryExpr([=](double x) {
-                            if ((x > NORMAL_PRESSURE)) return 1.0;
+                            if ((x > NORMAL_PRESSURE))
+                              return 1.0;
                             return 0.0;
                           })
                           .array();
@@ -630,25 +632,25 @@ TEST_CASE("MatrixAssembler is checked for .inp input", "[MatrixAssembler]") {
          case5_bool *
              ((demand.array()) - demands_heads_vec.array() *
                                      ((pressure.array().abs() - MIN_PRESSURE) /
-                                      (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
+                                      (NORMAL_PRESSURE - MIN_PRESSURE))
+                                         .abs()
                                          .pow(0.5)));
-      auto vals =
-              (case1_bool * (-PDD_SLOPE * demands_heads_vec.array() *
-                             head.array()) +
-               case2_bool * (-demands_heads_vec.array() *
-                             (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
-                              2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
-                              pdd1_poly_vec[2])) +
-               case3_bool * (-demands_heads_vec.array() *
-                             (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
-                              2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
-                              pdd2_poly_vec[2])) +
-               case4_bool * (-PDD_SLOPE * demands_heads_vec.array() *
-                             head.array()) +
-               case5_bool * (-0.5 * demands_heads_vec.array() /
-                             (NORMAL_PRESSURE - MIN_PRESSURE) *
-                             ((pressure.array().abs() - MIN_PRESSURE) /
-                              (NORMAL_PRESSURE - MIN_PRESSURE)).abs()
-                                     .pow(-0.5)));
+    auto vals =
+        (case1_bool * (-PDD_SLOPE * demands_heads_vec.array() * head.array()) +
+         case2_bool * (-demands_heads_vec.array() *
+                       (3 * pdd1_poly_vec[0] * pressure.array().pow(2) +
+                        2 * pdd1_poly_vec[1] * pressure.array().pow(1) +
+                        pdd1_poly_vec[2])) +
+         case3_bool * (-demands_heads_vec.array() *
+                       (3 * pdd2_poly_vec[0] * pressure.array().pow(2) +
+                        2 * pdd2_poly_vec[1] * pressure.array().pow(1) +
+                        pdd2_poly_vec[2])) +
+         case4_bool * (-PDD_SLOPE * demands_heads_vec.array() * head.array()) +
+         case5_bool * (-0.5 * demands_heads_vec.array() /
+                       (NORMAL_PRESSURE - MIN_PRESSURE) *
+                       ((pressure.array().abs() - MIN_PRESSURE) /
+                        (NORMAL_PRESSURE - MIN_PRESSURE))
+                           .abs()
+                           .pow(-0.5)));
   }
 }

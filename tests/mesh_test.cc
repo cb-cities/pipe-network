@@ -66,7 +66,8 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   const std::vector<double> length{100, 200, 300};
   const std::vector<double> diameter{3, 4, 5};
   const std::vector<double> roughness{0.2, .6, .9};
-  const std::vector<pipenetwork::Link_status> status{pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN};
+  const std::vector<pipenetwork::Link_status> status{
+      pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN};
 
   std::vector<pipenetwork::Pipe_prop> pipe_props;
   for (int i = 0; i < pipe_ids.size(); ++i) {

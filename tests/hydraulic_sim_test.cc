@@ -81,7 +81,7 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
   mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                      std::placeholders::_1,
-                                     init_discharge));  // initialze discharge
+                                     init_discharge)); // initialze discharge
   auto curves_info = std::make_shared<pipenetwork::Curves>();
   SECTION("DD SIM TEST CASE 1: MESH INPUT") {
     bool pdd_mode = false;
@@ -128,7 +128,7 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
-//    std::cout << duration.count() << std::endl;
+    //    std::cout << duration.count() << std::endl;
     REQUIRE(sim->sim_residual_norm() < tolerance);
   }
 
@@ -147,40 +147,41 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
-//    std::cout << duration.count() << std::endl;
+    //    std::cout << duration.count() << std::endl;
     REQUIRE(sim->sim_residual_norm() < tolerance);
   }
-//  SECTION("DD SIM TEST CASE 9: Large Synthetic Network") {
-//    bool pdd_mode = false;
-//    bool debug = true;
-//    std::string solver_name = "mkl_pardiso";
-//    auto start = high_resolution_clock::now();
-//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(400, pdd_mode,
-//                                                           solver_name, debug);
-//    //    REQUIRE(sim->run_simulation());
-//    sim->run_simulation(1e-8, 30);
-//    auto stop = high_resolution_clock::now();
-//    auto duration = duration_cast<milliseconds>(stop - start);
-//
-//    std::cout << duration.count() << std::endl;
-//    REQUIRE(sim->sim_residual_norm() < tolerance);
-//  }
-//  SECTION("DD SIM TEST CASE 9: Saved Synthetic Network") {
-//    bool pdd_mode = false;
-//    bool debug = false;
-//    std::string solver_name = "mkl_pardiso";
-//    auto start = high_resolution_clock::now();
-//    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-//        "../benchmarks/synthetic_400.inp", "synthetic_400", pdd_mode,
-//        solver_name, debug);
-//    //    REQUIRE(sim->run_simulation());
-//    sim->run_simulation(1e-8, 100);
-//    auto stop = high_resolution_clock::now();
-//    auto duration = duration_cast<milliseconds>(stop - start);
-//
-//    std::cout << duration.count() << std::endl;
-//    REQUIRE(sim->sim_residual_norm() < tolerance);
-//  }
+  //  SECTION("DD SIM TEST CASE 9: Large Synthetic Network") {
+  //    bool pdd_mode = false;
+  //    bool debug = true;
+  //    std::string solver_name = "mkl_pardiso";
+  //    auto start = high_resolution_clock::now();
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(400, pdd_mode,
+  //                                                           solver_name,
+  //                                                           debug);
+  //    //    REQUIRE(sim->run_simulation());
+  //    sim->run_simulation(1e-8, 30);
+  //    auto stop = high_resolution_clock::now();
+  //    auto duration = duration_cast<milliseconds>(stop - start);
+  //
+  //    std::cout << duration.count() << std::endl;
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
+  //  SECTION("DD SIM TEST CASE 9: Saved Synthetic Network") {
+  //    bool pdd_mode = false;
+  //    bool debug = false;
+  //    std::string solver_name = "mkl_pardiso";
+  //    auto start = high_resolution_clock::now();
+  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+  //        "../benchmarks/synthetic_400.inp", "synthetic_400", pdd_mode,
+  //        solver_name, debug);
+  //    //    REQUIRE(sim->run_simulation());
+  //    sim->run_simulation(1e-8, 100);
+  //    auto stop = high_resolution_clock::now();
+  //    auto duration = duration_cast<milliseconds>(stop - start);
+  //
+  //    std::cout << duration.count() << std::endl;
+  //    REQUIRE(sim->sim_residual_norm() < tolerance);
+  //  }
 
   SECTION("PDD SIM TEST CASE 1: Large real case .INP FILE INPUT") {
     bool pdd_mode = true;

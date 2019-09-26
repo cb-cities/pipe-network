@@ -54,8 +54,8 @@ void pipenetwork::Input::parse_sections() {
 //}
 
 std::pair<std::vector<std::string>, std::vector<double>>
-    pipenetwork::Input::parse_node_line(const std::string& section_name,
-                                        const std::string& mode) const {
+pipenetwork::Input::parse_node_line(const std::string &section_name,
+                                    const std::string &mode) const {
   // check if the section name is right.
 
   if (!sections_.count(section_name)) {
@@ -68,9 +68,10 @@ std::pair<std::vector<std::string>, std::vector<double>>
   std::vector<std::string> node_ids;
   std::vector<double> node_info;
   // get elevation for junctions
-  for (auto const& line : sections_.at(section_name)) {
+  for (auto const &line : sections_.at(section_name)) {
     // skip keys entries
-    if (line[0] == '[' || line[0] == ';') continue;
+    if (line[0] == '[' || line[0] == ';')
+      continue;
 
     std::istringstream iss(line);
     // parsing lines for demand
@@ -99,7 +100,7 @@ void pipenetwork::Input::construct_node_info() {
   auto junction_elevations = junction_info.second;
   // get demand for junctions
   auto junction_demand_info =
-      parse_node_line("[JUNCTIONS]", "demand");  // parse junction
+      parse_node_line("[JUNCTIONS]", "demand"); // parse junction
   auto junction_demands = junction_demand_info.second;
 
   // get head for reservoirs
@@ -129,9 +130,10 @@ void pipenetwork::Input::construct_pipe_info() {
   std::string pid, nid1, nid2, status;
 
   // get pipe information
-  for (auto const& line : sections_.at("[PIPES]")) {
+  for (auto const &line : sections_.at("[PIPES]")) {
     // skip keys entries
-    if (line[0] == '[' || line[0] == ';') continue;
+    if (line[0] == '[' || line[0] == ';')
+      continue;
 
     std::istringstream iss(line);
     // parsing lines for pipe
@@ -141,8 +143,8 @@ void pipenetwork::Input::construct_pipe_info() {
       pipenetwork::Pipe_prop pipe_prop;
       std::transform(status.begin(), status.end(), status.begin(), ::toupper);
       pipe_prop.id = pid;
-      pipe_prop.length = to_si(length,"length");
-      pipe_prop.diameter = to_si(diameter,"diameter");
+      pipe_prop.length = to_si(length, "length");
+      pipe_prop.diameter = to_si(diameter, "diameter");
       pipe_prop.roughness = roughness;
       pipe_prop.node1_id = nid1;
       pipe_prop.node2_id = nid2;
@@ -161,10 +163,11 @@ void pipenetwork::Input::construct_pump_info() {
   // get pump information
   std::string pid, nid1, nid2, type, curve_name;
   double speed{1.0}, power{50};
-  for (auto const& line : sections_.at("[PUMPS]")) {
+  for (auto const &line : sections_.at("[PUMPS]")) {
     Pump_prop pump_prop;
     // skip keys entries
-    if (line[0] == '[' || line[0] == ';') continue;
+    if (line[0] == '[' || line[0] == ';')
+      continue;
 
     std::istringstream iss(line);
 
@@ -195,10 +198,11 @@ void pipenetwork::Input::construct_valve_info() {
   // get valve information
   std::string pid, nid1, nid2, type;
   double diameter, setting, minorloss{0};
-  for (auto const& line : sections_.at("[VALVES]")) {
+  for (auto const &line : sections_.at("[VALVES]")) {
     Valve_prop valve_prop;
     // skip keys entries
-    if (line[0] == '[' || line[0] == ';') continue;
+    if (line[0] == '[' || line[0] == ';')
+      continue;
     std::istringstream iss(line);
     if (iss >> pid >> nid1 >> nid2 >> diameter >> type >> setting) {
       std::transform(type.begin(), type.end(), type.begin(), ::toupper);
@@ -235,9 +239,10 @@ void pipenetwork::Input::construct_curve_info() {
   std::vector<std::pair<double, double>> curve_point;
   std::vector<Pump_curve_prop> head_pump_props;
 
-  for (auto const& line : sections_.at("[CURVES]")) {
+  for (auto const &line : sections_.at("[CURVES]")) {
     // skip keys entries
-    if (line[0] == '[' || line[0] == ';') continue;
+    if (line[0] == '[' || line[0] == ';')
+      continue;
     std::istringstream iss(line);
 
     if (iss >> curve_id >> x >> y) {
@@ -260,7 +265,7 @@ void pipenetwork::Input::construct_curve_info() {
 }
 
 std::vector<std::vector<std::string>>
-    pipenetwork::Input::construct_synthesis_junctions(int n) {
+pipenetwork::Input::construct_synthesis_junctions(int n) {
   // buffer vector
   std::vector<std::vector<std::string>> junction_names(n);
   std::vector<std::string> buffer;
@@ -288,7 +293,7 @@ std::vector<std::vector<std::string>>
 }
 
 void pipenetwork::Input::construct_synthesis_pipes(
-    const std::vector<std::vector<std::string>>& junction_names) {
+    const std::vector<std::vector<std::string>> &junction_names) {
   int n = junction_names.size();
   for (int i = 0; i < n; ++i) {
     std::vector<std::string> junction_name_col = junction_names.at(i);
@@ -302,7 +307,7 @@ void pipenetwork::Input::construct_synthesis_pipes(
 }
 
 void pipenetwork::Input::create_vertical_pipes(
-    const std::vector<std::string>& junction_names, int col_num, bool rand) {
+    const std::vector<std::string> &junction_names, int col_num, bool rand) {
   int n = junction_names.size();
   pipenetwork::Pipe_prop pipe_prop;
   std::string upper_junc_id, lower_junc_id, pipe_name;
@@ -328,8 +333,8 @@ void pipenetwork::Input::create_vertical_pipes(
 }
 
 void pipenetwork::Input::create_horizontal_pipes(
-    const std::vector<std::string>& l_junc,
-    const std::vector<std::string>& r_junc, int col_num, bool rand) {
+    const std::vector<std::string> &l_junc,
+    const std::vector<std::string> &r_junc, int col_num, bool rand) {
   int n = l_junc.size();
   pipenetwork::Pipe_prop pipe_prop;
   std::string left_junc_id, right_junc_id, pipe_name;
@@ -382,17 +387,17 @@ double pipenetwork::rand_number(double l, double h) {
                      (static_cast<float>(RAND_MAX / (h - l)));
   return r;
 }
-double pipenetwork::to_si(double val, const std::string& mode) {
+double pipenetwork::to_si(double val, const std::string &mode) {
   if (mode == "elevation" || mode == "length" || mode == "head") {
-    return val * 0.3048;  // ft to meter
+    return val * 0.3048; // ft to meter
   } else if (mode == "demand" || mode == "flow") {
-    return val * 6.30901964e-05;  // GPM to si
+    return val * 6.30901964e-05; // GPM to si
   } else if (mode == "diameter") {
-    return val * 0.0254;  // inch to meter
+    return val * 0.0254; // inch to meter
   } else if (mode == "power") {
-    return val * 745.699872;  // hp to W (Nm/s)
+    return val * 745.699872; // hp to W (Nm/s)
   } else if (mode == "pressure") {
-    return val * (0.3048 / 0.4333);  // psi * (m/ft / psi/ft)
+    return val * (0.3048 / 0.4333); // psi * (m/ft / psi/ft)
   } else {
     throw std::runtime_error("Mode not recognized!");
   }

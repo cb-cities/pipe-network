@@ -29,7 +29,7 @@ class Pipe : public Link {
   //! Constructor with two end nodes, length, diameter roughness and pipe status
   //! \param[in] pipe_prop struct with properties for the pipe
   Pipe(const Pipe_prop& pipe_prop)
-      : Link(pipe_prop.id, pipe_prop.node1, pipe_prop.node2,pipe_prop.status) {
+      : Link(pipe_prop.id, pipe_prop.node1, pipe_prop.node2, pipe_prop.status) {
     pipe_info_["type"] = PIPE;
     pipe_info_["length"] = pipe_prop.length;
     pipe_info_["diameter"] = pipe_prop.diameter;

@@ -50,19 +50,19 @@ TEST_CASE("Input is checked", "[IO]") {
     REQUIRE(pump_props[1].power == 37284.9936);
     auto junction_props = IO->junction_properties();
     auto reservoir_props = IO->reservoir_properties();
-    auto pipe_pros = IO->pipe_properties ();
-//    for (int i = 0; i < pipe_pros.size(); ++i) {
-//      std::cout << pipe_pros[i].id << std::endl;
-//      std::cout << pipe_pros[i].diameter << std::endl;
-//      std::cout << pipe_pros[i].roughness << std::endl;
-//    }
-//    for (int i = 0; i < reservoir_props.size(); ++i) {
-//      std::cout << reservoir_props[i].id << std::endl;
-//      std::cout << reservoir_props[i].head << std::endl;
-//    }
+    auto pipe_pros = IO->pipe_properties();
+    //    for (int i = 0; i < pipe_pros.size(); ++i) {
+    //      std::cout << pipe_pros[i].id << std::endl;
+    //      std::cout << pipe_pros[i].diameter << std::endl;
+    //      std::cout << pipe_pros[i].roughness << std::endl;
+    //    }
+    //    for (int i = 0; i < reservoir_props.size(); ++i) {
+    //      std::cout << reservoir_props[i].id << std::endl;
+    //      std::cout << reservoir_props[i].head << std::endl;
+    //    }
 
     mesh->create_mesh_from_inp(IO);
-//    mesh->print_summary();
+    //    mesh->print_summary();
   }
 
   SECTION("Check Synthetic Net") {

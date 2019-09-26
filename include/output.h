@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <set>
@@ -9,7 +10,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <iomanip>
 
 #include "mesh.h"
 #ifndef PIPE_NETWORK_OUTPUT_H

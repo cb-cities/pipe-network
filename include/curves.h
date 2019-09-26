@@ -84,10 +84,10 @@ class Curves {
   }
 
   //! get pump string name to int code map
-  int pump_str_int(std::string k) const { return pump_str_int_.at (k); }
+  int pump_str_int(std::string k) const { return pump_str_int_.at(k); }
 
   //! get pump int code to string name map
-  std::string pump_int_str(int k) const { return pump_int_str_.at (k); }
+  std::string pump_int_str(int k) const { return pump_int_str_.at(k); }
 
  private:
   //! map that stores all the polynomial approximation coefficients

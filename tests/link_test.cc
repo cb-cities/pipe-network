@@ -54,6 +54,6 @@ TEST_CASE("Link is checked", "[Link]") {
     REQUIRE(pipe->link_info()["roughness"] ==
             Approx(pipe1.roughness).epsilon(tolerance));
     // check status
-    REQUIRE(pipe->link_status () == pipenetwork::CLOSED);
+    REQUIRE(pipe->link_status() == pipenetwork::CLOSED);
   }
 }

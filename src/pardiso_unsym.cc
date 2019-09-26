@@ -2,23 +2,23 @@
 #include "factory.h"
 
 using namespace std;
-static Register<pipenetwork::Solver, pipenetwork::Pardiso_unsym> registry(
-    "pardiso");
+static Register<pipenetwork::Solver, pipenetwork::Pardiso_unsym>
+    registry("pardiso");
 
 /* PARDISO prototype. */
-extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
-extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*,
-                        int*, int*, int*, int*, int*, double*, double*, int*,
-                        double*);
-extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
-extern "C" void pardiso_chkvec(int*, int*, double*, int*);
-extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*,
-                                   double*, int*);
+extern "C" void pardisoinit(void *, int *, int *, int *, double *, int *);
+extern "C" void pardiso(void *, int *, int *, int *, int *, int *, double *,
+                        int *, int *, int *, int *, int *, int *, double *,
+                        double *, int *, double *);
+extern "C" void pardiso_chkmatrix(int *, int *, double *, int *, int *, int *);
+extern "C" void pardiso_chkvec(int *, int *, double *, int *);
+extern "C" void pardiso_printstats(int *, int *, double *, int *, int *, int *,
+                                   double *, int *);
 
 pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
-  char* var;
+  char *var;
 
   mtype_ = 11; /* Real unsymmetric matrix */
   /* RHS and solution vectors. */
@@ -33,9 +33,12 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   pardisoinit(pt_, &mtype_, &solver_, iparm_, dparm_, &error_);
 
   if (error_ != 0) {
-    if (error_ == -10) printf("No license file found \n");
-    if (error_ == -11) printf("License is expired \n");
-    if (error_ == -12) printf("Wrong username or hostname \n");
+    if (error_ == -10)
+      printf("No license file found \n");
+    if (error_ == -11)
+      printf("License is expired \n");
+    if (error_ == -12)
+      printf("Wrong username or hostname \n");
     exit(1);
   } else
     printf("[PARDISO]: License check was successful ... \n");
@@ -85,7 +88,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
 Eigen::VectorXd pipenetwork::Pardiso_unsym::solve() {
   // configure matrix
   int n = vec_b_->size();
-  double* vec_b = vec_b_->data();
+  double *vec_b = vec_b_->data();
   double x_diff[n];
   int nnz = ia_[n];
 

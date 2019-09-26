@@ -27,7 +27,8 @@ class Valve : public Link {
   //! the valve
   //! \param[in] pipe_prop struct with properties for the pipe
   explicit Valve(const Valve_prop& valve_prop)
-      : Link(valve_prop.id, valve_prop.node1, valve_prop.node2,valve_prop.valve_status) {
+      : Link(valve_prop.id, valve_prop.node1, valve_prop.node2,
+             valve_prop.valve_status) {
     valve_info_["type"] = valve_prop.valve_type;
     valve_info_["setting"] = valve_prop.setting;
     valve_info_["minor_loss"] = valve_prop.minor_loss;
