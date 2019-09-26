@@ -25,8 +25,9 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   if (var != NULL)
     sscanf(var, "%d", &num_procs_);
   else {
-    num_procs_ = omp_get_max_threads();
+    num_procs_ = 2;
   }
+
 
   /* -------------------------------------------------------------------- */
   /* .. Setup Pardiso control parameters. */
