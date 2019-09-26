@@ -10,6 +10,7 @@ jobs:
       - run:
           name: GCC-8 build
           command: |
+	    source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
@@ -20,6 +21,7 @@ jobs:
       - run:
           name: Clang-6.0 build
           command: |
+	    source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
@@ -41,6 +43,7 @@ jobs:
       - run:
           name: codecov.io
           command: |
+	    source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
