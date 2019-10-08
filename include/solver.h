@@ -27,10 +27,15 @@ class Solver {
     mat_a_ = mat_a;
     vec_x_ = vec_x;
     vec_b_ = vec_b;
-
+    // pointers for sparse matrix info
     ia_ = mat_a_->outerIndexPtr();
     ja_ = mat_a_->innerIndexPtr();
     a_ = mat_a_->valuePtr();
+    // matrix a basic information
+    rowsA_ = mat_a_->rows();
+    colsA_ = mat_a_->cols();
+    nnzA_ = mat_a_->nonZeros();
+
   }
   //! Restrain vector
   void restrains(const Eigen::VectorXd& restraints) {
@@ -69,6 +74,13 @@ class Solver {
   int* ia_{nullptr};
   //! Column index for csr format matrix
   int* ja_{nullptr};
+
+  int rowsA_ = 0; /* number of rows of A */
+  int colsA_ = 0; /* number of columns of A */
+  int nnzA_  = 0; /* number of nonzeros of A */
+  int baseA_ = 0;
+
+
   //! Matrix values for csr format matrix
   double* a_{nullptr};
 };

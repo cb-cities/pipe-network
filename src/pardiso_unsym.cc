@@ -45,8 +45,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   if (var != NULL)
     sscanf(var, "%d", &num_procs_);
   else {
-    printf("Set environment OMP_NUM_THREADS to 1");
-    exit(1);
+    num_procs_ = omp_get_max_threads();
   }
 
   /* -------------------------------------------------------------------- */
@@ -56,7 +55,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
     iparm_[i] = 0;
   }
   iparm_[0] = 1; /* No solver default */
-  iparm_[1] = 0; /* Fill-in reordering from METIS */
+  iparm_[1] = 1; /* Fill-in reordering from METIS */
   /* Numbers of processors, value of OMP_NUM_THREADS */
   iparm_[2] = num_procs_;
   iparm_[3] = 0;   /* No iterative-direct algorithm */
@@ -65,7 +64,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   iparm_[6] = 0;   /* Not in use */
   iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
   iparm_[8] = 0;   /* Not in use */
-  iparm_[9] = 8;   /* Perturb the pivot elements with 1E-8 */
+  iparm_[9] = 13;   /* Perturb the pivot elements with 1E-13 */
   iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
   iparm_[11] = 0;  /* Not in use */
   iparm_[12] = 0;  /* Not in use */
