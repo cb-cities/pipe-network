@@ -100,11 +100,12 @@ SET(pipe_network_src
   src/mesh.cc
 #  src/mkl_unsym.cc
   src/pardiso_unsym.cc
+        src/cuda_unsym.cc
   src/output.cc
   )
 
 
-add_library(lpipe_network SHARED ${pipe_network_src} src/cuda_unsym.cpp include/cuda_unsym.h)
+add_library(lpipe_network SHARED ${pipe_network_src}  include/cuda_unsym.h)
 target_link_libraries(lpipe_network libpardiso600-GNU720-X86-64.so)
 
 add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
