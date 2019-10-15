@@ -31,27 +31,44 @@ option(PIPE_NETWORK_TEST_BUILD_TESTING "enable testing for cityscape" ON)
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+
+
+# pipe_network executable
+SET(pipe_network_src
+        src/curves.cc
+        src/hydralic_sim.cc
+        src/input.cc
+        src/matrix_assembler.cc
+        src/mesh.cc
+        #  src/mkl_unsym.cc
+        src/pardiso_unsym.cc
+        src/cuda_unsym.cc
+        src/output.cc
+        )
+
+# create library
+add_library(lpipe_network SHARED ${pipe_network_src})
+
+# Find dependencies for the library
+
+# Eigen
+find_package(Eigen3 REQUIRED)
+
 # Boost Archive
 #find_package(Boost REQUIRED COMPONENTS system serialization)
 #include_directories(${BOOST_INCLUDE_DIRS})
 #link_libraries(${Boost_SERIALIZATION_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
-# Eigen
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 # Cuda
-find_package(CUDA REQUIRED)
-if (CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-    link_libraries(${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY}  )
-endif ()
-
+#find_package(CUDA REQUIRED)
+#if (CUDA_FOUND)
+#  SET(CUDA_LIB_USED "${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY} ")
+#  SET(NVIDIA_HELPERS "/home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc")
+#endif ()
 
 # Pthreads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package (Threads)
-link_libraries (${CMAKE_THREAD_LIBS_INIT})
 
 # OpenMP
 find_package(OpenMP)
@@ -75,41 +92,38 @@ endif()
 
 # BLAS Math Libraries
 find_package(BLAS REQUIRED)
-link_libraries(${BLAS_LIBRARIES})
-  
+
+# LAPACK
 find_package(LAPACK REQUIRED)
-link_libraries(${LAPACK_LIBRARIES})
 
-# Include directories
-include_directories(
-  ${pipe_network_SOURCE_DIR}/include/
-  ${pipe_network_SOURCE_DIR}/external/
-        /home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc
+# PARDISO
+SET(PARDISO6 "libpardiso600-GNU720-X86-64.so")
 
-
-)
-
-link_directories(${pipe_network_SOURCE_DIR}/external/)
-
-# pipe_network executable
-SET(pipe_network_src
-  src/curves.cc
-  src/hydralic_sim.cc
-  src/input.cc
-  src/matrix_assembler.cc
-  src/mesh.cc
-#  src/mkl_unsym.cc
-  src/pardiso_unsym.cc
-        src/cuda_unsym.cc
-  src/output.cc
-  )
+target_include_directories(lpipe_network
+        PRIVATE
+        ${pipe_network_SOURCE_DIR}/include/
+        ${pipe_network_SOURCE_DIR}/external/
+        ${EIGEN3_INCLUDE_DIR}
+        ${NVIDIA_HELPERS}
+        ${CUDA_INCLUDE_DIRS}
+        )
 
 
-add_library(lpipe_network SHARED ${pipe_network_src}  include/cuda_unsym.h)
-target_link_libraries(lpipe_network libpardiso600-GNU720-X86-64.so)
+target_link_libraries(lpipe_network
+        PRIVATE
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${BLAS_LIBRARIES}
+        ${CUDA_LIB_USED}
+        ${LAPACK_LIBRARIES}
+        ${PARDISO6}
+        )
+
+
 
 add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
-target_link_libraries(pipe_network lpipe_network)
+target_link_libraries(pipe_network
+        PUBLIC
+        lpipe_network)
 
 
 if(PIPE_NETWORK_TEST_BUILD_TESTING)
