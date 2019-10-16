@@ -99,7 +99,7 @@ class Cuda_unsym : public Solver {
   double* d_r_ = NULL;  /* r = b - A*x */
 
   double tol_ = 1.e-12;
-  const int reorder_ = 1; /* use reordering */
+  const int reorder_ = 3; /* use metis reordering */
   int singularity_ = 0;   /* -1 if A is invertible under tol. */
 
   /* the constants are used in residual evaluation, r = b - A*x */

@@ -158,14 +158,14 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
     bool debug = false;
     std::string solver_name = "cuda";
     auto start = high_resolution_clock::now();
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(20, pdd_mode,
+    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(300, pdd_mode,
                                                            solver_name, debug);
     //    REQUIRE(sim->run_simulation());
     sim->run_simulation(1e-8, 30);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
-    //      std::cout << duration.count() << std::endl;
+    std::cout << duration.count() << std::endl;
     REQUIRE(sim->sim_residual_norm() < tolerance);
   }
   //  SECTION("DD SIM TEST CASE 9: Saved Synthetic Network") {

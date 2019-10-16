@@ -58,13 +58,13 @@ find_package(Eigen3 REQUIRED)
 #find_package(Boost REQUIRED COMPONENTS system serialization)
 #include_directories(${BOOST_INCLUDE_DIRS})
 #link_libraries(${Boost_SERIALIZATION_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-
+#
 # Cuda
-#find_package(CUDA REQUIRED)
-#if (CUDA_FOUND)
-#  SET(CUDA_LIB_USED "${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY} ")
-#  SET(NVIDIA_HELPERS "/home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc")
-#endif ()
+find_package(CUDA REQUIRED)
+if (CUDA_FOUND)
+  SET(CUDA_LIB_USED ${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY})
+  SET(NVIDIA_HELPERS "/home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc")
+endif ()
 
 # Pthreads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -97,10 +97,10 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 # PARDISO
-SET(PARDISO6 "libpardiso600-GNU720-X86-64.so")
+SET(PARDISO6 "${pipe_network_SOURCE_DIR}/external/libpardiso600-GNU720-X86-64.so")
 
 target_include_directories(lpipe_network
-        PRIVATE
+        PUBLIC
         ${pipe_network_SOURCE_DIR}/include/
         ${pipe_network_SOURCE_DIR}/external/
         ${EIGEN3_INCLUDE_DIR}
