@@ -1,65 +1,54 @@
 #include "catch.hpp"
 #include <iostream>
 
-#include "node.h"
+#include "junction.h"
+#include "reservoir.h"
 
 // Check node class
 TEST_CASE("Node is checked", "[Node]") {
   // Tolerance
   const double tolerance = 1.e-6;
 
-  // Index
-  unsigned id = 123;
-  // Coordinates
-  Eigen::Vector3d coords{11.2, 22.3, 33.4};
+  SECTION("Check junction") {
+    pipenetwork::Junction_prop junction_1;
+    junction_1.id = "123";
+    junction_1.elevation = 10;
+    junction_1.demand = 20;
+    junction_1.leak_diameter = 5;
 
-  // Create a node
-  auto node = std::make_unique<pipenetwork::Node>(id, coords);
+    auto junction_node = std::make_shared<pipenetwork::Junction>(junction_1);
 
-  // Check node id
-  REQUIRE(node->id() == id);
+    // check elevation
+    REQUIRE(junction_node->id() == junction_1.id);
 
-  // Check nodal coordinates
-  for (int i = 0; i < coords.size(); ++i)
-    REQUIRE(node->coordinates()(i) == Approx(coords(i)).epsilon(tolerance));
+    // check elevation
+    REQUIRE(junction_node->nodal_info()["elevation"] == junction_1.elevation);
+    // check type
+    REQUIRE(junction_node->nodal_info()["type"] == pipenetwork::JUNCTION);
+    // check demand
+    REQUIRE(junction_node->nodal_info()["demand"] == junction_1.demand);
+    // check leak hole area
+    REQUIRE(junction_node->nodal_info()["leak_area"] ==
+            Approx(19.634954084936).epsilon(tolerance));
 
-  // Check status of discharge before it is initialized
-  REQUIRE(node->isdischarge() == false);
-
-  // Check hydraulic head at the node
-  SECTION("check hydraulic head at the node") {
-    // check PDD polynomial approximation
-    double elevation = 110.1;
-    node->elevation(elevation);
-    auto pdd_coeff1 = node->get_pdd_poly_coef_1();
-    auto pdd_coeff2 = node->get_pdd_poly_coef_2();
-
-    REQUIRE(pdd_coeff1[0] == Approx(-18.75).epsilon(tolerance));
-    REQUIRE(pdd_coeff1[1] == Approx(6.25).epsilon(tolerance));
-    REQUIRE(pdd_coeff1[2] == Approx(1.00009e-12).epsilon(tolerance));
-    REQUIRE(pdd_coeff1[3] == Approx(-3.88578e-17).epsilon(tolerance));
-
-    REQUIRE(pdd_coeff2[0] == Approx(-0.624992).epsilon(tolerance));
-    REQUIRE(pdd_coeff2[1] == Approx(37.2492).epsilon(tolerance));
-    REQUIRE(pdd_coeff2[2] == Approx(-739.978).epsilon(tolerance));
-    REQUIRE(pdd_coeff2[3] == Approx(4900.81).epsilon(tolerance));
-
-    // Check nodal elevation
-    REQUIRE(node->elevation() == Approx(elevation).epsilon(tolerance));
-    // Check if hydraulic head is assigned at the node
-    //    REQUIRE(node->ishead() == true);
+    // set some simulation result
+    junction_node->update_sim_head(99);
+    REQUIRE(junction_node->sim_head() == Approx(99).epsilon(tolerance));
   }
 
-  // Check discharge at the node
-  SECTION("Check discharge at the node") {
-    double discharge = -23.4;
-    node->demand(discharge);
+  SECTION("Check reservoir") {
+    // Index
+    pipenetwork::Reservoir_prop res_1;
+    res_1.id = "321";
+    res_1.head = 10;
 
-    // Check discharge at the node
-    REQUIRE(node->demand() == Approx(discharge).epsilon(tolerance));
-    // Check if discharge is assigned at the node
-    REQUIRE(node->isdischarge() == true);
+    auto reservoir_node = std::make_shared<pipenetwork::Reservoir>(res_1);
+
+    // check elevation
+    REQUIRE(reservoir_node->id() == res_1.id);
+    // check elevation
+    REQUIRE(reservoir_node->nodal_info()["head"] == res_1.head);
+    // check type
+    REQUIRE(reservoir_node->nodal_info()["type"] == pipenetwork::RESERVOIR);
   }
-
-  // TODO: test return nconnections
 }

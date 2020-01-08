@@ -10,6 +10,7 @@ jobs:
       - run:
           name: GCC-8 build
           command: |
+            source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
@@ -20,6 +21,7 @@ jobs:
       - run:
           name: Clang-6.0 build
           command: |
+            source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
@@ -32,10 +34,16 @@ jobs:
           command: |
             cppcheck --version
             cppcheck --enable=warning --inconclusive --force --language=c++ --std=c++11 src/*.cc include/*.h include/*.tcc --error-exitcode=1
+      # clang-format
+      - run:
+          name: clang-format
+          command: |
+            python3 ./clang-tools/run-clang-format.py -r include/* src/* tests/*
       # codecoverage
       - run:
           name: codecov.io
           command: |
+            source /opt/intel/compilers_and_libraries/linux/bin/compilervars.sh -arch intel64 -platform linux
             mkdir -p build
             [ "$(ls -A build)" ] && rm -rf build/*
             cd build
