@@ -137,7 +137,6 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
     tests/hydraulic_sim_test.cc
     tests/input_test.cc
     tests/curve_test.cc
-
     )
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)
