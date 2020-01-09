@@ -37,7 +37,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   if (var != NULL)
     sscanf(var, "%d", &num_procs_);
   else {
-    num_procs_ = omp_get_max_threads();
+    num_procs_ = 2;
   }
 
   /* -------------------------------------------------------------------- */
