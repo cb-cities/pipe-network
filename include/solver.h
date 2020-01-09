@@ -35,7 +35,6 @@ class Solver {
     rowsA_ = mat_a_->rows();
     colsA_ = mat_a_->cols();
     nnzA_ = mat_a_->nonZeros();
-
   }
   //! Restrain vector
   void restrains(const Eigen::VectorXd& restraints) {
@@ -77,9 +76,8 @@ class Solver {
 
   int rowsA_ = 0; /* number of rows of A */
   int colsA_ = 0; /* number of columns of A */
-  int nnzA_  = 0; /* number of nonzeros of A */
+  int nnzA_ = 0;  /* number of nonzeros of A */
   int baseA_ = 0;
-
 
   //! Matrix values for csr format matrix
   double* a_{nullptr};

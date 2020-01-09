@@ -68,7 +68,8 @@ class Hydralic_sim {
   //! \param[in] line_search whether to use line search
   //! \param[in] output_path the path for output
   bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000,
-                      std::string output_path = "../results/res_",bool line_search = true);
+                      std::string output_path = "../results/res_",
+                      bool line_search = true);
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
 
