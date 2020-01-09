@@ -56,8 +56,6 @@ class Cuda_unsym : public Solver {
   cudaStream_t stream_ = NULL;
   cusparseMatDescr_t descrA_ = NULL;
 
-  int baseA_ = 0; /* base index in CSR format */
-
   /* CSR(A) from I/O */
   int* h_csrRowPtrA_ = NULL;
   int* h_csrColIndA_ = NULL;
