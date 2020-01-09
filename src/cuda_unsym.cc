@@ -113,7 +113,7 @@ void pipenetwork::Cuda_unsym::create_mtx_B() {
     free(buffer_cpu_);
   }
   buffer_cpu_ = (void*)malloc(sizeof(char) * size_perm_);
-  assert(NULL != buffer_cpu);
+  assert(NULL != buffer_cpu_);
 
   /* h_mapBfromA = Identity */
   for (int j = 0; j < nnzA_; j++) {

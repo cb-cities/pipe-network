@@ -7,7 +7,7 @@
 #include <exception>
 #include <iostream>
 
-//#include "mkl_pardiso.h"
+#include "mkl_pardiso.h"
 #include "solver.h"
 
 namespace pipenetwork {

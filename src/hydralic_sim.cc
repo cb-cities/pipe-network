@@ -3,8 +3,8 @@
 
 bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                                                int max_nr_steps,
-                                               bool line_search,
-                                               std::string output_path) {
+                                               std::string output_path,
+                                               bool line_search) {
 
   residuals_ = assembler_->residual_vector();
   variables_ = assembler_->variable_vector();
@@ -62,7 +62,6 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     }
     //    std::cout << "start solving" << std::endl;
     auto x_diff = solver_->solve();
-
     //    std::cout << "start line search" << std::endl;
     if (line_search) {
       line_search_func(x_diff);

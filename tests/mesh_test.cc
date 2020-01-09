@@ -16,17 +16,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   // Creat a mesh
   auto mesh = std::make_unique<pipenetwork::Mesh>(meshid);
 
-  // Junctions
-  pipenetwork::Reservoir_prop res_1;
-  res_1.id = "321";
-  res_1.head = 10;
-
-  pipenetwork::Junction_prop junction_1;
-  junction_1.id = "123";
-  junction_1.elevation = 10;
-  junction_1.demand = 20;
-  junction_1.leak_diameter = 5;
-
+  // create junctions
   std::vector<std::string> junction_ids{"1", "2", "3", "4", "5"};
   std::vector<double> elevations{5, 4, 3, 2, 1};
   std::vector<double> demands{1, 2, 3, 4, 5};
@@ -84,7 +74,21 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   }
 
   mesh->create_pipes(pipe_props);
-  //  mesh->print_summary();
+
+  REQUIRE(mesh->njunctions() == 5);
+  REQUIRE(mesh->nsources() == 2);
+  REQUIRE(mesh->npipes() == 3);
+  REQUIRE(mesh->nnodes() == 7);
+
+  auto node_map = mesh->nodes();
+  auto links = mesh->links();
+  auto junction_node = node_map.at("2");
+  auto res_node = node_map.at("6");
+  auto pipe = links[0];
+
+  REQUIRE(junction_node->nodal_info()["elevation"] == 4);
+  REQUIRE(res_node->nodal_info()["head"] == 99);
+  REQUIRE(pipe->link_info()["length"] == 100);
 
   //
   ////    mesh->print_summary ();
