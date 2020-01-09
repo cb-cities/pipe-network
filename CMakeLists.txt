@@ -29,7 +29,7 @@ endif()
 option(PIPE_NETWORK_TEST_BUILD_TESTING "enable testing for cityscape" ON)
 
 SET(USE_PARDISO  OFF)
-SET(USE_CUDA  ON)
+SET(USE_CUDA  OFF)
 
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -146,8 +146,7 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/input_test.cc
           tests/curve_test.cc
           tests/hydraulic_sim_test.cc
-          tests/sim_pressure_test.cc
-
+#          tests/sim_pressure_test.cc
           )
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)

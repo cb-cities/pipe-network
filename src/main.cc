@@ -24,5 +24,5 @@ int main(int argc, char** argv) {
 
   auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
       filepath, mesh_name, pdd_mode, solver_name, debug);
-  sim->run_simulation(1e-8, 30,save_path);
+  sim->run_simulation(1e-8, 30, save_path);
 }

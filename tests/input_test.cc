@@ -72,8 +72,8 @@ TEST_CASE("Input is checked", "[IO]") {
     REQUIRE(reservoir_props[0].id == "41");
   }
   SECTION("Check Parsed Pipe info") {
-    auto IO = std::make_shared<pipenetwork::Input>(
-        "../test_files/test_net.inp");
+    auto IO =
+        std::make_shared<pipenetwork::Input>("../test_files/test_net.inp");
     // check end nodes
     auto pipe_props = IO->pipe_properties();
     REQUIRE(pipe_props.size() == 8);
@@ -82,8 +82,7 @@ TEST_CASE("Input is checked", "[IO]") {
     // check roughness
     REQUIRE(pipe_props[0].roughness == 100);
     // check diameter
-    REQUIRE(pipe_props[1].diameter ==
-            Approx(0.254).epsilon(tolerance));
+    REQUIRE(pipe_props[1].diameter == Approx(0.254).epsilon(tolerance));
     // check diameter
     REQUIRE(pipe_props[0].status == pipenetwork::OPEN);
     // check length

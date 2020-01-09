@@ -112,14 +112,14 @@ TEST_CASE("Solver is checked", "[Solver]") {
 
     REQUIRE(linear_sys_res < tolerance);
   }
-//  SECTION("cuda solver") {
-//    std::string solver_name = "cuda";
-//    std::shared_ptr<pipenetwork::Solver> solve_ptr(
-//        Factory<pipenetwork::Solver>::instance()->create(solver_name));
-//    solve_ptr->assembled_matrices(jac, variables, residuals);
-//    auto x_diff = solve_ptr->solve();
-//
-//    auto linear_sys_res = ((*jac) * x_diff - (*residuals)).norm();
-//    REQUIRE(linear_sys_res < tolerance);
-//  }
+  //  SECTION("cuda solver") {
+  //    std::string solver_name = "cuda";
+  //    std::shared_ptr<pipenetwork::Solver> solve_ptr(
+  //        Factory<pipenetwork::Solver>::instance()->create(solver_name));
+  //    solve_ptr->assembled_matrices(jac, variables, residuals);
+  //    auto x_diff = solve_ptr->solve();
+  //
+  //    auto linear_sys_res = ((*jac) * x_diff - (*residuals)).norm();
+  //    REQUIRE(linear_sys_res < tolerance);
+  //  }
 }

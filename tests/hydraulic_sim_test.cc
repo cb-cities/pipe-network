@@ -141,5 +141,4 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
     //    std::cout << duration.count() << std::endl;
     REQUIRE(sim->sim_residual_norm() < tolerance);
   }
-
 }

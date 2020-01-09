@@ -6,8 +6,8 @@
 
 if(NOT MKL_FOUND)
     set(MKL_INCLUDE_PATH "/opt/intel/mkl/include")
-    set(MKL_LIBRARY_PATH "/opt/intel/mkl/lib/intel64")
-    set(INTEL_LIBRARY_PATH "/opt/intel/lib/intel64")
+    set(MKL_LIBRARY_PATH "/opt/intel/mkl/lib")
+    set(INTEL_LIBRARY_PATH "/opt/intel/lib")
 
     find_path(MKL_INCLUDE_DIR mkl.h HINTS ${MKL_INCLUDE_PATH} ENV CPATH)
     find_library(MKL_CORE mkl_core HINTS ${MKL_LIBRARY_PATH} ENV LD_LIBRARY_PATH)
