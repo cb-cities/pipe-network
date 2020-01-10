@@ -42,15 +42,7 @@ TEST_CASE("Check Curves", "[Curve]") {
             Approx(638.1311689716313).epsilon(tolerance));
     REQUIRE(head_curve_coefficients[2] == Approx(2).epsilon(tolerance));
   }
-  SECTION("Check polynomial approximation coefficients") {
-    auto poly = p_curve1.poly_coefficients;
-    //      REQUIRE(poly[0] == Approx(212550574933.2975).epsilon(tolerance));
-    //      REQUIRE(poly[1] ==
-    //              Approx( -11575.72313494231).epsilon(tolerance));
-    //      REQUIRE(poly[2] ==
-    //      Approx(-9.999999960041972e-12).epsilon(tolerance)); REQUIRE(poly[3]
-    //      == Approx(31.6992).epsilon(tolerance));
-  }
+
   SECTION("Check linear approximation coefficients") {
     auto line = p_curve1.line_param;
     REQUIRE(line[0] == Approx(4.4542219126875336e-18).epsilon(tolerance));

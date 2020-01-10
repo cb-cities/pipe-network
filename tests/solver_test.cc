@@ -1,20 +1,25 @@
 #include "catch.hpp"
 
-#include "hydralic_sim.h"
-#include <chrono>
+#include "curves.h"
+#include "factory.h"
+#include "input.h"
+#include "matrix_assembler.h"
+#include "solver.h"
 
-using namespace std::chrono;
-// Check matrix_assembler class
-TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
+// Check solver class
+TEST_CASE("Solver is checked", "[Solver]") {
 
   // Tolerance
   const double tolerance = 1.e-6;
 
   // Mesh index
-  std::string meshid = "111";
+  std::string meshid = "Matrix test mesh";
 
   // Creat a mesh
   auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+
+  // Create a curves info object
+  auto curves_info = std::make_shared<pipenetwork::Curves>();
 
   std::vector<std::string> junction_ids{"10", "11", "12"};
   std::vector<double> elevations{216.408, 216.408, 213.36};
@@ -36,6 +41,7 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
   std::vector<std::string> res_ids{"13"};
   std::vector<double> heads{3.048e+02};
+
   std::vector<pipenetwork::Reservoir_prop> res_props;
   for (int i = 0; i < res_ids.size(); ++i) {
     pipenetwork::Reservoir_prop res_prop;
@@ -44,7 +50,6 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
     res_props.emplace_back(res_prop);
   }
-  mesh->create_reservoirs(res_props);
 
   mesh->create_reservoirs(res_props);
 
@@ -77,68 +82,44 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
   mesh->create_pipes(pipe_props);
 
+  //  mesh->print_summary ();
+
   double init_discharge = 1e-3;
 
   mesh->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
                                      std::placeholders::_1,
                                      init_discharge));  // initialze discharge
-  auto curves_info = std::make_shared<pipenetwork::Curves>();
-  SECTION("DD SIM TEST CASE 1: MESH INPUT ") {
-    bool pdd_mode = false;
-    bool debug = false;
+  bool pdd_mode = false;
+  auto assembler = std::make_shared<pipenetwork::MatrixAssembler>(
+      mesh, curves_info, pdd_mode);
+
+  assembler->assemble_residual();
+  assembler->update_jacobian();
+
+  // A, x, b
+  auto jac = assembler->jac_matrix();
+  auto variables = assembler->variable_vector();
+  auto residuals = assembler->residual_vector();
+
+  SECTION("mkl pardiso solver") {
     std::string solver_name = "mkl_pardiso";
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        mesh, curves_info, pdd_mode, solver_name, debug);
-    REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-    // pressure test for stability
-    REQUIRE(!sim->run_simulation(1e-30, 1000));
-    REQUIRE(sim->sim_residual_norm() < tolerance);
+    std::shared_ptr<pipenetwork::Solver> solve_ptr(
+        Factory<pipenetwork::Solver>::instance()->create(solver_name));
+    solve_ptr->assembled_matrices(jac, variables, residuals);
+    auto x_diff = solve_ptr->solve();
+
+    auto linear_sys_res = ((*jac) * x_diff - (*residuals)).norm();
+
+    REQUIRE(linear_sys_res < tolerance);
   }
-
-  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
-    bool pdd_mode = false;
-    bool debug = false;
-    std::string mesh_name = "testnet";
-    std::string solver_name = "mkl_pardiso";
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../test_files/test_net.inp", mesh_name, pdd_mode, solver_name, debug);
-    auto start = high_resolution_clock::now();
-
-    sim->run_simulation(1e-8, 100);
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<seconds>(stop - start);
-
-    //    std::cout << duration.count() << std::endl;
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
-
-  SECTION("PDD SIM TEST CASE 1: MESH INPUT ") {
-    bool pdd_mode = true;
-    bool debug = false;
-    std::string solver_name = "mkl_pardiso";
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        mesh, curves_info, pdd_mode, solver_name, debug);
-    REQUIRE(sim->run_simulation());
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-    // pressure test for stability
-    REQUIRE(!sim->run_simulation(1e-30, 1000));
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
-
-  SECTION("PDD SIM TEST CASE 2: .INP FILE INPUT") {
-    bool pdd_mode = true;
-    bool debug = false;
-    std::string mesh_name = "testnet";
-    std::string solver_name = "mkl_pardiso";
-    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-        "../test_files/test_net.inp", mesh_name, pdd_mode, solver_name, debug);
-    auto start = high_resolution_clock::now();
-
-    sim->run_simulation(1e-8, 100);
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<seconds>(stop - start);
-    //    std::cout << duration.count() << std::endl;
-    REQUIRE(sim->sim_residual_norm() < tolerance);
-  }
+  //  SECTION("cuda solver") {
+  //    std::string solver_name = "cuda";
+  //    std::shared_ptr<pipenetwork::Solver> solve_ptr(
+  //        Factory<pipenetwork::Solver>::instance()->create(solver_name));
+  //    solve_ptr->assembled_matrices(jac, variables, residuals);
+  //    auto x_diff = solve_ptr->solve();
+  //
+  //    auto linear_sys_res = ((*jac) * x_diff - (*residuals)).norm();
+  //    REQUIRE(linear_sys_res < tolerance);
+  //  }
 }

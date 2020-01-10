@@ -8,10 +8,6 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
   char* var;
-
-  mtype_ = 11; /* Real unsymmetric matrix */
-  /* RHS and solution vectors. */
-  nrhs_ = 1; /* Number of right hand sides. */
   /* -------------------------------------------------------------------- */
   /* ..  Setup Pardiso control parameters and initialize the solvers      */
   /*     internal adress pointers. This is only necessary for the FIRST   */

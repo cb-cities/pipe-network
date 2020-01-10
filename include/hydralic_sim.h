@@ -7,10 +7,9 @@
 #include "factory.h"
 #include "input.h"
 #include "matrix_assembler.h"
-#include "mkl_unsym.h"
 #include "output.h"
-#include "pardiso_unsym.h"
 #include "settings.h"
+#include "solver.h"
 
 namespace pipenetwork {
 //! Hydraulic Simulation class
@@ -26,7 +25,6 @@ class Hydralic_sim {
   //! \param[in] debug debug mode. if the mode is on, the initial variables,
   //! residual, and jacobian matrix will be recorded, iteration process will be
   //! printed
-
   Hydralic_sim(const std::shared_ptr<Mesh>& mesh,
                std::shared_ptr<Curves>& curves_info, bool pdd_mode = false,
                const std::string& solver_name = "mkl_pardiso",
@@ -70,8 +68,8 @@ class Hydralic_sim {
   //! \param[in] line_search whether to use line search
   //! \param[in] output_path the path for output
   bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000,
-                      bool line_search = true,
-                      std::string output_path = "../results/res_");
+                      std::string output_path = "../results/res_",
+                      bool line_search = true);
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
 

@@ -10,19 +10,11 @@ extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
 extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*,
                         int*, int*, int*, int*, int*, double*, double*, int*,
                         double*);
-extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
-extern "C" void pardiso_chkvec(int*, int*, double*, int*);
-extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*,
-                                   double*, int*);
 
 pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
   char* var;
-
-  mtype_ = 11; /* Real unsymmetric matrix */
-  /* RHS and solution vectors. */
-  nrhs_ = 1; /* Number of right hand sides. */
   /* -------------------------------------------------------------------- */
   /* ..  Setup Pardiso control parameters and initialize the solvers      */
   /*     internal adress pointers. This is only necessary for the FIRST   */
@@ -45,8 +37,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   if (var != NULL)
     sscanf(var, "%d", &num_procs_);
   else {
-    printf("Set environment OMP_NUM_THREADS to 1");
-    exit(1);
+    num_procs_ = 2;
   }
 
   /* -------------------------------------------------------------------- */
@@ -56,7 +47,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
     iparm_[i] = 0;
   }
   iparm_[0] = 1; /* No solver default */
-  iparm_[1] = 0; /* Fill-in reordering from METIS */
+  iparm_[1] = 1; /* Fill-in reordering from METIS */
   /* Numbers of processors, value of OMP_NUM_THREADS */
   iparm_[2] = num_procs_;
   iparm_[3] = 0;   /* No iterative-direct algorithm */
@@ -65,7 +56,7 @@ pipenetwork::Pardiso_unsym::Pardiso_unsym() : Solver() {
   iparm_[6] = 0;   /* Not in use */
   iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
   iparm_[8] = 0;   /* Not in use */
-  iparm_[9] = 8;   /* Perturb the pivot elements with 1E-8 */
+  iparm_[9] = 13;  /* Perturb the pivot elements with 1E-13 */
   iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
   iparm_[11] = 0;  /* Not in use */
   iparm_[12] = 0;  /* Not in use */
@@ -99,43 +90,6 @@ Eigen::VectorXd pipenetwork::Pardiso_unsym::solve() {
   for (int i = 0; i < nnz; i++) {
     ja_[i] += 1;
   }
-
-  /* -------------------------------------------------------------------- */
-  /*  .. pardiso_chk_matrix(...)                                          */
-  /*     Checks the consistency of the given matrix.                      */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkmatrix(&mtype, &n, a, ia, ja, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR in consistency of matrix: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* ..  pardiso_chkvec(...)                                              */
-  /*     Checks the given vectors for infinite and NaN values             */
-  /*     Input parameters (see PARDISO user manual for a description):    */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkvec(&n, &nrhs, vec_b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR  in right hand side: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* .. pardiso_printstats(...)                                           */
-  /*    prints information on the matrix to STDOUT.                       */
-  /*    Use this functionality only for debugging purposes                */
-  /* -------------------------------------------------------------------- */
-
-  //    pardiso_printstats (&mtype, &n, a, ia, ja, &nrhs, b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR right hand side: %d", error);
-  //    exit(1);
-  //  }
 
   /* -------------------------------------------------------------------- */
   /* ..  Reordering and Symbolic Factorization.  This step also allocates */
@@ -181,12 +135,6 @@ Eigen::VectorXd pipenetwork::Pardiso_unsym::solve() {
     exit(3);
   }
 
-  //    printf("\nSolve completed ... ");
-  //    printf("\nThe solution of the system is: ");
-  //    for (i = 0; i < n; i++) {
-  //        printf("\n x [%d] = % f", i, x[i] );
-  //    }
-  //    printf ("\n");
   /* -------------------------------------------------------------------- */
   /* ..  Convert matrix back to 0-based C-notation.                       */
   /* -------------------------------------------------------------------- */
