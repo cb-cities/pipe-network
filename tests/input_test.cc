@@ -1,81 +1,109 @@
 #include "catch.hpp"
 
 #include "input.h"
-
-
+#include "mesh.h"
 // Check IO class
 TEST_CASE("Input is checked", "[IO]") {
-    double tolerance = 1e-6;
-    // Create a IO class object
-    auto IO = std::make_unique<pipenetwork::Input>("../benchmarks/Net1c.inp");
-    SECTION ("Check Parsed node info"){
-        auto node_info = IO->get_node_coord ();
-        Index node_id = node_info[0].first;
-        Eigen::Vector3d coord = node_info[0].second;
+  double tolerance = 1e-6;
 
+  SECTION("Check Parsed valve info") {
 
-        REQUIRE (node_info.size() == 11);//check size
-        REQUIRE (node_id == 0);// check ID
-        // check coords
-        REQUIRE (coord[0]== Approx(20).epsilon(tolerance));
-        REQUIRE (coord[1]== Approx(70).epsilon(tolerance));
-        REQUIRE (coord[2]== Approx(0).epsilon(tolerance));
+    // Create a INPUT class object
+    auto IO = std::make_shared<pipenetwork::Input>(
+        "../test_files/test_net_valve.inp");
+    // Mesh index
+    std::string meshid = "IO_test_mesh";
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
-//        for (auto const& x : IO->get_node_map ()){
-//            std::cout<< x.first<<" "<<x.second<<std::endl;
-//        }
-        // node elevations
-        auto node_elevation = IO->get_node_elevation ();
-        //check size
-        REQUIRE (node_elevation.size() == 11);
-        //check a junction elevation
-        REQUIRE (node_elevation[0].second == Approx(216.408).epsilon (tolerance));
-//        //check a reservoir elevation
-//        REQUIRE (node_elevation[92].second == Approx(220).epsilon (tolerance));
-//        //check a tank elevation
-//        REQUIRE (node_elevation[96].second == Approx(129).epsilon (tolerance));
+    auto valve_props = IO->valve_properties();
+    REQUIRE(valve_props.size() == 3);
+    REQUIRE(valve_props[0].valve_type == pipenetwork::PRVALVE);
+    REQUIRE(valve_props[0].id == "124");
+    REQUIRE(valve_props[0].setting == 28.137549042234017);
+    REQUIRE(valve_props[1].id == "125");
+    REQUIRE(valve_props[1].valve_type == pipenetwork::TCVALVE);
+    REQUIRE(valve_props[1].setting == 50);
+  }
 
-        // node demand
-        auto node_demand = IO->get_node_demand ();
-        //check size
-        REQUIRE (node_demand.size() == 11);
-        //check a junction elevation
-        REQUIRE (node_demand[1].second == Approx(0.0094635295).epsilon (tolerance));
-//        //check a reservoir elevation
-//        REQUIRE (node_demand[92].second == Approx(-1).epsilon (tolerance));
-//        //check a tank elevation
-//        REQUIRE (node_demand[96].second == Approx(-1).epsilon (tolerance));
+  SECTION("Check Parsed pump info") {
+    // Create a INPUT class object
+    auto IO =
+        std::make_shared<pipenetwork::Input>("../test_files/test_net_pump.inp");
+    // Mesh index
+    std::string meshid = "IO_test_mesh";
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
+    auto pump_props = IO->pump_properties();
+    auto curve_info = IO->curve_info();
+    REQUIRE(pump_props.size() == 2);
+    REQUIRE(curve_info->pump_int_str(pump_props[0].curve_name) == "2");
+    REQUIRE(pump_props[0].pump_type == pipenetwork::HEADPUMP);
+    REQUIRE(pump_props[0].id == "123");
+    REQUIRE(pump_props[1].id == "124");
+    REQUIRE(pump_props[1].pump_type == pipenetwork::POWERPUMP);
+    REQUIRE(pump_props[1].curve_name == -1);
+    REQUIRE(pump_props[1].power == 37284.9936);
+  }
 
+  SECTION("Check Parsed node info") {
+    auto IO = std::make_shared<pipenetwork::Input>(
+        "../test_files/test_net_valve.inp");
+    // Mesh index
+    std::string meshid = "IO_test_mesh";
+    // Creat a mesh
+    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
 
+    // junctions
+    auto junction_props = IO->junction_properties();
 
-    }
-    SECTION ("Check Parsed Pipe info"){
-        // check end nodes
-        auto pipe_end_nodes = IO->get_pipe_end_ids ();
-        REQUIRE (pipe_end_nodes.size() == 13);
-        REQUIRE (pipe_end_nodes[0].first == 0);
-        REQUIRE (pipe_end_nodes[0].second== 1);
-        // check roughness
-        auto rough = IO->get_pipe_roughness ();
-        REQUIRE (rough[0] == 100);
-        // check diameter
-        auto dia = IO->get_pipe_diameters ();
-        REQUIRE (dia[1] == Approx(0.35559999999999997).epsilon (tolerance));
-        // check diameter
-        auto status = IO->get_pipe_status ();
-        REQUIRE (status[0] == true);
+    REQUIRE(junction_props.size() == 9);
+    REQUIRE(junction_props[0].id == "10");
+    REQUIRE(junction_props[0].elevation == Approx(216.408).epsilon(tolerance));
+    REQUIRE(junction_props[1].demand ==
+            Approx(0.0094635295).epsilon(tolerance));
+    REQUIRE(junction_props[8].id == "32");
 
-        // check length
-        auto length = IO->get_pipe_length ();
-        REQUIRE (length[1] == Approx(1609.344).epsilon (tolerance));
+    // reservoirs
+    auto reservoir_props = IO->reservoir_properties();
 
+    REQUIRE(reservoir_props[0].head == Approx(243.84).epsilon(tolerance));
+    REQUIRE(reservoir_props[0].id == "41");
+  }
+  SECTION("Check Parsed Pipe info") {
+    auto IO =
+        std::make_shared<pipenetwork::Input>("../test_files/test_net.inp");
+    // check end nodes
+    auto pipe_props = IO->pipe_properties();
+    REQUIRE(pipe_props.size() == 8);
+    REQUIRE(pipe_props[0].node1_id == "10");
+    REQUIRE(pipe_props[0].node2_id == "11");
+    // check roughness
+    REQUIRE(pipe_props[0].roughness == 100);
+    // check diameter
+    REQUIRE(pipe_props[1].diameter == Approx(0.254).epsilon(tolerance));
+    // check diameter
+    REQUIRE(pipe_props[0].status == pipenetwork::OPEN);
+    // check length
+    REQUIRE(pipe_props[1].length == Approx(1609.344).epsilon(tolerance));
+    // check id
+    REQUIRE(pipe_props[1].id == "102");
+  }
 
-
-    }
-
-
-
-
-
+  //  SECTION("Check Synthetic Net") {
+  //    // Create a INPUT class object
+  //    auto IO = std::make_shared<pipenetwork::Input>(10);
+  //    auto junction_props = IO->junction_properties();
+  //    //    for (int i=0;i<100;++i){
+  //    //        std::cout<<junction_props[i].elevation<<std::endl;
+  //    //        std::cout<<junction_props[i].demand<<std::endl;
+  //    //    }
+  //    std::string meshid = "IO_test_mesh";
+  //    // Creat a mesh
+  //    auto mesh = std::make_shared<pipenetwork::Mesh>(meshid);
+  //
+  //    mesh->create_mesh_from_inp(IO);
+  //    //    mesh->print_summary();
+  //  }
 }
