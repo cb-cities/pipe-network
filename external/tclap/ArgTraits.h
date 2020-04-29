@@ -36,8 +36,8 @@ namespace TCLAP {
  * operator>>. This is the default value type.
  */
 struct ValueLike {
-    typedef ValueLike ValueCategory;
-	virtual ~ValueLike() {}
+  typedef ValueLike ValueCategory;
+  virtual ~ValueLike() {}
 };
 
 /**
@@ -46,7 +46,7 @@ struct ValueLike {
  * will be broken up into individual tokens by operator>>.
  */
 struct StringLike {
-	virtual ~StringLike() {}
+  virtual ~StringLike() {}
 };
 
 /**
@@ -55,8 +55,8 @@ struct StringLike {
  * to the inherenting class.
  */
 struct StringLikeTrait {
-    typedef StringLike ValueCategory;
-	virtual ~StringLikeTrait() {}
+  typedef StringLike ValueCategory;
+  virtual ~StringLikeTrait() {}
 };
 
 /**
@@ -65,8 +65,8 @@ struct StringLikeTrait {
  * to the inherenting class.
  */
 struct ValueLikeTrait {
-    typedef ValueLike ValueCategory;
-	virtual ~ValueLikeTrait() {}
+  typedef ValueLike ValueCategory;
+  virtual ~ValueLikeTrait() {}
 };
 
 /**
@@ -75,11 +75,10 @@ struct ValueLikeTrait {
  * values gets assigned to any particular type during parsing. The two
  * supported types are StringLike and ValueLike.
  */
-template<typename T>
-struct ArgTraits {
-    typedef typename T::ValueCategory ValueCategory;
-	virtual ~ArgTraits() {}
-    //typedef ValueLike ValueCategory;
+template <typename T> struct ArgTraits {
+  typedef typename T::ValueCategory ValueCategory;
+  virtual ~ArgTraits() {}
+  // typedef ValueLike ValueCategory;
 };
 
 #endif

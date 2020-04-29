@@ -26,7 +26,7 @@ void write(std::ostream &os, Writer &w) {
     size -= n;
   } while (size != 0);
 }
-}
+} // namespace
 
 FMT_FUNC void print(std::ostream &os, CStringRef format_str, ArgList args) {
   MemoryWriter w;
@@ -40,4 +40,4 @@ FMT_FUNC int fprintf(std::ostream &os, CStringRef format, ArgList args) {
   write(os, w);
   return static_cast<int>(w.size());
 }
-}  // namespace fmt
+} // namespace fmt

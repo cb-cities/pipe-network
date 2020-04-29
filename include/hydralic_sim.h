@@ -1,6 +1,8 @@
 #ifndef PIPE_NETWORK_HYDRALIC_SIM_H
 #define PIPE_NETWORK_HYDRALIC_SIM_H
+#include <boost/filesystem.hpp>
 #include <fstream>
+#include <iomanip>
 #include <string>
 #include <vector>
 
@@ -68,7 +70,7 @@ class Hydralic_sim {
   //! \param[in] line_search whether to use line search
   //! \param[in] output_path the path for output
   bool run_simulation(double NR_tolerance = 1.e-8, int max_nr_steps = 1000,
-                      std::string output_path = "../results/res_",
+                      const std::string& output_path = "../results/",
                       bool line_search = true);
   //! get the norm of simulation residual
   double sim_residual_norm() const { return residual_norm_; }
@@ -109,6 +111,9 @@ class Hydralic_sim {
   //! \param[in] var variables need to be written
   void write_final_result(const std::string& output_path,
                           const Eigen::VectorXd& var);
+  //! Function to write initial variables and jabobian matrix for
+  //! debug purpose
+  void write_debug_info();
 };
 
 }  // namespace pipenetwork

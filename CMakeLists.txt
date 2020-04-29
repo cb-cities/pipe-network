@@ -53,9 +53,7 @@ SET(pipe_network_src
 find_package(Eigen3 REQUIRED)
 
 # Boost Archive
-#find_package(Boost REQUIRED COMPONENTS system serialization)
-#include_directories(${BOOST_INCLUDE_DIRS})
-#link_libraries(${Boost_SERIALIZATION_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # TBB
 #find_package(TBB REQUIRED)
@@ -119,6 +117,8 @@ target_include_directories(lpipe_network
         ${pipe_network_SOURCE_DIR}/external/
         ${EIGEN3_INCLUDE_DIR}
         ${MKL_INCLUDE_DIR}
+        ${BOOST_INCLUDE_DIRS}
+
         )
 
 # link libs
@@ -127,6 +127,7 @@ target_link_libraries(lpipe_network
         ${CMAKE_THREAD_LIBS_INIT}
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
+        ${Boost_LIBRARIES}
         )
 
 add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)

@@ -1,10 +1,14 @@
 #include "hydralic_sim.h"
-#include <iomanip>
 
 bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
                                                int max_nr_steps,
-                                               std::string output_path,
+                                               const std::string& output_path,
                                                bool line_search) {
+  boost::filesystem::path dir(output_path);
+  if (boost::filesystem::create_directory(dir)) {
+    std::cout << "Results saving directory created: " << output_path
+              << std::endl;
+  }
 
   residuals_ = assembler_->residual_vector();
   variables_ = assembler_->variable_vector();
@@ -20,49 +24,12 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
     if (debug_) {
       // save the initial values into csv files for debugging
       if (nr_iter < 1) {
-        std::ofstream outFile("../results/init_var_res.csv");
-        std::ofstream outFile2("../results/init_jacob.csv");
-        outFile << "variables"
-                << ","
-                << "residuals"
-                << "\n";
-        for (int i = 0; i < (*residuals_).size(); ++i) {
-          outFile << std::setprecision(12) << (*variables_).coeff(i) << ","
-                  << (*residuals_).coeff(i) << "\n";
-        }
-        outFile2 << "row"
-                 << ","
-                 << "col"
-                 << ","
-                 << "val"
-                 << "\n";
-        for (int k = 0; k < (*jac).outerSize(); ++k)
-          for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
-                   (*jac), k);
-               it; ++it) {
-            outFile2 << std::setprecision(12) << it.row() << "," << it.col()
-                     << "," << it.value() << "\n";
-          }
+        write_debug_info();
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residuals_->norm() << std::endl;
-      //                                    std::cout << "Jac = " << std::endl
-      //                                              << (*jac) << std::endl
-      //                                              << std::endl
-      //                                              << "residual = " <<
-      //                                              std::endl
-      //                                              << (*residual_vec) <<
-      //                                              std::endl
-      //                                              << std::endl
-      //                                              << "variable = " <<
-      //                                              std::endl
-      //                                              << (*variable_vec) <<
-      //                                              std::endl
-      //                                              << std::endl;
     }
-    //    std::cout << "start solving" << std::endl;
     auto x_diff = solver_->solve();
-    //    std::cout << "start line search" << std::endl;
     if (line_search) {
       line_search_func(x_diff);
     } else {
@@ -181,4 +148,41 @@ void pipenetwork::Hydralic_sim::write_final_result(
     flow_rate = var[2 * nnodes + i];
     outlink << std::setprecision(12) << link_id << "," << flow_rate << "\n";
   }
+}
+
+void pipenetwork::Hydralic_sim::write_debug_info() {
+  std::string save_folder = "../results/";
+  boost::filesystem::path dir(save_folder);
+  if (boost::filesystem::create_directory(dir)) {
+    std::cout << "Results saving directory created: " << save_folder
+              << std::endl;
+  }
+  std::ofstream variables(save_folder + "init_var_res.csv");
+  std::ofstream jacobians(save_folder + "init_jacob.csv");
+
+  // record vairables
+  variables << "variables"
+            << ","
+            << "residuals"
+            << "\n";
+  for (int i = 0; i < (*residuals_).size(); ++i) {
+    variables << std::setprecision(12) << (*variables_).coeff(i) << ","
+              << (*residuals_).coeff(i) << "\n";
+  }
+
+  // record jacobians
+  auto jac = assembler_->jac_matrix();
+  jacobians << "row"
+            << ","
+            << "col"
+            << ","
+            << "val"
+            << "\n";
+  for (int k = 0; k < (*jac).outerSize(); ++k)
+    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it((*jac),
+                                                                        k);
+         it; ++it) {
+      jacobians << std::setprecision(12) << it.row() << "," << it.col() << ","
+                << it.value() << "\n";
+    }
 }
