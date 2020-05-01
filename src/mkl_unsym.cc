@@ -40,7 +40,7 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   iparm_[6] = 0;   /* Not in use */
   iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
   iparm_[8] = 0;   /* Not in use */
-  iparm_[9] = 8;   /* Perturb the pivot elements with 1E-8 */
+  iparm_[9] = 6;   /* Perturb the pivot elements with 1E-6 */
   iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
   iparm_[11] = 0;  /* Not in use */
   iparm_[12] = 0;  /* Not in use */

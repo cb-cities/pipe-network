@@ -1,5 +1,24 @@
 #include "input.h"
 
+pipenetwork::Input::Input(const std::string& filename) : filename_(filename) {
+  if (!file_exists(filename)) {
+    throw std::runtime_error(
+        "Input file does not exist, please check the path!");
+  }
+  try {
+    parse_sections();
+    construct_node_info();
+    construct_pipe_info();
+    construct_curve_info();
+    construct_pump_info();
+    construct_valve_info();
+  } catch (std::exception& e) {
+    std::cerr << "Failed to read input file, error message " << e.what()
+              << std::endl;
+    throw std::runtime_error("Failed to read input file! ");
+  }
+}
+
 void pipenetwork::Input::parse_sections() {
   std::string line;
   std::string buf, current_key{"init"};
@@ -33,25 +52,6 @@ void pipenetwork::Input::parse_sections() {
     }
   }
 }
-
-// void pipenetwork::Input::construct_node_coord() {
-//  std::string buf;
-//  Index id, mesh_id = 0;
-//  double x_coord, y_coord;
-//
-//  for (auto const& line : sections_.at("[COORDINATES]")) {
-//    // skip keys entries
-//    if (line[0] == '[' || line[0] == ';') continue;
-//
-//    std::istringstream iss(line);
-//    // parsing lines
-//    if (iss >> id >> x_coord >> y_coord) {
-//      Eigen::Vector3d coord{x_coord, y_coord, 0};
-//      node_coords_.emplace_back(std::make_pair(mesh_id, coord));
-//      ++mesh_id;
-//    }
-//  }
-//}
 
 std::pair<std::vector<std::string>, std::vector<double>>
     pipenetwork::Input::parse_node_line(const std::string& section_name,

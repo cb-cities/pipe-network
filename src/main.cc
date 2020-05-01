@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     cmd.parse(argc, argv);
 
     std::string filepath = fileArg.getValue();
-    std::string mesh_name = saveArg.getValue();
+    std::string mesh_name = nameArg.getValue();
     std::string solver_name = solverArg.getValue();
     bool pdd_mode = pddSwitch.getValue();
     bool debug = debugSwitch.getValue();

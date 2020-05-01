@@ -53,18 +53,7 @@ class Input {
 
   //! constructor to create mesh from .inp file
   //! \param[in] filename path of the .inp file
-  explicit Input(const std::string& filename) : filename_(filename) {
-    if (!file_exists(filename)) {
-      throw std::runtime_error(
-          "Input file does not exist, please check the path!");
-    }
-    parse_sections();
-    construct_node_info();
-    construct_pipe_info();
-    construct_curve_info();
-    construct_pump_info();
-    construct_valve_info();
-  };
+  explicit Input(const std::string& filename);
 
   //! Return node information
   std::vector<pipenetwork::Junction_prop> junction_properties() const {

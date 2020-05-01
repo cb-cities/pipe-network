@@ -28,6 +28,21 @@ bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
       }
       std::cout << "niter = " << nr_iter << std::endl;
       std::cout << "residual norm = " << residuals_->norm() << std::endl;
+      //                                            std::cout << "Jac = " <<
+      //                                            std::endl
+      //                                                      << (*jac) <<
+      //                                                      std::endl
+      //                                                      << std::endl
+      //                                                      << "residual = "
+      //                                                      << std::endl
+      //                                                      << (*residuals_)
+      //                                                      << std::endl
+      //                                                      << std::endl
+      //                                                      << "variable = "
+      //                                                      << std::endl
+      //                                                      << (*variables_)
+      //                                                      << std::endl
+      //                                                      << std::endl;
     }
     auto x_diff = solver_->solve();
     if (line_search) {
@@ -115,6 +130,7 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
 
 void pipenetwork::Hydralic_sim::write_final_result(
     const std::string& output_path, const Eigen::VectorXd& var) {
+
   std::ofstream outnode(output_path + "_nodes.csv");
   std::ofstream outlink(output_path + "_links.csv");
   outnode << "node_id"

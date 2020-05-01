@@ -6,8 +6,8 @@
 #include <exception>
 #include <functional>
 #include <iostream>
-#include <map>
 #include <memory>
+#include <tsl/ordered_map.h>
 #include <tuple>
 #include <vector>
 
@@ -65,7 +65,8 @@ class Mesh {
   void create_valve(std::vector<Valve_prop>& valve_props);
 
   //! get all nodes map
-  std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes() const {
+  tsl::ordered_map<std::string, std::shared_ptr<pipenetwork::Node>> nodes()
+      const {
     return nodes_;
   }
   //! get links map
@@ -138,7 +139,7 @@ class Mesh {
   //! number of sources
   unsigned nsrcs_{0};
   //! nodal id and corresponding nodal pointer
-  std::map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
+  tsl::ordered_map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
   //! vector of links
   std::vector<std::shared_ptr<pipenetwork::Link>> links_;
 };
