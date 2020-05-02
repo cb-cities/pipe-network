@@ -1,81 +1,5 @@
 #include "hydralic_sim.h"
 
-bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
-                                               int max_nr_steps,
-                                               const std::string& output_path,
-                                               bool line_search) {
-  boost::filesystem::path dir(output_path);
-  if (boost::filesystem::create_directory(dir)) {
-    std::cout << "Results saving directory created: " << output_path
-              << std::endl;
-  }
-
-  residuals_ = assembler_->residual_vector();
-  variables_ = assembler_->variable_vector();
-  auto jac = assembler_->jac_matrix();
-
-  solver_->assembled_matrices(jac, variables_, residuals_);
-  for (unsigned nr_iter = 0; nr_iter < max_nr_steps; ++nr_iter) {
-
-    assembler_->assemble_residual();
-    assembler_->update_jacobian();
-    original_variable_ = *variables_;
-
-    if (debug_) {
-      // save the initial values into csv files for debugging
-      if (nr_iter < 1) {
-        write_debug_info();
-      }
-      std::cout << "niter = " << nr_iter << std::endl;
-      std::cout << "residual norm = " << residuals_->norm() << std::endl;
-      //                                            std::cout << "Jac = " <<
-      //                                            std::endl
-      //                                                      << (*jac) <<
-      //                                                      std::endl
-      //                                                      << std::endl
-      //                                                      << "residual = "
-      //                                                      << std::endl
-      //                                                      << (*residuals_)
-      //                                                      << std::endl
-      //                                                      << std::endl
-      //                                                      << "variable = "
-      //                                                      << std::endl
-      //                                                      << (*variables_)
-      //                                                      << std::endl
-      //                                                      << std::endl;
-    }
-    auto x_diff = solver_->solve();
-    if (line_search) {
-      line_search_func(x_diff);
-    } else {
-      (*variables_) = original_variable_.array() - x_diff.array();
-    }
-    residual_norm_ = residuals_->norm();
-    if (residuals_->norm() < NR_tolerance) {
-      auto path_name = output_path + mesh_->id();
-      write_final_result(path_name, (*variables_));
-      return true;
-    }
-  }
-  return false;
-}
-void pipenetwork::Hydralic_sim::line_search_func(
-    const Eigen::VectorXd& x_diff) {
-  double alpha = 1.0;
-  auto old_res = residuals_->norm();
-  for (int bt_iter = 0; bt_iter < bt_max_iter_; ++bt_iter) {
-    (*variables_) = original_variable_.array() - alpha * x_diff.array();
-    assembler_->assemble_residual();
-    auto new_res = residuals_->norm();
-    if (new_res < (1.0 - 0.0001 * alpha) * old_res) {
-      break;
-    } else {
-      alpha = alpha * bt_roh_;
-    }
-  }
-  //  throw std::runtime_error("Line search failed!");
-}
-
 pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
                                         const std::string& mesh_name,
                                         bool pdd_mode,
@@ -126,6 +50,67 @@ pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
   debug_ = debug;
   // print mesh summary if on debug mode
   if (debug_) mesh_->print_summary();
+}
+
+bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
+                                               int max_nr_steps,
+                                               const std::string& output_path,
+                                               bool line_search) {
+  boost::filesystem::path dir(output_path);
+  if (boost::filesystem::create_directory(dir)) {
+    std::cout << "Results saving directory created: " << output_path
+              << std::endl;
+  }
+
+  residuals_ = assembler_->residual_vector();
+  variables_ = assembler_->variable_vector();
+  auto jac = assembler_->jac_matrix();
+
+  solver_->assembled_matrices(jac, variables_, residuals_);
+  for (unsigned nr_iter = 0; nr_iter < max_nr_steps; ++nr_iter) {
+
+    assembler_->assemble_residual();
+    assembler_->update_jacobian();
+    original_variable_ = *variables_;
+
+    if (debug_) {
+      // save the initial values into csv files for debugging
+      if (nr_iter < 1) {
+        write_debug_info();
+      }
+      std::cout << "niter = " << nr_iter << std::endl;
+      std::cout << "residual norm = " << residuals_->norm() << std::endl;
+    }
+    auto x_diff = solver_->solve();
+    if (line_search) {
+      line_search_func(x_diff);
+    } else {
+      (*variables_) = original_variable_.array() - x_diff.array();
+    }
+    residual_norm_ = residuals_->norm();
+    if (residuals_->norm() < NR_tolerance) {
+      auto path_name = output_path + mesh_->id();
+      write_final_result(path_name, (*variables_));
+      return true;
+    }
+  }
+  return false;
+}
+void pipenetwork::Hydralic_sim::line_search_func(
+    const Eigen::VectorXd& x_diff) {
+  double alpha = 1.0;
+  auto old_res = residuals_->norm();
+  for (int bt_iter = 0; bt_iter < bt_max_iter_; ++bt_iter) {
+    (*variables_) = original_variable_.array() - alpha * x_diff.array();
+    assembler_->assemble_residual();
+    auto new_res = residuals_->norm();
+    if (new_res < (1.0 - 0.0001 * alpha) * old_res) {
+      break;
+    } else {
+      alpha = alpha * bt_roh_;
+    }
+  }
+  //  throw std::runtime_error("Line search failed!");
 }
 
 void pipenetwork::Hydralic_sim::write_final_result(

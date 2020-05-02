@@ -15,7 +15,7 @@ pipenetwork::Input::Input(const std::string& filename) : filename_(filename) {
   } catch (std::exception& e) {
     std::cerr << "Failed to read input file, error message " << e.what()
               << std::endl;
-    throw std::runtime_error("Failed to read input file! ");
+    std::abort();
   }
 }
 

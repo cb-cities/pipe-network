@@ -25,19 +25,7 @@ class MatrixAssembler {
   //! driven
   explicit MatrixAssembler(const std::shared_ptr<Mesh>& mesh,
                            std::shared_ptr<Curves>& curves_info,
-                           bool pdd_mode = false)
-      : mesh_{mesh}, curves_info_{curves_info}, pdd_{pdd_mode} {
-    nnodes_ = mesh_->nnodes();
-    nlinks_ = mesh_->nlinks();
-    npumps_ = mesh_->npumps();
-    npipes_ = mesh_->npipes();
-    nvalves_ = mesh_->nvalves();
-
-    init_variable_vector();
-    init_internal_graph();
-    assemble_balance_headloss_matrix();
-    initialize_jacobian();
-  }
+                           bool pdd_mode = false);
 
   //! Destructor
   ~MatrixAssembler() = default;

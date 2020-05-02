@@ -93,15 +93,47 @@ void pipenetwork::Mesh::create_mesh_from_inp(
   auto valve_props = IO->valve_properties();
 
   // create nodes
-  create_junctions(IO->junction_properties());
-  create_reservoirs(IO->reservoir_properties());
-
+  try {
+    create_junctions(IO->junction_properties());
+  } catch (std::exception& e) {
+    std::cerr
+        << "Failed to create junctions from the input file, error message "
+        << e.what() << std::endl;
+    std::abort();
+  }
+  try {
+    create_reservoirs(IO->reservoir_properties());
+  } catch (std::exception& e) {
+    std::cerr
+        << "Failed to create reservoirs from the input file, error message "
+        << e.what() << std::endl;
+    std::abort();
+  }
   // create links
-  create_pipes(pipe_props);
+  try {
+    create_pipes(pipe_props);
+  } catch (std::exception& e) {
+    std::cerr << "Failed to create pipes from the input file, error message "
+              << e.what() << std::endl;
+    std::abort();
+  }
+
   if (!pump_props.empty()) {
-    create_pumps(pump_props);
+    try {
+      create_pumps(pump_props);
+    } catch (std::exception& e) {
+      std::cerr << "Failed to create pumps from the input file, error message "
+                << e.what() << std::endl;
+      std::abort();
+    }
   }
   if (!valve_props.empty()) {
-    create_valve(valve_props);
+    try {
+      create_valve(valve_props);
+    } catch (std::exception& e) {
+      std::cerr << "Failed to create valves from the input file, error message "
+                << e.what() << std::endl;
+      std::abort();
+    }
   }
 }

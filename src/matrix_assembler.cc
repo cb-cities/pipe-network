@@ -1,5 +1,41 @@
 #include "matrix_assembler.h"
 
+pipenetwork::MatrixAssembler::MatrixAssembler(
+    const std::shared_ptr<pipenetwork::Mesh>& mesh,
+    std::shared_ptr<pipenetwork::Curves>& curves_info, bool pdd_mode)
+    : mesh_{mesh}, curves_info_{curves_info}, pdd_{pdd_mode} {
+  nnodes_ = mesh_->nnodes();
+  nlinks_ = mesh_->nlinks();
+  npumps_ = mesh_->npumps();
+  npipes_ = mesh_->npipes();
+  nvalves_ = mesh_->nvalves();
+
+  init_variable_vector();
+  try {
+    init_internal_graph();
+  } catch (std::exception& e) {
+    std::cerr << "Failed to create internal graph from the mesh, error message "
+              << e.what() << std::endl;
+    std::abort();
+  }
+  try {
+    assemble_balance_headloss_matrix();
+  } catch (std::exception& e) {
+    std::cerr
+        << "Failed to create headloss matrix from the mesh, error message "
+        << e.what() << std::endl;
+    std::abort();
+  }
+  try {
+    initialize_jacobian();
+  } catch (std::exception& e) {
+    std::cerr
+        << "Failed to initialize jacobian matrix from the mesh, error message "
+        << e.what() << std::endl;
+    std::abort();
+  }
+}
+
 // Initialize variable vector
 // 1 to nnode element: nodal head
 // nnode+1 to 2*nnode element: nodal demand

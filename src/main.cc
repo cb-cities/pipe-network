@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 
     auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
         filepath, mesh_name, pdd_mode, solver_name, debug);
-    if (sim->run_simulation(1e-8, 30, save_path)) {
+    if (sim->run_simulation(1e-8, 100, save_path)) {
       std::cout << "Simulation Completed!!!" << std::endl;
     } else {
       std::cerr << "Simulation does not converge!  " << std::endl;
@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
 
   } catch (std::exception& e) {
     std::cerr << "Simulation failed: " << e.what() << std::endl;
+    std::abort();
   }
 
   return 0;
