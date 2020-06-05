@@ -6,6 +6,7 @@
 #include "pipe.h"
 #include "pump.h"
 #include "reservoir.h"
+#include "valve.h"
 
 // Check node class
 TEST_CASE("Link is checked", "[Link]") {
@@ -72,5 +73,26 @@ TEST_CASE("Link is checked", "[Link]") {
     auto property = pump.property();
     REQUIRE(property.name == pump1.name);
     REQUIRE(property.status == pump1.status);
+  }
+
+  SECTION("Check Valve") {
+    pipenetwork::ValveProp valve1;
+    valve1.name = "valve1";
+    valve1.status = pipenetwork::LinkStatus::CLOSED;
+    pipenetwork::Index pump_id = 3;
+
+    auto valve =
+        pipenetwork::Valve(pump_id, junction_node, reservoir_node, valve1);
+    // check id
+    REQUIRE(valve.id() == pump_id);
+
+    // check two end points
+    REQUIRE(valve.nodes().first->id() == nid1);
+    REQUIRE(valve.nodes().second->id() == nid2);
+
+    // check pipe property
+    auto property = valve.property();
+    REQUIRE(property.name == valve1.name);
+    REQUIRE(property.status == valve1.status);
   }
 }

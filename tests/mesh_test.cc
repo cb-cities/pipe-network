@@ -1,9 +1,6 @@
 #include "catch.hpp"
 
-#include "junction.h"
 #include "mesh.h"
-#include "pipe.h"
-#include "reservoir.h"
 
 // Check mesh class
 TEST_CASE("Mesh is checked", "[Mesh]") {

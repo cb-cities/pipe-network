@@ -23,6 +23,8 @@ enum class ValveType { PRVALVE, FCVALVE, TCVALVE };
 enum class LinkStatus { OPEN, CLOSED };
 const double PUMP_POWER{50};
 const double PUMP_SPEED{1};
+const double MINOR_LOSS_COEFF{0};
+const double VALVE_DIAMETER{0.3048};
 
 //! constant for modified hazen-williams formula
 const double HW_Q1{0.0002};

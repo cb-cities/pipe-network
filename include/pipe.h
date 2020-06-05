@@ -5,23 +5,20 @@
 
 namespace pipenetwork {
 //! Pipe Property
-//! node1_name name of one end node
-//! node2_name ame of the other end node
 //! length, length of the pipe
 //! diameter, diameter of the pipe
 //! roughness, roughness of the pipe
 //! status, status of the pipe (open or close)
-struct PipeProp {
-  std::string name{"None"};
-  std::string node1_name{"None"};
-  std::string node2_name{"None"};
+struct PipeProp:LinkProp {
   double length{std::numeric_limits<float>::max()};
   double diameter{std::numeric_limits<float>::max()};
   double roughness{std::numeric_limits<float>::max()};
-  double minor_loss_coeff{0};
+  double minor_loss_coeff{MINOR_LOSS_COEFF};
   LinkStatus status{LinkStatus::OPEN};
 };
 
+//! Pipe class
+//! \brief Class that stores the information about pipes
 class Pipe : public Link {
  public:
   //! Constructor for a pipe
@@ -30,7 +27,7 @@ class Pipe : public Link {
   //! \param[in] node2 the other end node
   //! \param[in] pipe_prop struct with properties for the pipe
   Pipe(Index link_id, const Node& node1, const Node& node2,
-       const PipeProp& pipe_prop)
+      const PipeProp& pipe_prop)
       : Link(link_id, node1, node2), property_{pipe_prop} {};
 
   //! Virtual destructor
@@ -40,7 +37,7 @@ class Pipe : public Link {
   PipeProp property() const { return property_; }
 
  private:
-  // pipe properties
+  //! pipe properties
   PipeProp property_;
 };
 

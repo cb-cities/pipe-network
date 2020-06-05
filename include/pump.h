@@ -5,16 +5,11 @@
 
 namespace pipenetwork {
 //! Pump Property
-//! node1_name name of one end node
-//! node2_name ame of the other end node
 //! type pump type
 //! curve_name pump head curve id
 //! speed speed for the pump
 //! pattern pattern for speed setting
-struct PumpProp {
-  std::string name{"None"};
-  std::string node1_name{"None"};
-  std::string node2_name{"None"};
+struct PumpProp: LinkProp {
   PumpType type{PumpType::POWERPUMP};
   LinkStatus status{LinkStatus::OPEN};
   int curve_id{-1};
@@ -22,6 +17,8 @@ struct PumpProp {
   double speed{PUMP_SPEED};
 };
 
+//! Pump class
+//! \brief Class that stores the information about pumps
 class Pump : public Link {
  public:
   //! Constructor with pump property, which contains all the information for

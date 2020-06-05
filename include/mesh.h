@@ -1,26 +1,21 @@
 #ifndef PIPE_NETWORK_MESH_H
 #define PIPE_NETWORK_MESH_H
 
+#include "pipe.h"
+#include "pump.h"
+#include "junction.h"
+#include "reservoir.h"
+
 #include <array>
-#include <cmath>
-#include <exception>
-#include <functional>
-#include <iostream>
-#include <memory>
+//#include <cmath>
+//#include <exception>
+//#include <functional>
+//#include <iostream>
+//#include <memory>
 #include <tsl/ordered_map.h>
 #include <tuple>
 #include <vector>
 
-//// TBB
-//#include <tbb/parallel_for.h>
-//#include <tbb/parallel_for_each.h>
-
-#include "input.h"
-#include "junction.h"
-#include "pipe.h"
-#include "pump.h"
-#include "reservoir.h"
-#include "valve.h"
 
 namespace pipenetwork {
 
@@ -31,34 +26,31 @@ class Mesh {
  public:
   //! Constructor with id
   //! \param[in] id mesh id
-  explicit Mesh(std::string& id) : id_{id} {};
+  explicit Mesh(std::string& name) : name_{name} {};
 
-  //! Destructor
-  ~Mesh() = default;
+  //! Return name
+  //! \retval name_ name of the mesh
+  std::string name() const { return name_; }
 
-  //! Return id
-  //! \retval id_ id of the mesh
-  std::string id() const { return id_; }
-
-  //! Create mesh from input object
-  //! \param[in] IO pointer to the input object
-  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
+//  //! Create mesh from input object
+//  //! \param[in] IO pointer to the input object
+//  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
 
   //! Create junction pointers
   //! \param[in] junc_props vector of junction properties
-  void create_junctions(const std::vector<Junction_prop>& junc_props);
+  void create_junctions(const std::vector<JunctionProp>& junc_props);
 
   //! Create Reservoir pointers
   //! \param[in] res_props vector of reservoir properties
-  void create_reservoirs(const std::vector<Reservoir_prop>& res_props);
+  void create_reservoirs(const std::vector<ReservoirProp>& res_props);
 
   //! Create Pipe pointers
   //! \param[in]  pipe_props vector of pipe properties
-  void create_pipes(std::vector<Pipe_prop>& pipe_props);
+  void create_pipes(std::vector<PipeProp>& pipe_props);
 
   //! Create Pump pointers
   //! \param[in]  pump_props vector of pump properties
-  void create_pumps(std::vector<Pump_prop>& pump_props);
+  void create_pumps(std::vector<PumpProp>& pump_props);
 
   //! Create Valve pointers
   //! \param[in]  valve_props vector of valve properties
@@ -125,8 +117,8 @@ class Mesh {
   unsigned nsources() const { return nsrcs_; }
 
  private:
-  //! mesh id
-  std::string id_;
+  //! mesh name
+  std::string name_;
 
   //! number of pumps
   unsigned npumps_{0};
