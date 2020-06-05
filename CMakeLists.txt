@@ -1,7 +1,7 @@
 project(pipe_network LANGUAGES CXX)
 
-# Require C++14-compliant compiler; only available for CMake v. 3.1 and up
-set(CMAKE_CXX_STANDARD 14)
+# Require C++17-compliant compiler; only available for CMake v. 3.1 and up
+set(CMAKE_CXX_STANDARD 17)
 
 cmake_minimum_required(VERSION 3.1)
 
@@ -36,14 +36,15 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # pipe_network executable
 SET(pipe_network_src
-        src/curves.cc
-        src/hydralic_sim.cc
-        src/input.cc
-        src/matrix_assembler.cc
-        src/mesh.cc
-        src/output.cc
-        src/mkl_unsym.cc
-        src/pardiso_unsym.cc)
+        src/foo.cc)
+#        src/curves.cc
+#        src/hydralic_sim.cc
+#        src/input.cc
+#        src/matrix_assembler.cc
+#        src/mesh.cc
+#        src/output.cc
+#        src/mkl_unsym.cc
+#        src/pardiso_unsym.cc)
 
 
 
@@ -55,11 +56,6 @@ find_package(Eigen3 REQUIRED)
 # Boost Archive
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-# TBB
-#find_package(TBB REQUIRED)
-#add_definitions(${TBB_DEFINITIONS})
-#include_directories(${TBB_INCLUDE_DIRS})
-#link_libraries(${TBB_LIBRARIES})
 
 # Pthreads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -130,23 +126,24 @@ target_link_libraries(lpipe_network
         ${Boost_LIBRARIES}
         )
 
-add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
-target_link_libraries(pipe_network
-        PUBLIC
-        lpipe_network)
+#add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
+#target_link_libraries(pipe_network
+#        PUBLIC
+#        lpipe_network)
 
 # Testing
 if(PIPE_NETWORK_TEST_BUILD_TESTING)
   # Unit test
   SET(pipe_network_test_src
-          tests/mesh_test.cc
           tests/node_test.cc
           tests/link_test.cc
-          tests/matrix_assembler_test.cc
-          tests/solver_test.cc
-          tests/input_test.cc
-          tests/curve_test.cc
-          tests/hydraulic_sim_test.cc
+#          tests/mesh_test.cc
+
+#          tests/matrix_assembler_test.cc
+#          tests/solver_test.cc
+#          tests/input_test.cc
+#          tests/curve_test.cc
+#          tests/hydraulic_sim_test.cc
 #          tests/sim_pressure_test.cc
           )
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})

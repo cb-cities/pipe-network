@@ -1,53 +1,44 @@
 #ifndef PIPE_NETWORK_PUMP_H
 #define PIPE_NETWORK_PUMP_H
 
-namespace pipenetwork {
+#include "link.h"
 
+namespace pipenetwork {
 //! Pump Property
-//! node1 ptr for end node
-//! node2 ptr for end node
+//! node1_name name of one end node
+//! node2_name ame of the other end node
 //! type pump type
-//! curve_name pump head curve name
+//! curve_name pump head curve id
 //! speed speed for the pump
 //! pattern pattern for speed setting
-struct Pump_prop {
-  std::string id;
-  std::shared_ptr<pipenetwork::Node> node1{NULL};
-  std::shared_ptr<pipenetwork::Node> node2{NULL};
-  Link_type pump_type{POWERPUMP};
-  Link_status pump_status{OPEN};
-  int curve_name{-1};
-  double power{50};
-  double speed{1.0};
-  std::string node1_id{"None"};
-  std::string node2_id{"None"};
-  std::string Pattern{"None"};
+struct PumpProp {
+  std::string name{"None"};
+  std::string node1_name{"None"};
+  std::string node2_name{"None"};
+  PumpType type{PumpType::POWERPUMP};
+  LinkStatus status{LinkStatus::OPEN};
+  int curve_id{-1};
+  double power{PUMP_POWER};
+  double speed{PUMP_SPEED};
 };
 
 class Pump : public Link {
  public:
   //! Constructor with pump property, which contains all the information for
   //! the valve \param[in] pipe_prop struct with properties for the pipe
-  Pump(const Pump_prop& pump_prop)
-      : Link(pump_prop.id, pump_prop.node1, pump_prop.node2,
-             pump_prop.pump_status) {
-    pump_info_["type"] = pump_prop.pump_type;
-    pump_info_["curve_name"] = pump_prop.curve_name;
-    pump_info_["power"] = pump_prop.power;
-    pump_info_["speed"] = pump_prop.speed;
-  };
+  Pump(Index link_id, const Node& node1, const Node& node2,
+       const PumpProp& pump_prop)
+      : Link(link_id, node1, node2), property_{pump_prop} {};
 
   //! Virtual destructor
   ~Pump() override{};
 
-  //! Return link info
-  std::map<std::string, double> link_info() const override {
-    return pump_info_;
-  }
+  //! Return pump property
+  PumpProp property() const { return property_; }
 
  private:
   //! valve information
-  std::map<std::string, double> pump_info_;
+  PumpProp property_;
 };
 
 }  // namespace pipenetwork
