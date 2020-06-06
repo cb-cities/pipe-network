@@ -1,26 +1,116 @@
 #ifndef PIPE_NETWORK_MESH_H
 #define PIPE_NETWORK_MESH_H
 
+#include "index_manager.h"
+#include "junction.h"
 #include "pipe.h"
 #include "pump.h"
-#include "junction.h"
 #include "reservoir.h"
+#include "valve.h"
 
 #include <array>
+#include <exception>
 //#include <cmath>
 //#include <exception>
 //#include <functional>
 //#include <iostream>
 //#include <memory>
+#include <iostream>
 #include <tsl/ordered_map.h>
 #include <tuple>
 #include <vector>
 
-
 namespace pipenetwork {
+//! MeshNodes class
+//! \brief Nodes information for a mesh
+class MeshNodes {
+ public:
+  MeshNodes() = default;
+  //! Constructor for different mesh nodes
+  //! \param[in] junc_props junction properties
+  //! \param[in] res_props reservoir properties
+  MeshNodes(const std::vector<JunctionProp>& junc_props,
+            const std::vector<ReservoirProp>& res_props);
 
-//! Mesh class
-//! \brief Class for mesh that contains node and pipe pointers
+  //! Get node ptr with node name
+  //! \param[in] node_name node name
+  //! \return node node ptr
+  std::shared_ptr<Node> get_node(const std::string& node_name) const;
+
+  //! node name to id map
+  tsl::ordered_map<std::string, Index> name2id;
+  //! Junction map with respect to internal index
+  tsl::ordered_map<Index, std::shared_ptr<Junction>> junctions;
+  //! Reservoir map with respect to internal index
+  tsl::ordered_map<Index, std::shared_ptr<Reservoir>> reservoirs;
+
+ private:
+  //! Internal id manager
+  IndexManager nid_manager_;
+  //! Add list of nodes
+  //! \param[in] props vector of node properties
+  template <typename Prop>
+  void add_nodes(const std::vector<Prop>& props);
+
+  //! Add a single node (junction)
+  //! \param[in] junc_prop junction property
+  void add_node(const JunctionProp& junc_prop);
+
+  //! Add a single node (reservoir)
+  //! \param[in] res_prop reservoir property
+  void add_node(const ReservoirProp& res_prop);
+};
+
+//! Meshlink class
+//! \brief links information for a mesh
+class MeshLinks {
+ public:
+  MeshLinks() = default;
+  //! Constructor for different mesh links
+  //! \param[in] pipe_props pipe properties
+  //! \param[in] pump_props pump properties
+  //! \param[in] valve_props valve properties
+  //! \param[in] mesh_nodes information of nodes inside the mesh
+  MeshLinks(std::vector<PipeProp>& pipe_props,
+            std::vector<PumpProp>& pump_props,
+            std::vector<ValveProp>& valve_props, const MeshNodes& mesh_nodes);
+
+  //! Pipes map with respect to internal index
+  tsl::ordered_map<Index, std::shared_ptr<Pipe>> pipes;
+  //! Pumps map with respect to internal index
+  tsl::ordered_map<Index, std::shared_ptr<Pump>> pumps;
+  //! Valves map with respect to internal index
+  tsl::ordered_map<Index, std::shared_ptr<Valve>> valves;
+
+ private:
+  //! Internal id manager
+  IndexManager lid_manager_;
+
+  //! Add list of links
+  //! \param[in] props vector of link properties
+  //! \param[in] mesh_nodes information of nodes inside the mesh
+  template <typename Prop>
+  void add_links(const std::vector<Prop>& props, const MeshNodes& mesh_nodes);
+
+  //! Add a single link (pipe)
+  //! \param[in] pipe_prop pipe property
+  void add_link(const std::shared_ptr<Node>& node1,
+                const std::shared_ptr<Node>& node2, const PipeProp& pipe_prop);
+
+  //! Add a single link (pump)
+  //! \param[in] pipe_prop pump property
+  void add_link(const std::shared_ptr<Node>& node1,
+                const std::shared_ptr<Node>& node2, const PumpProp& pump_prop);
+
+  //! Add a single link (valve)
+  //! \param[in] valve_prop valve property
+  void add_link(const std::shared_ptr<Node>& node1,
+                const std::shared_ptr<Node>& node2,
+                const ValveProp& valve_prop);
+};
+
+////! Mesh class
+////! \brief Class for mesh that contains node and pipe pointers
 class Mesh {
 
  public:
@@ -32,108 +122,41 @@ class Mesh {
   //! \retval name_ name of the mesh
   std::string name() const { return name_; }
 
-//  //! Create mesh from input object
-//  //! \param[in] IO pointer to the input object
-//  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
+  //  //! Create mesh from input object
+  //  //! \param[in] IO pointer to the input object
+  //  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
 
   //! Create junction pointers
   //! \param[in] junc_props vector of junction properties
-  void create_junctions(const std::vector<JunctionProp>& junc_props);
+  void create_nodes(const std::vector<JunctionProp>& junc_props,
+                    const std::vector<ReservoirProp>& res_props) {
+    mesh_nodes_ = std::make_shared<MeshNodes>(junc_props, res_props);
+  };
 
   //! Create Reservoir pointers
   //! \param[in] res_props vector of reservoir properties
-  void create_reservoirs(const std::vector<ReservoirProp>& res_props);
-
-  //! Create Pipe pointers
-  //! \param[in]  pipe_props vector of pipe properties
-  void create_pipes(std::vector<PipeProp>& pipe_props);
-
-  //! Create Pump pointers
-  //! \param[in]  pump_props vector of pump properties
-  void create_pumps(std::vector<PumpProp>& pump_props);
-
-  //! Create Valve pointers
-  //! \param[in]  valve_props vector of valve properties
-  void create_valve(std::vector<Valve_prop>& valve_props);
-
-  //! get all nodes map
-  tsl::ordered_map<std::string, std::shared_ptr<pipenetwork::Node>> nodes()
-      const {
-    return nodes_;
-  }
-  //! get links map
-  std::vector<std::shared_ptr<pipenetwork::Link>> links() const {
-    return links_;
-  }
-
-  //! Iterate over nodes
-  //! \tparam Toper Callable object typically a baseclass functor
-  template <typename Toper>
-  void iterate_over_nodes(Toper oper) {
-    std::for_each(
-        nodes_.cbegin(), nodes_.cend(),
-        [=](std::pair<std::string, std::shared_ptr<pipenetwork::Node>> node) {
-          oper(node.second);
-        });
+  void create_links(std::vector<PipeProp>& pipe_props,
+                    std::vector<PumpProp>& pump_props,
+                    std::vector<ValveProp>& valve_props) {
+    mesh_links_ =
+        std::make_shared<MeshLinks>(pipe_props, pump_props, valve_props,*mesh_nodes_);
   };
 
-  //! Iterate over links
-  //! \tparam Toper Callable object typically a baseclass functor
-  template <typename Toper>
-  void iterate_over_links(Toper oper) {
-    std::for_each(links_.cbegin(), links_.cend(),
-                  [=](std::shared_ptr<pipenetwork::Link> link) { oper(link); });
-  };
+  //! get nodes
+  std::shared_ptr<MeshNodes> nodes() const { return mesh_nodes_; }
+  //! get links
+  std::shared_ptr<MeshLinks> links() const { return mesh_links_; }
 
   //! Print summary for the mesh
-  void print_summary();
-
-  //! Return number of nodes in the network
-  //! \retval nnode_ number of nodes in the network
-  unsigned nnodes() const { return nodes_.size(); }
-
-  //! Return number of links in the network
-  //! \retval nnode_ number of pipes in the network
-  unsigned nlinks() const { return links_.size(); }
-
-  //! Return number of pipes in the network
-  //! \retval nnode_ number of pipes in the network
-  unsigned npipes() const { return npipes_; }
-
-  //! Return number of pumps in the network
-  //! \retval nnode_ number of pumps in the network
-  unsigned npumps() const { return npumps_; }
-
-  //! Return number of valves in the network
-  //! \retval nnode_ number of valves in the network
-  unsigned nvalves() const { return nvalves_; }
-
-  //! Return number of junctions in the network
-  //! \retval nnode_ number of valves in the network
-  unsigned njunctions() const { return njunctions_; }
-
-  //! Return number of sources in the network
-  //! \retval nnode_ number of valves in the network
-  unsigned nsources() const { return nsrcs_; }
+  //  void print_summary();
 
  private:
   //! mesh name
   std::string name_;
-
-  //! number of pumps
-  unsigned npumps_{0};
-  //! number of pipes
-  unsigned npipes_{0};
-  //! number of valves
-  unsigned nvalves_{0};
-  //! number of junctions
-  unsigned njunctions_{0};
-  //! number of sources
-  unsigned nsrcs_{0};
-  //! nodal id and corresponding nodal pointer
-  tsl::ordered_map<std::string, std::shared_ptr<pipenetwork::Node>> nodes_;
-  //! vector of links
-  std::vector<std::shared_ptr<pipenetwork::Link>> links_;
+  //! mesh nodes
+  std::shared_ptr<MeshNodes> mesh_nodes_;
+  //! mesh links
+  std::shared_ptr<MeshLinks> mesh_links_;
 };
 
 }  // namespace pipenetwork

@@ -36,7 +36,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # pipe_network executable
 SET(pipe_network_src
-        src/foo.cc)
+        src/index_manager.cc
+        src/mesh.cc
+        )
 #        src/curves.cc
 #        src/hydralic_sim.cc
 #        src/input.cc
@@ -137,7 +139,7 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
   SET(pipe_network_test_src
           tests/node_test.cc
           tests/link_test.cc
-#          tests/mesh_test.cc
+          tests/mesh_test.cc
 
 #          tests/matrix_assembler_test.cc
 #          tests/solver_test.cc
