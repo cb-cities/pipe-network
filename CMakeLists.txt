@@ -37,7 +37,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # pipe_network executable
 SET(pipe_network_src
         src/index_manager.cc
+        src/mesh_components.cc
         src/mesh.cc
+
         )
 #        src/curves.cc
 #        src/hydralic_sim.cc

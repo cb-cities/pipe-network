@@ -14,33 +14,7 @@
 //  }
 //}
 //
-// void pipenetwork::Mesh::print_summary() {
-//
-//  std::cout << "number of nodes: " << nnodes()
-//            << " ;number of links: " << nlinks()
-//            << " ;number of pipes: " << npipes()
-//            << " ;number of pumps: " << npumps()
-//            << " ;number of valves: " << nvalves()
-//            << " ;number of junctions: " << njunctions_
-//            << " ;number of sources: " << nsrcs_ << std::endl;
-//
-//  //  std::cout
-//  //      << "======================= NODES INFO ======================="
-//  //      << std::endl;
-//  //
-//  //  for (auto const& x : nodes_) {
-//  //    std::cout << "node id: " << x.second->id() << std::endl;
-//  //  }
-//  //
-//  //  std::cout << "======================= LINKS INFO
-//  ======================="
-//  //            << std::endl;
-//  //  for (auto const& x : links_) {
-//  //    std::cout << "link id: " << x->id()
-//  //              << "; node1 id: " << x->nodes().first->id()
-//  //              << "; node2 id: " << x->nodes().second->id() << std::endl;
-//  //  }
-//}
+
 //
 // void pipenetwork::Mesh::create_pumps(
 //    std::vector<pipenetwork::Pump_prop>& pump_props) {
@@ -124,106 +98,62 @@
 //  }
 //}
 
-pipenetwork::MeshNodes::MeshNodes(
-    const std::vector<pipenetwork::JunctionProp>& junc_props,
-    const std::vector<pipenetwork::ReservoirProp>& res_props) {
-
-  add_nodes(junc_props);
-  add_nodes(res_props);
+void pipenetwork::Mesh::find_iso_components_() {
+  find_iso_nodes_();
+  find_iso_links_();
 }
 
-std::shared_ptr<pipenetwork::Node> pipenetwork::MeshNodes::get_node(
-    const std::string& node_name) const {
-  try {
-    Index nid = name2id.at(node_name);
-    if (nid < junctions.size()) {
-      return junctions.at(nid);
-    }
-    return reservoirs.at(nid);
+void pipenetwork::Mesh::find_iso_nodes_() {
+  Index nnodes = mesh_nodes_->nnodes();
+  Eigen::VectorXd check_result(nnodes);
+  check_result.setZero(nnodes);
 
-  } catch (...) {
-    throw std::runtime_error("Node does not exist: " + node_name + "\n");
+  auto reservoirs = mesh_nodes_->reservoirs();
+  for (const auto& index_res : reservoirs) {
+    auto res_id = index_res.first;
+    check_result += mesh_graph_->bfs(res_id);
   }
-}
-template <typename Prop>
-void pipenetwork::MeshNodes::add_nodes(const std::vector<Prop>& props) {
-  for (const auto& prop : props) {
-    Index nid = nid_manager_.create_index();
-    name2id.emplace(prop.name, nid);
-    add_node(prop);
-  }
-}
-
-void pipenetwork::MeshNodes::add_node(
-    const pipenetwork::JunctionProp& junc_prop) {
-  auto nid = nid_manager_.current_index();
-  auto junc = std::make_shared<pipenetwork::Junction>(nid, junc_prop);
-  junctions.emplace(nid, junc);
-}
-
-void pipenetwork::MeshNodes::add_node(
-    const pipenetwork::ReservoirProp& res_prop) {
-  auto nid = nid_manager_.current_index();
-  auto res = std::make_shared<pipenetwork::Reservoir>(nid, res_prop);
-  reservoirs.emplace(nid, res);
-}
-
-// Meshlinks constructor
-pipenetwork::MeshLinks::MeshLinks(
-    std::vector<pipenetwork::PipeProp>& pipe_props,
-    std::vector<pipenetwork::PumpProp>& pump_props,
-    std::vector<pipenetwork::ValveProp>& valve_props,
-    const MeshNodes& mesh_nodes) {
-
-  add_links(pipe_props, mesh_nodes);
-  add_links(pump_props, mesh_nodes);
-  add_links(valve_props, mesh_nodes);
-}
-
-template <typename Prop>
-void pipenetwork::MeshLinks::add_links(
-    const std::vector<Prop>& props, const pipenetwork::MeshNodes& mesh_nodes) {
-  for (const auto& prop : props) {
-    try {
-      Index lid = lid_manager_.create_index();
-      auto node1 = mesh_nodes.get_node(prop.node1_name);
-      auto node2 = mesh_nodes.get_node(prop.node2_name);
-      add_link(node1, node2, prop);
-    } catch (std::exception& e) {
-      std::cout << "Failed to create link: " << prop.name << "\n";
-      std::cout << "Exception: " << e.what() << "\n";
+  for (Index i = 0; i < nnodes; ++i) {
+    if (check_result[i] == 0) {
+      iso_nodes_.emplace_back(i);
     }
   }
 }
 
-void pipenetwork::MeshLinks::add_link(
-    const std::shared_ptr<pipenetwork::Node>& node1,
-    const std::shared_ptr<pipenetwork::Node>& node2,
-    const pipenetwork::PipeProp& pipe_prop) {
-  auto lid = lid_manager_.current_index();
-  auto pipe =
-      std::make_shared<pipenetwork::Pipe>(lid, *node1, *node2, pipe_prop);
-  pipes.emplace(lid, pipe);
+void pipenetwork::Mesh::find_iso_links_() {
+  auto node2link_map = mesh_graph_->node2link_map();
+  for (const auto& nid : iso_nodes_) {
+    if (node2link_map.find(nid) != node2link_map.end()) {
+      auto links = node2link_map.at(nid);
+      for (const auto& link : links) {
+        iso_links_.emplace_back(link);
+      }
+    }
+  }
 }
+void pipenetwork::Mesh::print_summary() {
+  std::cout << "Network Name: " << name_ << std::endl
+            << "number of pipes: " << mesh_links_->npipes()
+            << " ;number of pumps: " << mesh_links_->npumps()
+            << " ;number of valves: " << mesh_links_->nvalves()
+            << " ;number of junctions: " << mesh_nodes_->njunctions()
+            << " ;number of sources: " << mesh_nodes_->nreservoirs()
+            << std::endl;
 
-void pipenetwork::MeshLinks::add_link(
-    const std::shared_ptr<pipenetwork::Node>& node1,
-    const std::shared_ptr<pipenetwork::Node>& node2,
-    const pipenetwork::PumpProp& pump_prop) {
-  auto lid = lid_manager_.current_index();
-  auto pump =
-      std::make_shared<pipenetwork::Pump>(lid, *node1, *node2, pump_prop);
-  pumps.emplace(lid, pump);
+  //  std::cout
+  //      << "======================= NODES INFO ======================="
+  //      << std::endl;
+  //
+  //  for (auto const& x : nodes_) {
+  //    std::cout << "node id: " << x.second->id() << std::endl;
+  //  }
+  //
+  //  std::cout << "======================= LINKS INFO
+  //  == == == == == == == == == == == = "
+  //            << std::endl;
+  //  for (auto const& x : links_) {
+  //    std::cout << "link id: " << x->id()
+  //              << "; node1 id: " << x->nodes().first->id()
+  //              << "; node2 id: " << x->nodes().second->id() << std::endl;
+  //  }
 }
-
-void pipenetwork::MeshLinks::add_link(
-    const std::shared_ptr<pipenetwork::Node>& node1,
-    const std::shared_ptr<pipenetwork::Node>& node2,
-    const pipenetwork::ValveProp& valve_prop) {
-  auto lid = lid_manager_.current_index();
-  auto valve =
-      std::make_shared<pipenetwork::Valve>(lid, *node1, *node2, valve_prop);
-  valves.emplace(lid, valve);
-}
-
-

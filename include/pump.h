@@ -9,7 +9,7 @@ namespace pipenetwork {
 //! curve_name pump head curve id
 //! speed speed for the pump
 //! pattern pattern for speed setting
-struct PumpProp: LinkProp {
+struct PumpProp : LinkProp {
   PumpType type{PumpType::POWERPUMP};
   LinkStatus status{LinkStatus::OPEN};
   int curve_id{-1};

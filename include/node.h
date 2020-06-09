@@ -8,7 +8,6 @@
 
 namespace pipenetwork {
 
-
 //! Node class
 //! \brief Base Class that stores the information about nodes
 class Node {

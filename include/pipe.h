@@ -9,7 +9,7 @@ namespace pipenetwork {
 //! diameter, diameter of the pipe
 //! roughness, roughness of the pipe
 //! status, status of the pipe (open or close)
-struct PipeProp:LinkProp {
+struct PipeProp : LinkProp {
   double length{std::numeric_limits<float>::max()};
   double diameter{std::numeric_limits<float>::max()};
   double roughness{std::numeric_limits<float>::max()};
@@ -27,7 +27,7 @@ class Pipe : public Link {
   //! \param[in] node2 the other end node
   //! \param[in] pipe_prop struct with properties for the pipe
   Pipe(Index link_id, const Node& node1, const Node& node2,
-      const PipeProp& pipe_prop)
+       const PipeProp& pipe_prop)
       : Link(link_id, node1, node2), property_{pipe_prop} {};
 
   //! Virtual destructor

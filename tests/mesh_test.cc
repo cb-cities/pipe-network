@@ -36,6 +36,8 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   }
 
   std::vector<std::string> pipe_names{"1", "2", "3"};
+  // 1<->2<->6; 4<->7
+
   std::vector<std::pair<std::string, std::string>> node_names{
       std::make_pair("1", "2"), std::make_pair("2", "6"),
       std::make_pair("4", "7")};
@@ -67,9 +69,11 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   SECTION("MeshNodes") {
     auto mesh_nodes = pipenetwork::MeshNodes(junc_props, res_props);
     // check junctions
-    REQUIRE(mesh_nodes.junctions.size() == junc_props.size());
+    REQUIRE(mesh_nodes.njunctions() == junc_props.size());
     // check reservoirs
-    REQUIRE(mesh_nodes.reservoirs.size() == res_props.size());
+    REQUIRE(mesh_nodes.nreservoirs() == res_props.size());
+    // check nodes
+    REQUIRE(mesh_nodes.nnodes() == (res_props.size() + junc_props.size()));
 
     // check get node
     auto junc1 = mesh_nodes.get_node("1");
@@ -84,75 +88,82 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
         pipenetwork::MeshLinks(pipe_props, pump_props, valve_props, mesh_nodes);
 
     // check pipes
-    REQUIRE(mesh_links.pipes.size() == pipe_props.size());
+    REQUIRE(mesh_links.npipes() == pipe_props.size());
     // check pumps
-    REQUIRE(mesh_links.pumps.size() == 0);
+    REQUIRE(mesh_links.npumps() == 0);
+    // check links
+    REQUIRE(mesh_links.nlinks() == pipe_props.size());
   }
+
   SECTION("Mesh") {
     std::string mesh_name = "test_mesh";
     auto mesh = pipenetwork::Mesh(mesh_name);
     mesh.create_nodes(junc_props, res_props);
     mesh.create_links(pipe_props, pump_props, valve_props);
-
+    mesh.create_mesh_graph();
+    mesh.find_iso_components();
+    mesh.print_summary();
     // nodes
     auto mesh_nodes = mesh.nodes();
-
-    REQUIRE(mesh_nodes->junctions.size() == junc_props.size());
+    REQUIRE(mesh_nodes->njunctions() == junc_props.size());
 
     // links
     auto mesh_links = mesh.links();
     // check pipes
-    REQUIRE(mesh_links->pipes.size() == pipe_props.size());
+    REQUIRE(mesh_links->npipes() == pipe_props.size());
     // check pumps
-    REQUIRE(mesh_links->pumps.size() == 0);
+    REQUIRE(mesh_links->npumps() == 0);
+
+    // graph
+    auto graph = mesh.mesh_graph();
+    // Adjacency matrix
+    auto A = graph->adjacency_matrix();
+
+    REQUIRE(A.coeff(0, 1) == 1);
+    REQUIRE(A.coeff(1, 0) == 1);
+    REQUIRE(A.coeff(1, 5) == 1);
+    REQUIRE(A.coeff(5, 1) == 1);
+    REQUIRE(A.coeff(3, 6) == 1);
+    REQUIRE(A.coeff(6, 3) == 1);
+    REQUIRE(A.coeff(4, 4) == 0);
+    REQUIRE(A.coeff(2, 6) == 0);
+
+    // Node to link map
+    auto n2l_map = graph->node2link_map();
+    REQUIRE(n2l_map[0].size() == 1);
+    REQUIRE(n2l_map[1].size() == 2);
+    REQUIRE(n2l_map[2].size() == 0);
+    REQUIRE(n2l_map[3].size() == 1);
+    REQUIRE(n2l_map[4].size() == 0);
+
+    // Node degrees
+    auto node_degrees = graph->ndegree();
+    REQUIRE(node_degrees[0] == 1);
+    REQUIRE(node_degrees[1] == 2);
+    REQUIRE(node_degrees[2] == 0);
+
+    // Bfs
+    auto connectivity_mask1 = graph->bfs(1);
+    REQUIRE(connectivity_mask1[0] == 1);
+    REQUIRE(connectivity_mask1[1] == 1);
+    REQUIRE(connectivity_mask1[5] == 1);
+    REQUIRE(connectivity_mask1[3] == 0);
+    REQUIRE(connectivity_mask1[6] == 0);
+    auto connectivity_mask3 = graph->bfs(3);
+    REQUIRE(connectivity_mask3[0] == 0);
+    REQUIRE(connectivity_mask3[1] == 0);
+    REQUIRE(connectivity_mask3[5] == 0);
+    REQUIRE(connectivity_mask3[3] == 1);
+    REQUIRE(connectivity_mask3[6] == 1);
+
+    // isolated junctions
+    auto iso_juncs = mesh.iso_nodes();
+    REQUIRE(iso_juncs.size() == 2);
+    REQUIRE(iso_juncs[0] == 2);
+    REQUIRE(iso_juncs[1] == 4);
+
+    // isolated links
+    auto iso_links = mesh.iso_links();
+    REQUIRE(iso_links.size() == 0);
   }
-
-  //  std::vector<std::string> pipe_ids{"1", "2", "3"};
-  //  std::vector<std::pair<std::string, std::string>> nodeids{
-  //      std::make_pair("1", "2"), std::make_pair("2", "6"),
-  //      std::make_pair("4", "7")};
-  //  const std::vector<double> length{100, 200, 300};
-  //  const std::vector<double> diameter{3, 4, 5};
-  //  const std::vector<double> roughness{0.2, .6, .9};
-  //  const std::vector<pipenetwork::Link_status> status{
-  //      pipenetwork::OPEN, pipenetwork::OPEN, pipenetwork::OPEN};
-  //
-  //  std::vector<pipenetwork::Pipe_prop> pipe_props;
-  //  for (int i = 0; i < pipe_ids.size(); ++i) {
-  //    pipenetwork::Pipe_prop pipe_prop;
-  //    pipe_prop.id = pipe_ids[i];
-  //    pipe_prop.length = length[i];
-  //    pipe_prop.diameter = diameter[i];
-  //    pipe_prop.roughness = roughness[i];
-  //    pipe_prop.node1_id = nodeids[i].first;
-  //    pipe_prop.node2_id = nodeids[i].second;
-  //    pipe_prop.status = status[i];
-  //
-  //    pipe_props.emplace_back(pipe_prop);
-  //  }
-  //
-  //  mesh->create_pipes(pipe_props);
-  //
-  //  REQUIRE(mesh->njunctions() == 5);
-  //  REQUIRE(mesh->nsources() == 2);
-  //  REQUIRE(mesh->npipes() == 3);
-  //  REQUIRE(mesh->nnodes() == 7);
-  //
-  //  auto node_map = mesh->nodes();
-  //  auto links = mesh->links();
-  //  auto junction_node = node_map.at("2");
-  //  auto res_node = node_map.at("6");
-  //  auto pipe = links[0];
-  //
-  //  REQUIRE(junction_node->nodal_info()["elevation"] == 4);
-  //  REQUIRE(res_node->nodal_info()["head"] == 99);
-  //  REQUIRE(pipe->link_info()["length"] == 100);
-
-  //
-  ////    mesh->print_summary ();
-  //    double init_head = 10;
-  //    mesh->iterate_over_nodes
-  //    (std::bind(&pipenetwork::Node::update_sim_demand,
-  //    std::placeholders::_1,init_head));
-  //
 }

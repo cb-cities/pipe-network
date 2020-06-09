@@ -32,9 +32,9 @@ class Junction : public Node {
   }
 
   //! Junction demand, mutable
-  double demand;
+  double demand{0};
   //! Junction head, mutable
-  double head;
+  double head{1e-3};
 
  private:
   //! junction information
