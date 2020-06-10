@@ -24,10 +24,10 @@ class Junction : public Node {
       : Node(id), property_{junc_prop} {};
 
   //! Return nodal info
-  inline JunctionProp property() const { return property_; }
+  inline const JunctionProp property() const { return property_; }
 
   //! Return leak area
-  inline double leak_area() const {
+  inline const double leak_area() const {
     return std::pow((property_.leak_diameter / 2), 2) * PI;
   }
 

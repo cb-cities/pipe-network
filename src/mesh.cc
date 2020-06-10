@@ -120,6 +120,17 @@ void pipenetwork::Mesh::find_iso_nodes_() {
   }
 }
 
+void pipenetwork::Mesh::find_leak_nids() {
+  auto junctions = mesh_nodes_->junctions();
+  for (const auto& index_junc : junctions) {
+    auto nid = index_junc.first;
+    auto junction = index_junc.second;
+    if (junction->leak_area() > 0) {
+      leak_nids_.emplace_back(nid);
+    }
+  }
+}
+
 void pipenetwork::Mesh::find_iso_links_() {
   auto node2link_map = mesh_graph_->node2link_map();
   for (const auto& nid : iso_nodes_) {

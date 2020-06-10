@@ -21,10 +21,10 @@ class Reservoir : public Node {
       : Node(id), property_{res_prop} {};
 
   //! Return nodal info
-  inline ReservoirProp property() const { return property_; }
+  inline const ReservoirProp property() const { return property_; }
 
   //! Getter for head
-  inline double head() const { return property_.head; }
+  inline const double head() const { return property_.head; }
 
   //! Setter for head
   inline void head(const double head) { property_.head = head; }

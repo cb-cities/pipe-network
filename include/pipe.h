@@ -34,7 +34,7 @@ class Pipe : public Link {
   ~Pipe() override{};
 
   //! Return pipe property
-  PipeProp property() const { return property_; }
+  const PipeProp& property() const { return property_; }
 
  private:
   //! pipe properties

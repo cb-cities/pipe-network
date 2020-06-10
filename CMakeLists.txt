@@ -39,6 +39,8 @@ SET(pipe_network_src
         src/index_manager.cc
         src/mesh_components.cc
         src/mesh.cc
+        src/matrix_assembler.cc
+        src/curves.cc
 
         )
 #        src/curves.cc
@@ -142,8 +144,7 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/node_test.cc
           tests/link_test.cc
           tests/mesh_test.cc
-
-#          tests/matrix_assembler_test.cc
+          tests/matrix_assembler_test.cc
 #          tests/solver_test.cc
 #          tests/input_test.cc
 #          tests/curve_test.cc

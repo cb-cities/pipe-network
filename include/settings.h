@@ -10,6 +10,7 @@ const double PI{M_PI};
 const double G{9.81};
 const double HW_COEFF{10.666829500036352};
 const double LEAK_COEFF{0.75};
+const double INIT_FLOWRATE{1E-3};
 
 //! pressure demand driven simulation (PDD) settings
 const double MIN_PRESSURE{1e-2};

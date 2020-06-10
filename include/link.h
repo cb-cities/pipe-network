@@ -39,7 +39,7 @@ class Link {
   Index id() const { return id_; }
 
   //! Return end nodes
-  std::pair<std::shared_ptr<Node>, std::shared_ptr<Node>> nodes() const {
+  const std::pair<std::shared_ptr<Node>, std::shared_ptr<Node>>& nodes() const {
     return nodes_;
   }
 

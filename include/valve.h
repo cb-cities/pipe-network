@@ -31,7 +31,7 @@ class Valve : public Link {
   ~Valve() override{};
 
   //! Return Valve property
-  ValveProp property() const { return property_; }
+  const ValveProp& property() const { return property_; }
 
  private:
   //! valve properties

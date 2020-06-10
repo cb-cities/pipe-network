@@ -175,13 +175,13 @@ class MeshGraph {
   };
 
   //! Get adjacency matrix of the mesh
-  const Eigen::SparseMatrix<int>& adjacency_matrix() { return A_; }
+  const Eigen::SparseMatrix<int>& adjacency_matrix() const { return A_; }
   //! Get node to link map
-  const std::map<Index, std::vector<Index>>& node2link_map() {
+  const std::map<Index, std::vector<Index>>& node2link_map() const {
     return node2link_;
   }
   //! Get node degrees
-  std::vector<unsigned> ndegree() { return ndegree_; }
+  std::vector<unsigned> ndegree() const { return ndegree_; }
   //! BFS
   Eigen::VectorXd bfs(Index nid);
 

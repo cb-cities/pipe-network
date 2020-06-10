@@ -25,6 +25,7 @@ class Mesh {
   void create_nodes(const std::vector<JunctionProp>& junc_props,
                     const std::vector<ReservoirProp>& res_props) {
     mesh_nodes_ = std::make_shared<MeshNodes>(junc_props, res_props);
+    find_leak_nids();
   };
 
   //! Create Reservoir pointers
@@ -49,9 +50,11 @@ class Mesh {
   //! get links
   std::shared_ptr<MeshGraph> mesh_graph() const { return mesh_graph_; }
   //! get isolated nodes
-  const std::vector<Index>& iso_nodes() { return iso_nodes_; }
+  const std::vector<Index>& iso_nodes() const { return iso_nodes_; }
   //! get isolated links
-  const std::vector<Index>& iso_links() { return iso_links_; }
+  const std::vector<Index>& iso_links() const { return iso_links_; }
+  //! get leak nids
+  const std::vector<Index>& leak_nids() const { return leak_nids_; }
 
   //! Print summary for the mesh
   void print_summary();
@@ -69,12 +72,16 @@ class Mesh {
   std::vector<Index> iso_nodes_;
   //! isolated link ids
   std::vector<Index> iso_links_;
+  //! leak nids
+  std::vector<Index> leak_nids_;
   //! Find isolated junctions and links for the mesh
   void find_iso_components_();
   //! find isolated nodes
   void find_iso_nodes_();
   //! find isolated links
   void find_iso_links_();
+  //! find leak node lids
+  void find_leak_nids();
 };
 
 }  // namespace pipenetwork

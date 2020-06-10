@@ -31,7 +31,7 @@ class Pump : public Link {
   ~Pump() override{};
 
   //! Return pump property
-  PumpProp property() const { return property_; }
+  const PumpProp& property() const { return property_; }
 
  private:
   //! valve information

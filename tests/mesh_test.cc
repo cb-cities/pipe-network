@@ -11,7 +11,7 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
   std::vector<std::string> junction_names{"1", "2", "3", "4", "5"};
   std::vector<double> elevations{5, 4, 3, 2, 1};
   std::vector<double> demands{1, 2, 3, 4, 5};
-  std::vector<double> leak_diameters{0.1, 0.4, 0.3, 0.2, 0.1};
+  std::vector<double> leak_diameters{0, 0, 0, 0.2, 0.1};
 
   std::vector<pipenetwork::JunctionProp> junc_props;
   for (int i = 0; i < elevations.size(); ++i) {
@@ -101,7 +101,6 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     mesh.create_nodes(junc_props, res_props);
     mesh.create_links(pipe_props, pump_props, valve_props);
     mesh.create_mesh_graph();
-    mesh.find_iso_components();
     mesh.print_summary();
     // nodes
     auto mesh_nodes = mesh.nodes();
@@ -113,6 +112,12 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     REQUIRE(mesh_links->npipes() == pipe_props.size());
     // check pumps
     REQUIRE(mesh_links->npumps() == 0);
+
+    // check leak node ids
+    auto leak_nids = mesh.leak_nids();
+    REQUIRE(leak_nids.size() == 2);
+    REQUIRE(leak_nids[0] == 3);
+    REQUIRE(leak_nids[1] == 4);
 
     // graph
     auto graph = mesh.mesh_graph();
