@@ -49,10 +49,9 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
     res_props.emplace_back(res_prop);
   }
 
-  std::vector<std::string> pipe_ids{"10", "11", "12", "13"};
+  std::vector<std::string> pipe_ids{"10", "11"};
   std::vector<std::pair<std::string, std::string>> nodeids{
-      std::make_pair("13", "10"), std::make_pair("10", "11"),
-      std::make_pair("11", "12"), std::make_pair("10", "12")};
+      std::make_pair("13", "10"), std::make_pair("10", "11")};
   const std::vector<double> length{3209.5440000000003, 3209.5440000000003,
                                    1609.344, 1609.344};
   const std::vector<double> diameter{0.5588, 0.4572, 0.35559999999999997,
@@ -71,8 +70,39 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
 
     pipe_props.emplace_back(pipe_prop);
   }
+
+  std::vector<std::string> pump_ids{"12"};
+  std::vector<std::pair<std::string, std::string>> pump_nodeids{
+      std::make_pair("10", "12")};
+
   std::vector<pipenetwork::PumpProp> pump_props;
+
+  for (int i = 0; i < pump_ids.size(); ++i) {
+    pipenetwork::PumpProp pump_prop;
+    pump_prop.name = pump_ids[i];
+    pump_prop.type = pipenetwork::PumpType::POWERPUMP;
+    pump_prop.node1_name = pump_nodeids[i].first;
+    pump_prop.node2_name = pump_nodeids[i].second;
+    pump_props.emplace_back(pump_prop);
+  }
+
+  std::vector<std::string> valve_ids{"13"};
+  std::vector<std::pair<std::string, std::string>> valve_nodeids{
+      std::make_pair("11", "12")};
+
   std::vector<pipenetwork::ValveProp> valve_props;
+
+  for (int i = 0; i < valve_ids.size(); ++i) {
+    pipenetwork::ValveProp valve_prop;
+    valve_prop.name = valve_ids[i];
+    valve_prop.type = pipenetwork::ValveType::PRVALVE;
+    valve_prop.status = pipenetwork::LinkStatus ::ACTIVE;
+    valve_prop.setting = 10;
+    valve_prop.node1_name = valve_nodeids[i].first;
+    valve_prop.node2_name = valve_nodeids[i].second;
+
+    valve_props.emplace_back(valve_prop);
+  }
 
   mesh->create_nodes(junc_props, res_props);
   mesh->create_links(pipe_props, pump_props, valve_props);
@@ -89,8 +119,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       REQUIRE(var_vec[5] == Approx(9.464e-03).epsilon(tolerance));
       REQUIRE(var_vec[10] ==
               Approx(pipenetwork::INIT_FLOWRATE).epsilon(tolerance));
-      REQUIRE(var_vec[12] ==
-              Approx(pipenetwork::INIT_FLOWRATE).epsilon(tolerance));
+      REQUIRE(var_vec[12] == Approx(0).epsilon(tolerance));
     }
     SECTION("variable vector") {
       auto demands_heads_vec = variables.demands_heads_vec();
@@ -133,6 +162,42 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
       double leak_area = pipenetwork::PI * std::pow((0.1 / 2), 2);
       REQUIRE(leak_areas.size() == 1);
       REQUIRE(leak_areas[0] == Approx(leak_area).epsilon(tolerance));
+    }
+  }
+
+  SECTION("TEST RESIDUALS") {
+    auto variables =
+        std::make_shared<pipenetwork::linear_system::Variables>(mesh);
+    auto residuals =
+        pipenetwork::linear_system::Residuals(mesh, variables, curves_info);
+    residuals.assemble_residual();
+    auto res_vec = residuals.residual_vec();
+
+    SECTION("node balance residual") {
+      REQUIRE(res_vec.coeff(0) == Approx(-0.001).epsilon(tolerance));
+      REQUIRE(res_vec.coeff(1) == Approx(-9.464e-03).epsilon(tolerance));
+    }
+
+    SECTION("node demand head residual") {
+      REQUIRE(res_vec.coeff(5) == Approx(0).epsilon(tolerance));
+      REQUIRE(res_vec.coeff(7) == Approx(0).epsilon(tolerance));
+    }
+
+    SECTION("pipe headloss residual") {
+      // pipe headloss
+      REQUIRE(res_vec.coeff(8) == Approx(-88.3916796736).epsilon(tolerance));
+      // pump headloss
+      double pump_res = 50 + (elevations[0] - elevations[2]) *
+                                 pipenetwork::INIT_FLOWRATE * pipenetwork::G *
+                                 1000.0;
+      REQUIRE(res_vec.coeff(10) == Approx(pump_res).epsilon(tolerance));
+
+      // valve headloss
+      REQUIRE(res_vec.coeff(11) == Approx(-10).epsilon(tolerance));
+    }
+
+    SECTION("pipe leak residual") {
+      REQUIRE(res_vec.coeff(12) == Approx(0).epsilon(tolerance));
     }
   }
 

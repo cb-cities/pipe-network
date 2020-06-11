@@ -101,6 +101,82 @@ class Variables {
   double get_link_minor_coeff(const std::shared_ptr<Link>& link) { return 0; }
 };
 
+//! Residuals class
+//! \brief Class for linear system residuals
+class Residuals {
+ public:
+  Residuals(const std::shared_ptr<Mesh>& mesh,
+            const std::shared_ptr<Variables>& vars,
+            const std::shared_ptr<Curves>& curves);
+
+  //! assemble the residual vector
+  void assemble_residual();
+
+  //! get the residual vector
+  const Eigen::VectorXd& residual_vec() const { return residual_vec_; }
+
+ private:
+  //! the mesh ptr
+  std::shared_ptr<Mesh> mesh_;
+  //! curves ptr
+  std::shared_ptr<Curves> curves_info_;
+  //! the vriable ptr
+  std::shared_ptr<Variables> vars_;
+  //! node balance matrix
+  Eigen::SparseMatrix<double> node_balance_mat_;
+  //! link headloss matrix
+  Eigen::SparseMatrix<double> headloss_mat_;
+  //! Residual vector
+  Eigen::VectorXd residual_vec_;
+  //! Variable vector
+  Eigen::VectorXd& variable_vec_;
+  //! number of nodes
+  Index nnodes_;
+  //! number of links
+  Index nlinks_;
+
+  //! isolated junctions vector (boolean mask purpose)
+  Eigen::VectorXd iso_junctions_mask_;
+  //! connected junctions vector (boolean mask purpose)
+  Eigen::VectorXd connect_junctions_mask_;
+  //! isolated/closed links vector (boolean mask purpose)
+  Eigen::VectorXd iso_links_mask_;
+  //! connected links vector (boolean mask purpose)
+  Eigen::VectorXd connect_links_mask_;
+
+  //! assemble the masks for isolated nodes and links
+  void assemble_iso_masks();
+
+  //! assemble the balance headloss matrix for fast residual computation
+  void assemble_balance_headloss_matrix();
+
+  //! assemble node balance residual (0-nnodes)
+  void assemble_node_balance_residual();
+
+  //! assemble demand head residual (nnodes-2*nnodes)
+  void assemble_demand_head_residual();
+
+  //! assemble headloss residual for pipes (hazan-williams equation)
+  void assemble_headloss_residual_pipe();
+
+  //! assemble headloss residual for pumps
+  void assemble_headloss_residual_pump();
+
+  //! get pump head gain for head pumps
+  double get_pump_headgain(const std::shared_ptr<Pump>& pump, double link_flow);
+  //! assemble headloss residual for valves
+  void assemble_headloss_residual_valve();
+
+  //! get residual for open valves
+  double get_open_valve_residual(const std::shared_ptr<Valve>& valve,
+                                 double link_flow);
+  //! get residual for active valves based on different valve types
+  double get_active_valve_residual(const std::shared_ptr<Valve>& valve,
+                                   double link_flow);
+  //! assemble leak residual
+  void assemble_leak_residual();
+};
+
 //
 ////! Mtrix assembler class
 ////! \brief Class for assembling matrix for solving
