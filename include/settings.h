@@ -13,7 +13,7 @@ const double LEAK_COEFF{0.75};
 const double INIT_FLOWRATE{1E-3};
 
 //! pressure demand driven simulation (PDD) settings
-const double MIN_PRESSURE{1e-2};
+const double MIN_PRESSURE{1e-4};
 const double NORMAL_PRESSURE{20};
 const double PDD_DELTA{0.2};
 const double PDD_SLOPE{1e-3};

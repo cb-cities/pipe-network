@@ -39,6 +39,7 @@ SET(pipe_network_src
         src/index_manager.cc
         src/mesh_components.cc
         src/mesh.cc
+        src/matrix_assembler_components.cc
         src/matrix_assembler.cc
         src/curves.cc
 
