@@ -36,6 +36,12 @@ class MatrixAssembler {
     return jac_->jac_matrix();
   }
 
+  //! Method for system update after variable changes
+  void system_update() {
+    assemble_residual();
+    update_jacobian();
+  }
+
  private:
   //! the mesh ptr
   std::shared_ptr<Mesh> mesh_;

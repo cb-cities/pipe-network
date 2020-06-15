@@ -1,10 +1,11 @@
 #include "mkl_unsym.h"
 #include "factory.h"
 
-static Register<pipenetwork::Solver, pipenetwork::Mkl_unsym> registry(
-    "mkl_pardiso");
+static Register<pipenetwork::linear_system::Solver,
+                pipenetwork::linear_system::Mkl_unsym>
+    registry("mkl_pardiso");
 
-pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
+pipenetwork::linear_system::Mkl_unsym::Mkl_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
   char* var;
@@ -23,7 +24,6 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   else {
     num_procs_ = 2;
   }
-
   /* -------------------------------------------------------------------- */
   /* .. Setup Pardiso control parameters. */
   /* -------------------------------------------------------------------- */
@@ -57,7 +57,7 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   error_ = 0;      /* Initialize error flag */
 }
 
-Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
+Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
   // configure matrix
   int n = vec_b_->size();
   double* vec_b = vec_b_->data();
@@ -74,43 +74,6 @@ Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
   for (int i = 0; i < nnz; i++) {
     ja_[i] += 1;
   }
-
-  /* -------------------------------------------------------------------- */
-  /*  .. pardiso_chk_matrix(...)                                          */
-  /*     Checks the consistency of the given matrix.                      */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkmatrix(&mtype, &n, a, ia, ja, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR in consistency of matrix: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* ..  pardiso_chkvec(...)                                              */
-  /*     Checks the given vectors for infinite and NaN values             */
-  /*     Input parameters (see PARDISO user manual for a description):    */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkvec(&n, &nrhs, vec_b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR  in right hand side: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* .. pardiso_printstats(...)                                           */
-  /*    prints information on the matrix to STDOUT.                       */
-  /*    Use this functionality only for debugging purposes                */
-  /* -------------------------------------------------------------------- */
-
-  //    pardiso_printstats (&mtype, &n, a, ia, ja, &nrhs, b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR right hand side: %d", error);
-  //    exit(1);
-  //  }
 
   /* -------------------------------------------------------------------- */
   /* ..  Reordering and Symbolic Factorization.  This step also allocates */

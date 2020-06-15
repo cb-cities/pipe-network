@@ -5,6 +5,7 @@
 #include <memory>
 
 namespace pipenetwork {
+namespace linear_system {
 
 //! Pipe network solver base class
 //! \brief Base class for the pipe network solver
@@ -12,21 +13,18 @@ class Solver {
  public:
   //! Default constructor for noniterative solver
   Solver() = default;
-  //! Constructor with max iterations and tolerance for iterative solvers
-  Solver(unsigned max_iter, double tolerance)
-      : max_iter_{max_iter}, tolerance_{tolerance} {}
 
   //! Copy Matrix A, Vectors b and x
   //! \param[in] mat_a_ pointer to assembled A matrix
   //! \param[in] vec_x_ pointer to assembled x vector
   //! \param[in] vec_b_ pointer to assembled b vector
   void assembled_matrices(
-      std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a,
-      std::shared_ptr<Eigen::VectorXd> vec_x,
-      std::shared_ptr<Eigen::VectorXd> vec_b) {
-    mat_a_ = mat_a;
-    vec_x_ = vec_x;
-    vec_b_ = vec_b;
+      const Eigen::SparseMatrix<double, Eigen::RowMajor>& mat_a,
+      Eigen::VectorXd& vec_x, const Eigen::VectorXd& vec_b) {
+    mat_a_ =
+        std::make_shared<Eigen::SparseMatrix<double, Eigen::RowMajor>>(mat_a);
+    vec_x_ = std::make_shared<Eigen::VectorXd>(vec_x);
+    vec_b_ = std::make_shared<Eigen::VectorXd>(vec_b);
     // pointers for sparse matrix info
     ia_ = mat_a_->outerIndexPtr();
     ja_ = mat_a_->innerIndexPtr();
@@ -36,37 +34,20 @@ class Solver {
     colsA_ = mat_a_->cols();
     nnzA_ = mat_a_->nonZeros();
   }
-  //! Restrain vector
-  void restrains(const Eigen::VectorXd& restraints) {
-    vrestraints_ = restraints;
-  }
 
   //! Solve
   virtual Eigen::VectorXd solve() = 0;
+
   virtual std::string assembler_type() const = 0;
 
-  //! number of iterations
-  unsigned niterations() const { return niterations_; }
-
-  //! Delta
-  double delta() const { return delta_; }
-
  protected:
-  //! Maximum number of iterations
-  unsigned max_iter_{1000};
   //! Tolerance
   double tolerance_{1E-6};
-  //! Displacement restraint
-  Eigen::VectorXd vrestraints_;
-  //! Iterations
-  unsigned niterations_{0};
-  //! Delta
-  double delta_{std::numeric_limits<double>::quiet_NaN()};
-  //! Displacement vector
+  //! Variable vector
   std::shared_ptr<Eigen::VectorXd> vec_x_;
-  //! Force vector
+  //! Residual vector
   std::shared_ptr<Eigen::VectorXd> vec_b_;
-  //! Sparse Stiffness Matrix
+  //! The A Matrix
   std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a_;
 
   //! Row index for csr format matrix
@@ -82,6 +63,7 @@ class Solver {
   //! Matrix values for csr format matrix
   double* a_{nullptr};
 };
+}  // namespace linear_system
 }  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_SOLVER_H_

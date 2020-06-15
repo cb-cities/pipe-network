@@ -299,8 +299,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
     auto assembler =
         std::make_shared<pipenetwork::linear_system::MatrixAssembler>(
             mesh, curves_info, pdd_mode);
-    assembler->assemble_residual();
-    assembler->update_jacobian();
+    assembler->system_update();
     Eigen::VectorXd& var_vec = assembler->variable_vector();
     auto res_vec = assembler->residual_vector();
     auto jac_matrix = assembler->jac_matrix();
