@@ -1,6 +1,7 @@
 #ifndef PIPE_NETWORK_SOLVER_H_
 #define PIPE_NETWORK_SOLVER_H_
 
+#include "matrix_assembler.h"
 #include <Eigen/Sparse>
 #include <memory>
 
@@ -19,20 +20,18 @@ class Solver {
   //! \param[in] vec_x_ pointer to assembled x vector
   //! \param[in] vec_b_ pointer to assembled b vector
   void assembled_matrices(
-      const Eigen::SparseMatrix<double, Eigen::RowMajor>& mat_a,
-      Eigen::VectorXd& vec_x, const Eigen::VectorXd& vec_b) {
-    mat_a_ =
-        std::make_shared<Eigen::SparseMatrix<double, Eigen::RowMajor>>(mat_a);
-    vec_x_ = std::make_shared<Eigen::VectorXd>(vec_x);
-    vec_b_ = std::make_shared<Eigen::VectorXd>(vec_b);
+      const std::shared_ptr<linear_system::MatrixAssembler>& matrix_assember) {
+    matrix_assembler_ = matrix_assember;
+
     // pointers for sparse matrix info
-    ia_ = mat_a_->outerIndexPtr();
-    ja_ = mat_a_->innerIndexPtr();
-    a_ = mat_a_->valuePtr();
+    ia_ = matrix_assembler_->jac_matrix().outerIndexPtr();
+    ja_ = matrix_assembler_->jac_matrix().innerIndexPtr();
+    a_ = matrix_assembler_->jac_matrix().valuePtr();
+
     // matrix a basic information
-    rowsA_ = mat_a_->rows();
-    colsA_ = mat_a_->cols();
-    nnzA_ = mat_a_->nonZeros();
+    rowsA_ = matrix_assembler_->jac_matrix().rows();
+    colsA_ = matrix_assembler_->jac_matrix().cols();
+    nnzA_ = matrix_assembler_->jac_matrix().nonZeros();
   }
 
   //! Solve
@@ -41,14 +40,7 @@ class Solver {
   virtual std::string assembler_type() const = 0;
 
  protected:
-  //! Tolerance
-  double tolerance_{1E-6};
-  //! Variable vector
-  std::shared_ptr<Eigen::VectorXd> vec_x_;
-  //! Residual vector
-  std::shared_ptr<Eigen::VectorXd> vec_b_;
-  //! The A Matrix
-  std::shared_ptr<Eigen::SparseMatrix<double, Eigen::RowMajor>> mat_a_;
+  std::shared_ptr<linear_system::MatrixAssembler> matrix_assembler_;
 
   //! Row index for csr format matrix
   int* ia_{nullptr};

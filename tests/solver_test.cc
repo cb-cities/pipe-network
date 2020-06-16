@@ -125,7 +125,7 @@ TEST_CASE("Solver is checked", "[Solver]") {
         Factory<pipenetwork::linear_system::Solver>::instance()->create(
             solver_name));
 
-    solve_ptr->assembled_matrices(jac_matrix, var_vec, res_vec);
+    solve_ptr->assembled_matrices(assembler);
     auto x_diff = solve_ptr->solve();
     auto linear_sys_res = (jac_matrix * x_diff - res_vec).norm();
 
@@ -138,7 +138,7 @@ TEST_CASE("Solver is checked", "[Solver]") {
         Factory<pipenetwork::linear_system::Solver>::instance()->create(
             solver_name));
 
-    solve_ptr->assembled_matrices(jac_matrix, var_vec, res_vec);
+    solve_ptr->assembled_matrices(assembler);
     auto x_diff = solve_ptr->solve();
     auto linear_sys_res = (jac_matrix * x_diff - res_vec).norm();
 

@@ -59,8 +59,8 @@ pipenetwork::linear_system::Mkl_unsym::Mkl_unsym() : Solver() {
 
 Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
   // configure matrix
-  int n = vec_b_->size();
-  double* vec_b = vec_b_->data();
+  int n = matrix_assembler_->residual_vector().size();
+  const double* vec_b = matrix_assembler_->residual_vector().data();
   double x_diff[n];
   int nnz = ia_[n];
 

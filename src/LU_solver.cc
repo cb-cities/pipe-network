@@ -6,9 +6,10 @@ static Register<pipenetwork::linear_system::Solver,
     registry("LU");
 
 Eigen::VectorXd pipenetwork::linear_system::LUSolver::solve() {
-  LU_solver_.analyzePattern(*mat_a_);
+  //    std::cout << "residual in linear solver: " << *vec_b_ << std::endl;
+  LU_solver_.analyzePattern(matrix_assembler_->jac_matrix());
   // Compute the numerical factorization
-  LU_solver_.factorize(*mat_a_);
+  LU_solver_.factorize(matrix_assembler_->jac_matrix());
   // Use the factors to solve the linear system
-  return LU_solver_.solve(*vec_b_);
+  return LU_solver_.solve(matrix_assembler_->residual_vector());
 }

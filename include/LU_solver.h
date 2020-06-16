@@ -24,12 +24,6 @@ class LUSolver : public Solver {
   Eigen::VectorXd solve() override;
 
  protected:
-  //! Vector x
-  using Solver::vec_x_;
-  //! Vector b
-  using Solver::vec_b_;
-  //! Matrix A
-  using Solver::mat_a_;
   //! Return the type of assembler for Factory
   //! \retval assembler_type Eigen assembler
   std::string assembler_type() const override { return "LU Solver"; }

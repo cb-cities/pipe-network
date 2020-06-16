@@ -43,7 +43,8 @@ SET(pipe_network_src
         src/matrix_assembler.cc
         src/curves.cc
         src/mkl_unsym.cc
-        src/LU_solver.cc)
+        src/LU_solver.cc
+        src/hydralic_sim.cc)
 #        src/curves.cc
 #        src/hydralic_sim.cc
 #        src/input.cc
@@ -147,6 +148,7 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/mesh_test.cc
           tests/matrix_assembler_test.cc
           tests/solver_test.cc
+          tests/hydraulic_sim_test.cc
 #          tests/input_test.cc
 #          tests/curve_test.cc
 #          tests/hydraulic_sim_test.cc

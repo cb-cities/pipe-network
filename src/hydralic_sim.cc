@@ -1,189 +1,210 @@
 #include "hydralic_sim.h"
 
-pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
-                                        const std::string& mesh_name,
-                                        bool pdd_mode,
-                                        const std::string& solver_name,
-                                        bool debug) {
-  auto IO = std::make_shared<pipenetwork::Input>(filepath);
-  // Creat a mesh
-  std::string mesh_id = mesh_name;
-  mesh_ = std::make_shared<pipenetwork::Mesh>(mesh_id);
-  mesh_->create_mesh_from_inp(IO);
-  // initialize discharges
-  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
-                                      std::placeholders::_1,
-                                      init_discharge_));  // initialze discharge
-  // get curves information
-  auto curves_info = IO->curve_info();
-  assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
+// pipenetwork::Hydralic_sim::Hydralic_sim(const std::string& filepath,
+//                                        const std::string& mesh_name,
+//                                        bool pdd_mode,
+//                                        const std::string& solver_name,
+//                                        bool debug) {
+//  auto IO = std::make_shared<pipenetwork::Input>(filepath);
+//  // Creat a mesh
+//  std::string mesh_id = mesh_name;
+//  mesh_ = std::make_shared<pipenetwork::Mesh>(mesh_id);
+//  mesh_->create_mesh_from_inp(IO);
+//  // initialize discharges
+//  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
+//                                      std::placeholders::_1,
+//                                      init_discharge_));  // initialze
+//                                      discharge
+//  // get curves information
+//  auto curves_info = IO->curve_info();
+//  assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info,
+//  pdd_mode);
+//
+//  //  solver_ = std::make_shared<Mkl_unsym>();
+//  std::shared_ptr<Solver> solve_ptr(
+//      Factory<Solver>::instance()->create(solver_name));
+//  solver_ = solve_ptr;
+//  debug_ = debug;
+//  // print mesh summary if on debug mode
+//  if (debug_) mesh_->print_summary();
+//}
 
-  //  solver_ = std::make_shared<Mkl_unsym>();
-  std::shared_ptr<Solver> solve_ptr(
-      Factory<Solver>::instance()->create(solver_name));
-  solver_ = solve_ptr;
-  debug_ = debug;
-  // print mesh summary if on debug mode
-  if (debug_) mesh_->print_summary();
-}
-
-pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
-                                        const std::string& solver_name,
-                                        bool debug) {
-  auto IO = std::make_shared<pipenetwork::Input>(syn_size);
-
-  // Mesh index
-  std::string meshid = "syn_net_" + std::to_string(syn_size);
-  // Creat a mesh
-  mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
-  mesh_->create_mesh_from_inp(IO);
-  // initialize discharges
-  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
-                                      std::placeholders::_1,
-                                      init_discharge_));  // initialze discharge
-  // get curves information
-  auto curves_info = IO->curve_info();
-  assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info, pdd_mode);
-  std::shared_ptr<Solver> solve_ptr(
-      Factory<Solver>::instance()->create(solver_name));
-  solver_ = solve_ptr;
-  debug_ = debug;
-  // print mesh summary if on debug mode
-  if (debug_) mesh_->print_summary();
-}
+// pipenetwork::Hydralic_sim::Hydralic_sim(int syn_size, bool pdd_mode,
+//                                        const std::string& solver_name,
+//                                        bool debug) {
+//  auto IO = std::make_shared<pipenetwork::Input>(syn_size);
+//
+//  // Mesh index
+//  std::string meshid = "syn_net_" + std::to_string(syn_size);
+//  // Creat a mesh
+//  mesh_ = std::make_shared<pipenetwork::Mesh>(meshid);
+//  mesh_->create_mesh_from_inp(IO);
+//  // initialize discharges
+//  mesh_->iterate_over_links(std::bind(&pipenetwork::Link::update_sim_discharge,
+//                                      std::placeholders::_1,
+//                                      init_discharge_));  // initialze
+//                                      discharge
+//  // get curves information
+//  auto curves_info = IO->curve_info();
+//  assembler_ = std::make_shared<MatrixAssembler>(mesh_, curves_info,
+//  pdd_mode); std::shared_ptr<Solver> solve_ptr(
+//      Factory<Solver>::instance()->create(solver_name));
+//  solver_ = solve_ptr;
+//  debug_ = debug;
+//  // print mesh summary if on debug mode
+//  if (debug_) mesh_->print_summary();
+//}
 
 bool pipenetwork::Hydralic_sim::run_simulation(double NR_tolerance,
-                                               int max_nr_steps,
-                                               const std::string& output_path,
-                                               bool line_search) {
-  boost::filesystem::path dir(output_path);
-  if (boost::filesystem::create_directory(dir)) {
-    std::cout << "Results saving directory created: " << output_path
-              << std::endl;
-  }
+                                               int max_nr_steps) {
+  //  boost::filesystem::path dir(output_path);
+  //  if (boost::filesystem::create_directory(dir)) {
+  //    std::cout << "Results saving directory created: " << output_path
+  //              << std::endl;
+  //  }
 
-  residuals_ = assembler_->residual_vector();
-  variables_ = assembler_->variable_vector();
-  auto jac = assembler_->jac_matrix();
-
-  solver_->assembled_matrices(jac, variables_, residuals_);
+  solver_->assembled_matrices(assembler_);
   for (unsigned nr_iter = 0; nr_iter < max_nr_steps; ++nr_iter) {
 
-    assembler_->assemble_residual();
-    assembler_->update_jacobian();
-    original_variable_ = *variables_;
+    assembler_->system_update();
+    init_variable_ = assembler_->variable_vector();
+
+    auto x_diff = solver_->solve();
+    line_search_update(x_diff);
+    auto res_norm = assembler_->residual_vector().norm();
 
     if (debug_) {
       // save the initial values into csv files for debugging
-      if (nr_iter < 1) {
-        write_debug_info();
-      }
+      //              if (nr_iter < 1) {
+      //                  write_debug_info();
+      //              }
       std::cout << "niter = " << nr_iter << std::endl;
-      std::cout << "residual norm = " << residuals_->norm() << std::endl;
+      std::cout << "residual norm = " << res_norm << std::endl;
     }
-    auto x_diff = solver_->solve();
-    if (line_search) {
-      line_search_func(x_diff);
-    } else {
-      (*variables_) = original_variable_.array() - x_diff.array();
-    }
-    residual_norm_ = residuals_->norm();
-    if (residuals_->norm() < NR_tolerance) {
-      auto path_name = output_path + mesh_->id();
-      write_final_result(path_name, (*variables_));
+
+    if (res_norm < NR_tolerance) {
       return true;
     }
   }
   return false;
 }
-void pipenetwork::Hydralic_sim::line_search_func(
+
+void pipenetwork::Hydralic_sim::line_search_update(
     const Eigen::VectorXd& x_diff) {
-  double alpha = 1.0;
-  auto old_res = residuals_->norm();
+  double alpha = 1.0;  // start line search with the original x_diff
+
+  auto old_res = assembler_->residual_vector().norm();
+  Eigen::VectorXd& variables = assembler_->variable_vector();
+
   for (int bt_iter = 0; bt_iter < bt_max_iter_; ++bt_iter) {
-    (*variables_) = original_variable_.array() - alpha * x_diff.array();
-    assembler_->assemble_residual();
-    auto new_res = residuals_->norm();
+
+    variables = init_variable_.array() - alpha * x_diff.array();
+    assembler_->assemble_residual();  // update residual from the new variable
+                                      // vector
+    auto new_res = assembler_->residual_vector().norm();
     if (new_res < (1.0 - 0.0001 * alpha) * old_res) {
-      break;
+      break;  // line search finished
     } else {
-      alpha = alpha * bt_roh_;
+      alpha = alpha * bt_roh_;  // continue line search
     }
   }
-  //  throw std::runtime_error("Line search failed!");
 }
+//
+// void pipenetwork::Hydralic_sim::write_final_result(
+//    const std::string& output_path, const Eigen::VectorXd& var) {
+//
+//  std::ofstream outnode(output_path + "_nodes.csv");
+//  std::ofstream outlink(output_path + "_links.csv");
+//  outnode << "node_id"
+//          << ","
+//          << "head"
+//          << ","
+//          << "demand"
+//          << "\n";
+//  outlink << "link_id"
+//          << ","
+//          << "flowrate"
+//          << "\n";
+//  auto node_map = assembler_->node_idx_map();
+//  auto link_map = assembler_->link_idx_map();
+//  auto nnodes = mesh_->nnodes();
+//  auto nlinks = mesh_->nlinks();
+//
+//  std::string node_id, link_id;
+//  int demand_idx;
+//  double head, demand, flow_rate;
+//  for (int i = 0; i < nnodes; ++i) {
+//    demand_idx = nnodes + i;
+//    node_id = node_map.at(i);
+//    head = var[i];
+//    demand = var[demand_idx];
+//    outnode << std::setprecision(12) << node_id << "," << head << "," <<
+//    demand
+//            << "\n";
+//  }
+//  for (int i = 0; i < nlinks; ++i) {
+//    link_id = link_map.at(i);
+//    flow_rate = var[2 * nnodes + i];
+//    outlink << std::setprecision(12) << link_id << "," << flow_rate << "\n";
+//  }
+//}
+//
+// void pipenetwork::Hydralic_sim::write_debug_info() {
+//  std::string save_folder = "../results/";
+//  boost::filesystem::path dir(save_folder);
+//  if (boost::filesystem::create_directory(dir)) {
+//    std::cout << "Results saving directory created: " << save_folder
+//              << std::endl;
+//  }
+//  std::ofstream variables(save_folder + "init_var_res.csv");
+//  std::ofstream jacobians(save_folder + "init_jacob.csv");
+//
+//  // record vairables
+//  variables << "variables"
+//            << ","
+//            << "residuals"
+//            << "\n";
+//  for (int i = 0; i < (*residuals_).size(); ++i) {
+//    variables << std::setprecision(12) << (*variables_).coeff(i) << ","
+//              << (*residuals_).coeff(i) << "\n";
+//  }
+//
+//  // record jacobians
+//  auto jac = assembler_->jac_matrix();
+//  jacobians << "row"
+//            << ","
+//            << "col"
+//            << ","
+//            << "val"
+//            << "\n";
+//  for (int k = 0; k < (*jac).outerSize(); ++k)
+//    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator
+//    it((*jac),
+//                                                                        k);
+//         it; ++it) {
+//      jacobians << std::setprecision(12) << it.row() << "," << it.col() << ","
+//                << it.value() << "\n";
+//    }
+//}
 
-void pipenetwork::Hydralic_sim::write_final_result(
-    const std::string& output_path, const Eigen::VectorXd& var) {
-
-  std::ofstream outnode(output_path + "_nodes.csv");
-  std::ofstream outlink(output_path + "_links.csv");
-  outnode << "node_id"
-          << ","
-          << "head"
-          << ","
-          << "demand"
-          << "\n";
-  outlink << "link_id"
-          << ","
-          << "flowrate"
-          << "\n";
-  auto node_map = assembler_->node_idx_map();
-  auto link_map = assembler_->link_idx_map();
-  auto nnodes = mesh_->nnodes();
-  auto nlinks = mesh_->nlinks();
-
-  std::string node_id, link_id;
-  int demand_idx;
-  double head, demand, flow_rate;
-  for (int i = 0; i < nnodes; ++i) {
-    demand_idx = nnodes + i;
-    node_id = node_map.at(i);
-    head = var[i];
-    demand = var[demand_idx];
-    outnode << std::setprecision(12) << node_id << "," << head << "," << demand
-            << "\n";
+pipenetwork::Hydralic_sim::Hydralic_sim(
+    const std::shared_ptr<pipenetwork::Mesh>& mesh,
+    std::shared_ptr<pipenetwork::Curves>& curves_info, bool pdd_mode,
+    bool debug) {
+  mesh_ = mesh;
+  assembler_ = std::make_shared<linear_system::MatrixAssembler>(
+      mesh, curves_info, pdd_mode);
+  // choose solver type based on network size
+  Index nnodes = mesh_->nodes()->nnodes();
+  if (nnodes < nthre_) {
+    std::shared_ptr<linear_system::Solver> solve_ptr(
+        Factory<linear_system::Solver>::instance()->create("LU"));
+    solver_ = solve_ptr;
+  } else {
+    std::shared_ptr<linear_system::Solver> solve_ptr(
+        Factory<linear_system::Solver>::instance()->create("mkl_pardiso"));
+    solver_ = solve_ptr;
   }
-  for (int i = 0; i < nlinks; ++i) {
-    link_id = link_map.at(i);
-    flow_rate = var[2 * nnodes + i];
-    outlink << std::setprecision(12) << link_id << "," << flow_rate << "\n";
-  }
-}
 
-void pipenetwork::Hydralic_sim::write_debug_info() {
-  std::string save_folder = "../results/";
-  boost::filesystem::path dir(save_folder);
-  if (boost::filesystem::create_directory(dir)) {
-    std::cout << "Results saving directory created: " << save_folder
-              << std::endl;
-  }
-  std::ofstream variables(save_folder + "init_var_res.csv");
-  std::ofstream jacobians(save_folder + "init_jacob.csv");
-
-  // record vairables
-  variables << "variables"
-            << ","
-            << "residuals"
-            << "\n";
-  for (int i = 0; i < (*residuals_).size(); ++i) {
-    variables << std::setprecision(12) << (*variables_).coeff(i) << ","
-              << (*residuals_).coeff(i) << "\n";
-  }
-
-  // record jacobians
-  auto jac = assembler_->jac_matrix();
-  jacobians << "row"
-            << ","
-            << "col"
-            << ","
-            << "val"
-            << "\n";
-  for (int k = 0; k < (*jac).outerSize(); ++k)
-    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it((*jac),
-                                                                        k);
-         it; ++it) {
-      jacobians << std::setprecision(12) << it.row() << "," << it.col() << ","
-                << it.value() << "\n";
-    }
+  debug_ = debug;
 }

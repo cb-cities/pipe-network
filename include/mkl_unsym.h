@@ -24,12 +24,6 @@ class Mkl_unsym : public Solver {
   Eigen::VectorXd solve() override;
 
  protected:
-  //! Vector x
-  using Solver::vec_x_;
-  //! Vector b
-  using Solver::vec_b_;
-  //! Matrix A
-  using Solver::mat_a_;
   //! Row index for csr format matrix
   using Solver::ia_;
   //! Column index for csr format matrix
