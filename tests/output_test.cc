@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include "input.h"
+#include "io.h"
 #include "mesh.h"
 #include "output.h"
 // Check output class

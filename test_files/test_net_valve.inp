@@ -58,10 +58,15 @@ wall reactions are included.
 ;ID              	Multipliers
 ;Demand Pattern
 
+[LEAKS]
+;JID              	Diameter
+11                  2
 
 [CURVES]
 ;ID              	X-Value     	Y-Value
    
+
+
 
 [CONTROLS]
 

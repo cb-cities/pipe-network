@@ -1,5 +1,5 @@
-#ifndef PIPE_NETWORK_INPUT_H
-#define PIPE_NETWORK_INPUT_H
+#ifndef PIPE_NETWORK_IO_H
+#define PIPE_NETWORK_IO_H
 
 #include <Eigen/Dense>
 #include <algorithm>
@@ -22,6 +22,7 @@
 #include "valve.h"
 
 namespace pipenetwork {
+namespace IO_utils {
 //! function to convert input value to standard unit for hydraulic simulation
 //! \param[in] val the value need to be converted
 //! \param[in] mode type of the input value (length, elevation, etc.)
@@ -38,39 +39,39 @@ inline bool file_exists(const std::string& name) {
   std::ifstream f(name.c_str());
   return f.good();
 }
+}  // namespace IO_utils
 
 //! Pipe network input output class
 //! \brief Base class for parsing input data using .inp file
-class Input {
+class IO {
  public:
-  //! constructor to create synthetic mesh
-  //! \param[in] n number of the mesh dimension (n*n)
-  explicit Input(int n) {
-    auto junction_nodes = construct_synthesis_junctions(n);
-    construct_synthesis_pipes(junction_nodes);
-    create_sources(n);
-  };
+  //! Default constructor
+  IO() = default;
 
-  //! constructor to create mesh from .inp file
+  //! Read and create mesh from the .inp file
   //! \param[in] filename path of the .inp file
-  explicit Input(const std::string& filename);
+  void read_inp(const std::string& filename);
+
+  //! Create synthetic network
+  //! \param[in] n size of the network, number of nodes will be n^2
+  void create_synthetic_net(Index n);
 
   //! Return node information
-  std::vector<pipenetwork::Junction_prop> junction_properties() const {
+  std::vector<pipenetwork::JunctionProp> junction_properties() const {
     return junc_props_;
   }
-  std::vector<pipenetwork::Reservoir_prop> reservoir_properties() const {
+  std::vector<pipenetwork::ReservoirProp> reservoir_properties() const {
     return res_props_;
   }
   //! Return pipe information
-  std::vector<pipenetwork::Pipe_prop> pipe_properties() const {
+  std::vector<pipenetwork::PipeProp> pipe_properties() const {
     return pipe_props_;
   }
   //! Return pump information
-  std::vector<Pump_prop> pump_properties() const { return pump_props_; }
+  std::vector<PumpProp> pump_properties() const { return pump_props_; }
 
   //! Return valve information
-  std::vector<Valve_prop> valve_properties() const { return valve_props_; }
+  std::vector<ValveProp> valve_properties() const { return valve_props_; }
 
   //! Return curve information
   std::shared_ptr<Curves> curve_info() const { return curves_info_; }
@@ -81,27 +82,39 @@ class Input {
   //! the curves info ptr
   std::shared_ptr<Curves> curves_info_{std::make_shared<pipenetwork::Curves>()};
   //! Set of section key words
-  std::set<std::string> section_keys_{"[JUNCTIONS]", "[RESERVOIRS]",  "[TANKS]",
-                                      "[PIPES]",     "[COORDINATES]", "[PUMPS]",
-                                      "[CURVES]",    "[VALVES]"};
+  std::set<std::string> section_keys_{
+      "[JUNCTIONS]", "[RESERVOIRS]", "[TANKS]",  "[PIPES]", "[COORDINATES]",
+      "[PUMPS]",     "[CURVES]",     "[VALVES]", "[LEAKS]"};
 
   //! Map of sections and its corresponding lines
   std::map<std::string, std::vector<std::string>> sections_;
 
+  //! Map of leaking nid to leak diameter
+  std::map<std::string, double> nid2ldia_;
+
   //! Vector of parsed junction properties
-  std::vector<pipenetwork::Junction_prop> junc_props_;
+  std::vector<pipenetwork::JunctionProp> junc_props_;
   //! Vector of parsed reservoir properties
-  std::vector<pipenetwork::Reservoir_prop> res_props_;
+  std::vector<pipenetwork::ReservoirProp> res_props_;
 
   //! Vector of parsed pipe properties
-  std::vector<Pipe_prop> pipe_props_;
+  std::vector<PipeProp> pipe_props_;
   //! Vector of parsed pump properties
-  std::vector<Pump_prop> pump_props_;
+  std::vector<PumpProp> pump_props_;
   //! Vector of parsed valve properties
-  std::vector<Valve_prop> valve_props_;
+  std::vector<ValveProp> valve_props_;
 
   //! Parse information to each section from the input file
   void parse_sections();
+  //! Parse leak information (leak diameter) from the input file
+  void parse_leak_info();
+
+  //! Parse elevation, head or demand from a given node section
+  //! \param[in] an opened file
+  //!\retval a pair with vector of node ids their corresponding elevations,
+  //! heads or demand
+  std::pair<std::vector<std::string>, std::vector<double>> parse_node_line(
+      const std::string& section_name, const std::string& mode) const;
 
   //! Construct node info that is used for pipeline-mesh
   void construct_node_info();
@@ -139,15 +152,8 @@ class Input {
   //! Create sources for synthetic network
   //! \param[in] n number of sources for the synthetic network
   void create_sources(int n);
-
-  //! Parse elevation, head or demand from a given node section
-  //! \param[in] an opened file
-  //!\retval a pair with vector of node ids their corresponding elevations,
-  //! heads or demand
-  std::pair<std::vector<std::string>, std::vector<double>> parse_node_line(
-      const std::string& section_name, const std::string& mode) const;
 };
 
 }  // namespace pipenetwork
 
-#endif  // PIPE_NETWORK_INPUT_H
+#endif  // PIPE_NETWORK_IO_H

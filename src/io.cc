@@ -1,7 +1,8 @@
-#include "input.h"
+#include "io.h"
 
-pipenetwork::Input::Input(const std::string& filename) : filename_(filename) {
-  if (!file_exists(filename)) {
+void pipenetwork::IO::read_inp(const std::string& filename) {
+  filename_ = filename;
+  if (!IO_utils::file_exists(filename)) {
     throw std::runtime_error(
         "Input file does not exist, please check the path!");
   }
@@ -19,7 +20,13 @@ pipenetwork::Input::Input(const std::string& filename) : filename_(filename) {
   }
 }
 
-void pipenetwork::Input::parse_sections() {
+void pipenetwork::IO::create_synthetic_net(pipenetwork::Index n) {
+  auto junction_nodes = construct_synthesis_junctions(n);
+  construct_synthesis_pipes(junction_nodes);
+  create_sources(n);
+}
+
+void pipenetwork::IO::parse_sections() {
   std::string line;
   std::string buf, current_key{"init"};
   std::vector<std::string> info;
@@ -54,8 +61,8 @@ void pipenetwork::Input::parse_sections() {
 }
 
 std::pair<std::vector<std::string>, std::vector<double>>
-    pipenetwork::Input::parse_node_line(const std::string& section_name,
-                                        const std::string& mode) const {
+    pipenetwork::IO::parse_node_line(const std::string& section_name,
+                                     const std::string& mode) const {
   // check if the section name is right.
 
   if (!sections_.count(section_name)) {
@@ -76,14 +83,14 @@ std::pair<std::vector<std::string>, std::vector<double>>
     // parsing lines for demand
     if (mode == "demand") {
       if (iss >> id >> elevation_head >> demand) {
-        node_info.emplace_back(to_si(demand, "demand"));
+        node_info.emplace_back(IO_utils::to_si(demand, "demand"));
         node_ids.emplace_back(id);
       }
     }
     // parsing lines for elevation/head
     else {
       if (iss >> id >> elevation_head) {
-        node_info.emplace_back(to_si(elevation_head, "elevation"));
+        node_info.emplace_back(IO_utils::to_si(elevation_head, "elevation"));
         node_ids.emplace_back(id);
       }
     }
@@ -92,7 +99,21 @@ std::pair<std::vector<std::string>, std::vector<double>>
   return std::make_pair(node_ids, node_info);
 }
 
-void pipenetwork::Input::construct_node_info() {
+void pipenetwork::IO::parse_leak_info() {
+  std::string nid;
+  double diameter;
+  for (auto const& line : sections_.at("[LEAKS]")) {
+    // skip keys entries
+    if (line[0] == '[' || line[0] == ';') continue;
+
+    std::istringstream iss(line);
+    if (iss >> nid >> diameter) {
+      nid2ldia_[nid] = diameter;
+    }
+  }
+}
+
+void pipenetwork::IO::construct_node_info() {
   // get elevation for junctions
   auto junction_info = parse_node_line("[JUNCTIONS]", "elevation");
   auto junction_ids = junction_info.first;
@@ -107,24 +128,35 @@ void pipenetwork::Input::construct_node_info() {
   auto reservoir_ids = reservoir_info.first;
   auto reservoir_heads = reservoir_info.second;
 
+  // get leak information
+  bool leak = sections_.find("[LEAKS]") != sections_.end();
+  if (leak) {
+    parse_leak_info();
+  }
+
   // construct property vectors
   for (int i = 0; i < junction_elevations.size(); ++i) {
-    pipenetwork::Junction_prop junc_prop;
-    junc_prop.id = junction_ids[i];
+    pipenetwork::JunctionProp junc_prop;
+    junc_prop.name = junction_ids[i];
     junc_prop.elevation = junction_elevations[i];
     junc_prop.demand = junction_demands[i];
+    bool leak_node = nid2ldia_.find(junction_ids[i]) != nid2ldia_.end();
+    if (leak_node) {
+      junc_prop.leak_diameter =
+          IO_utils::to_si(nid2ldia_.at(junction_ids[i]), "diameter");
+    }
     junc_props_.emplace_back(junc_prop);
   }
 
   for (int i = 0; i < reservoir_ids.size(); ++i) {
-    pipenetwork::Reservoir_prop res_prop;
-    res_prop.id = reservoir_ids[i];
+    pipenetwork::ReservoirProp res_prop;
+    res_prop.name = reservoir_ids[i];
     res_prop.head = reservoir_heads[i];
     res_props_.emplace_back(res_prop);
   }
 }
 
-void pipenetwork::Input::construct_pipe_info() {
+void pipenetwork::IO::construct_pipe_info() {
   double length, diameter, roughness, loss;
   std::string pid, nid1, nid2, status;
 
@@ -138,31 +170,31 @@ void pipenetwork::Input::construct_pipe_info() {
     if (iss >> pid >> nid1 >> nid2 >> length >> diameter >> roughness >> loss >>
         status) {
 
-      pipenetwork::Pipe_prop pipe_prop;
+      pipenetwork::PipeProp pipe_prop;
       std::transform(status.begin(), status.end(), status.begin(), ::toupper);
-      pipe_prop.id = pid;
-      pipe_prop.length = to_si(length, "length");
-      pipe_prop.diameter = to_si(diameter, "diameter");
+      pipe_prop.name = pid;
+      pipe_prop.length = IO_utils::to_si(length, "length");
+      pipe_prop.diameter = IO_utils::to_si(diameter, "diameter");
       pipe_prop.roughness = roughness;
-      pipe_prop.node1_id = nid1;
-      pipe_prop.node2_id = nid2;
+      pipe_prop.node1_name = nid1;
+      pipe_prop.node2_name = nid2;
 
       if (status == "OPEN") {
-        pipe_prop.status = OPEN;
+        pipe_prop.status = LinkStatus::OPEN;
       } else {
-        pipe_prop.status = CLOSED;
+        pipe_prop.status = LinkStatus::CLOSED;
       }
       pipe_props_.emplace_back(pipe_prop);
     }
   }
 }
 
-void pipenetwork::Input::construct_pump_info() {
+void pipenetwork::IO::construct_pump_info() {
   // get pump information
   std::string pid, nid1, nid2, type, curve_name;
   double speed{1.0}, power{50};
   for (auto const& line : sections_.at("[PUMPS]")) {
-    Pump_prop pump_prop;
+    PumpProp pump_prop;
     // skip keys entries
     if (line[0] == '[' || line[0] == ';') continue;
 
@@ -172,62 +204,60 @@ void pipenetwork::Input::construct_pump_info() {
       std::transform(type.begin(), type.end(), type.begin(), ::toupper);
       if (type == "HEAD") {
         iss >> curve_name;
-        pump_prop.curve_name = curves_info_->pump_str_int(curve_name);
-        pump_prop.id = pid;
-        pump_prop.node1_id = nid1;
-        pump_prop.node2_id = nid2;
-        pump_prop.pump_type = HEADPUMP;
+        pump_prop.curve_id = curves_info_->pump_str_int(curve_name);
+        pump_prop.name = pid;
+        pump_prop.node1_name = nid1;
+        pump_prop.node2_name = nid2;
+        pump_prop.type = PumpType::HEADPUMP;
       }
       if (type == "POWER") {
         iss >> power;
-        pump_prop.id = pid;
-        pump_prop.node1_id = nid1;
-        pump_prop.node2_id = nid2;
-        pump_prop.pump_type = POWERPUMP;
-        pump_prop.power = to_si(power, "power");
+        pump_prop.name = pid;
+        pump_prop.node1_name = nid1;
+        pump_prop.node2_name = nid2;
+        pump_prop.type = PumpType::POWERPUMP;
+        pump_prop.power = IO_utils::to_si(power, "power");
       }
       pump_props_.emplace_back(pump_prop);
     }
   }
 }
 
-void pipenetwork::Input::construct_valve_info() {
+void pipenetwork::IO::construct_valve_info() {
   // get valve information
   std::string pid, nid1, nid2, type;
   double diameter, setting, minorloss{0};
   for (auto const& line : sections_.at("[VALVES]")) {
-    Valve_prop valve_prop;
+    ValveProp valve_prop;
     // skip keys entries
     if (line[0] == '[' || line[0] == ';') continue;
     std::istringstream iss(line);
     if (iss >> pid >> nid1 >> nid2 >> diameter >> type >> setting) {
       std::transform(type.begin(), type.end(), type.begin(), ::toupper);
-      valve_prop.id = pid;
-      valve_prop.node1_id = nid1;
-      valve_prop.node2_id = nid2;
-      valve_prop.diameter = to_si(diameter, "diameter");
+      valve_prop.name = pid;
+      valve_prop.node1_name = nid1;
+      valve_prop.node2_name = nid2;
+      valve_prop.diameter = IO_utils::to_si(diameter, "diameter");
 
       if (type == "PRV") {
-        valve_prop.valve_type = PRVALVE;
-        valve_prop.setting = to_si(setting, "pressure");
-      }
-      if (type == "FCV") {
-        valve_prop.valve_type = FCVALVE;
-        valve_prop.setting = to_si(setting, "flow");
-      }
-      if (type == "TCV") {
-        valve_prop.valve_type = TCVALVE;
+        valve_prop.type = ValveType::PRVALVE;
+        valve_prop.setting = IO_utils::to_si(setting, "pressure");
+      } else if (type == "FCV") {
+        valve_prop.type = ValveType::FCVALVE;
+        valve_prop.setting = IO_utils::to_si(setting, "flow");
+      } else if (type == "TCV") {
+        valve_prop.type = ValveType::TCVALVE;
         valve_prop.setting = setting;
       }
       if (iss >> minorloss) {
-        valve_prop.minor_loss = minorloss;
+        valve_prop.minor_loss_coeff = minorloss;
       }
       valve_props_.emplace_back(valve_prop);
     }
   }
 }
 
-void pipenetwork::Input::construct_curve_info() {
+void pipenetwork::IO::construct_curve_info() {
   // get curve information
   std::string curve_id;
   double x, y;
@@ -246,8 +276,8 @@ void pipenetwork::Input::construct_curve_info() {
         head_pump_props.emplace_back(pump_curve);
         curve_point.clear();
       }
-      curve_point.emplace_back(
-          std::make_pair(to_si(x, "flow"), to_si(y, "head")));
+      curve_point.emplace_back(std::make_pair(IO_utils::to_si(x, "flow"),
+                                              IO_utils::to_si(y, "head")));
       id_buff = curve_id;
     }
   }
@@ -260,24 +290,24 @@ void pipenetwork::Input::construct_curve_info() {
 }
 
 std::vector<std::vector<std::string>>
-    pipenetwork::Input::construct_synthesis_junctions(int n) {
+    pipenetwork::IO::construct_synthesis_junctions(int n) {
   // buffer vector
   std::vector<std::vector<std::string>> junction_names(n);
   std::vector<std::string> buffer;
   std::string junction_name;
-  pipenetwork::Junction_prop junc_prop;
+  pipenetwork::JunctionProp junc_prop;
   double elevation, demand;
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
       // create junction name
       junction_name = "J-" + std::to_string(i * n + j);
       // elevation and demand
-      elevation = rand_number(400, 900);
-      demand = rand_number(0, 5);
+      elevation = IO_utils::rand_number(400, 900);
+      demand = IO_utils::rand_number(0, 5);
       // add to junction array
-      junc_prop.id = junction_name;
-      junc_prop.elevation = to_si(elevation, "elevation");
-      junc_prop.demand = to_si(demand, "demand");
+      junc_prop.name = junction_name;
+      junc_prop.elevation = IO_utils::to_si(elevation, "elevation");
+      junc_prop.demand = IO_utils::to_si(demand, "demand");
       junc_props_.emplace_back(junc_prop);
       buffer.emplace_back(junction_name);
     }
@@ -287,7 +317,7 @@ std::vector<std::vector<std::string>>
   return junction_names;
 }
 
-void pipenetwork::Input::construct_synthesis_pipes(
+void pipenetwork::IO::construct_synthesis_pipes(
     const std::vector<std::vector<std::string>>& junction_names) {
   int n = junction_names.size();
   for (int i = 0; i < n; ++i) {
@@ -301,14 +331,14 @@ void pipenetwork::Input::construct_synthesis_pipes(
   }
 }
 
-void pipenetwork::Input::create_vertical_pipes(
+void pipenetwork::IO::create_vertical_pipes(
     const std::vector<std::string>& junction_names, int col_num, bool rand) {
   int n = junction_names.size();
-  pipenetwork::Pipe_prop pipe_prop;
+  pipenetwork::PipeProp pipe_prop;
   std::string upper_junc_id, lower_junc_id, pipe_name;
   for (int i = 1; i < n; ++i) {
     if (rand) {
-      if (rand_number(0, 1) < 0.5) {
+      if (IO_utils::rand_number(0, 1) < 0.5) {
         continue;
       }
     }
@@ -316,73 +346,76 @@ void pipenetwork::Input::create_vertical_pipes(
     lower_junc_id = junction_names.at(i - 1);
     upper_junc_id = junction_names.at(i);
     pipe_name = "P-V-" + std::to_string(col_num * n + i);
-    pipe_prop.id = pipe_name;
-    pipe_prop.length = to_si(rand_number(200, 800), "length");
-    pipe_prop.diameter = to_si(rand_number(3, 15), "diameter");
+    pipe_prop.name = pipe_name;
+    pipe_prop.length =
+        IO_utils::to_si(IO_utils::rand_number(200, 800), "length");
+    pipe_prop.diameter =
+        IO_utils::to_si(IO_utils::rand_number(3, 15), "diameter");
     pipe_prop.roughness = 155;
-    pipe_prop.node1_id = lower_junc_id;
-    pipe_prop.node2_id = upper_junc_id;
-    pipe_prop.status = OPEN;
+    pipe_prop.node1_name = lower_junc_id;
+    pipe_prop.node2_name = upper_junc_id;
     pipe_props_.emplace_back(pipe_prop);
   }
 }
 
-void pipenetwork::Input::create_horizontal_pipes(
+void pipenetwork::IO::create_horizontal_pipes(
     const std::vector<std::string>& l_junc,
     const std::vector<std::string>& r_junc, int col_num, bool rand) {
   int n = l_junc.size();
-  pipenetwork::Pipe_prop pipe_prop;
+  pipenetwork::PipeProp pipe_prop;
   std::string left_junc_id, right_junc_id, pipe_name;
   for (int i = 0; i < n; ++i) {
     if (rand) {
-      if (rand_number(0, 1) < 0.5) {
+      if (IO_utils::rand_number(0, 1) < 0.5) {
         continue;
       }
     }
     left_junc_id = l_junc.at(i);
     right_junc_id = r_junc.at(i);
     pipe_name = "P-H-" + std::to_string(col_num * n + i);
-    pipe_prop.id = pipe_name;
-    pipe_prop.length = to_si(rand_number(200, 800), "length");
-    pipe_prop.diameter = to_si(rand_number(3, 15), "diameter");
+    pipe_prop.name = pipe_name;
+    pipe_prop.length =
+        IO_utils::to_si(IO_utils::rand_number(200, 800), "length");
+    pipe_prop.diameter =
+        IO_utils::to_si(IO_utils::rand_number(3, 15), "diameter");
     pipe_prop.roughness = 155;
-    pipe_prop.node1_id = left_junc_id;
-    pipe_prop.node2_id = right_junc_id;
-    pipe_prop.status = OPEN;
+    pipe_prop.node1_name = left_junc_id;
+    pipe_prop.node2_name = right_junc_id;
     pipe_props_.emplace_back(pipe_prop);
   }
 }
 
-void pipenetwork::Input::create_sources(int n) {
-  pipenetwork::Reservoir_prop src_prop;
-  pipenetwork::Pipe_prop pipe_prop;
+void pipenetwork::IO::create_sources(int n) {
+  pipenetwork::ReservoirProp src_prop;
+  pipenetwork::PipeProp pipe_prop;
   std::string src_name, pipe_name;
 
   for (int i = 0; i < 5; ++i) {
     src_name = "SRC-" + std::to_string(i);
-    src_prop.id = src_name;
-    src_prop.head = to_si(rand_number(500, 1000), "elevation");
+    src_prop.name = src_name;
+    src_prop.head =
+        IO_utils::to_si(IO_utils::rand_number(500, 1000), "elevation");
 
     pipe_name = "P-S-" + std::to_string(i);
-    pipe_prop.id = pipe_name;
-    pipe_prop.length = to_si(30, "length");
-    pipe_prop.diameter = to_si(30, "diameter");
+    pipe_prop.name = pipe_name;
+    pipe_prop.length = IO_utils::to_si(30, "length");
+    pipe_prop.diameter = IO_utils::to_si(30, "diameter");
     pipe_prop.roughness = 155;
-    pipe_prop.node1_id = src_name;
-    pipe_prop.node2_id = "J-" + std::to_string(i * n);
-    pipe_prop.status = OPEN;
+    pipe_prop.node1_name = src_name;
+    pipe_prop.node2_name = "J-" + std::to_string(i * n);
 
     res_props_.emplace_back(src_prop);
     pipe_props_.emplace_back(pipe_prop);
   }
 }
 
-double pipenetwork::rand_number(double l, double h) {
+double pipenetwork::IO_utils::rand_number(double l, double h) {
   double r = l + static_cast<float>(std::rand()) /
                      (static_cast<float>(RAND_MAX / (h - l)));
   return r;
 }
-double pipenetwork::to_si(double val, const std::string& mode) {
+
+double pipenetwork::IO_utils::to_si(double val, const std::string& mode) {
   if (mode == "elevation" || mode == "length" || mode == "head") {
     return val * 0.3048;  // ft to meter
   } else if (mode == "demand" || mode == "flow") {
