@@ -20,6 +20,51 @@ void pipenetwork::IO::read_inp(const std::string& filename) {
   }
 }
 
+void pipenetwork::IO::save_mesh(const std::shared_ptr<Mesh>& mesh,
+                                const std::string& output_path) {
+
+  std::ofstream outnode(output_path + mesh->name() + "_nodes.csv");
+  std::ofstream outlink(output_path + mesh->name() + "_links.csv");
+  outnode << "node_name"
+          << ","
+          << "head"
+          << ","
+          << "demand"
+          << "\n";
+  outlink << "link_name"
+          << ","
+          << "flowrate"
+          << "\n";
+
+  // junctions
+  auto junction_map = mesh->nodes()->junctions();
+  for (auto& index_junc : junction_map) {
+    auto nid = index_junc.first;
+    auto junction = index_junc.second;
+    auto junc_prop = junction->property();
+    outnode << std::setprecision(12) << junc_prop.name << "," << junction->head
+            << "," << junction->demand << "\n";
+  }
+  // reservoirs
+  auto res_map = mesh->nodes()->reservoirs();
+  for (auto& index_res : res_map) {
+    auto nid = index_res.first;
+    auto res = index_res.second;
+    auto res_prop = res->property();
+    outnode << std::setprecision(12) << res_prop.name << "," << res_prop.head
+            << "," << res->discharge << "\n";
+  }
+
+  auto pipe_map = mesh->links()->pipes();
+  for (auto& index_pipe : pipe_map) {
+    auto nid = index_pipe.first;
+    auto pipe = index_pipe.second;
+    auto pipe_prop = pipe->property();
+    outlink << std::setprecision(12) << pipe_prop.name << "," << pipe->flowrate
+            << "\n";
+  }
+}
+
 void pipenetwork::IO::create_synthetic_net(pipenetwork::Index n) {
   auto junction_nodes = construct_synthesis_junctions(n);
   construct_synthesis_pipes(junction_nodes);

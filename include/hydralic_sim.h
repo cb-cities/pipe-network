@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "factory.h"
-//#include "input.h"
+#include "io.h"
 #include "matrix_assembler.h"
 #include "output.h"
 #include "settings.h"

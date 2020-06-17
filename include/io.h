@@ -14,11 +14,7 @@
 #include <vector>
 
 #include "curves.h"
-#include "junction.h"
-#include "pipe.h"
-#include "pump.h"
-#include "reservoir.h"
-#include "valve.h"
+#include "mesh.h"
 
 namespace pipenetwork {
 namespace IO_utils {
@@ -54,6 +50,10 @@ class IO {
   //! Create synthetic network
   //! \param[in] n size of the network, number of nodes will be n^2
   void create_synthetic_net(Index n);
+
+  //! save mesh information
+  void save_mesh(const std::shared_ptr<Mesh>& mesh,
+                 const std::string& output_path);
 
   //! Return node information
   std::vector<pipenetwork::JunctionProp> junction_properties() const {

@@ -1,5 +1,6 @@
 #include "catch.hpp"
 
+#include "io.h"
 #include "mesh.h"
 
 // Check mesh class
@@ -176,7 +177,10 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     IO->read_inp("../test_files/test_net.inp");
     std::string mesh_name = "test_mesh_inp";
     auto mesh = pipenetwork::Mesh(mesh_name);
-    mesh.create_mesh_from_io(IO);
+    mesh.create_nodes(IO->junction_properties(), IO->reservoir_properties());
+    mesh.create_links(IO->pipe_properties(), IO->pump_properties(),
+                      IO->valve_properties());
+    mesh.create_mesh_graph();
     //    mesh.print_summary();
 
     REQUIRE(mesh.nodes()->njunctions() == 9);

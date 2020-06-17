@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iomanip>
 
-#include "io.h"
 #include "mesh_components.h"
 namespace pipenetwork {
 
@@ -19,9 +18,9 @@ class Mesh {
   //! \retval name_ name of the mesh
   std::string name() const { return name_; }
 
-  //! Create mesh from input object
-  //! \param[in] IO pointer to the input object
-  void create_mesh_from_io(const std::shared_ptr<IO>& IO);
+  //  //! Create mesh from input object
+  //  //! \param[in] IO pointer to the input object
+  //  void create_mesh_from_io(const std::shared_ptr<IO>& IO);
 
   //! Create junction pointers
   //! \param[in] junc_props vector of junction properties
@@ -61,8 +60,6 @@ class Mesh {
 
   //! Print summary for the mesh
   void print_summary();
-  //! save mesh information
-  void save_mesh(const std::string& output_path);
 
  private:
   //! mesh name

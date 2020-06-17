@@ -133,15 +133,20 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
     std::string mesh_name = "test_mesh_inp";
 
     auto mesh_inp = std::make_shared<pipenetwork::Mesh>(mesh_name);
-    mesh_inp->create_mesh_from_io(IO);
+    mesh_inp->create_nodes(IO->junction_properties(),
+                           IO->reservoir_properties());
+    mesh_inp->create_links(IO->pipe_properties(), IO->pump_properties(),
+                           IO->valve_properties());
+    mesh_inp->create_mesh_graph();
     mesh_inp->print_summary();
+
     auto curves_info_io = IO->curve_info();
     auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
         mesh_inp, curves_info_io, pdd_mode, debug);
     sim->run_simulation(1e-8, 10);
     REQUIRE(sim->sim_residual_norm() < tolerance);
     sim->update_mesh();
-    mesh_inp->save_mesh("../benchmarks/");
+    IO->save_mesh(mesh_inp, "../benchmarks/");
   }
   //
   //  SECTION("PDD SIM TEST CASE 1: MESH INPUT ") {

@@ -1,13 +1,5 @@
 #include "mesh.h"
 
-void pipenetwork::Mesh::create_mesh_from_io(
-    const std::shared_ptr<pipenetwork::IO>& IO) {
-  create_nodes(IO->junction_properties(), IO->reservoir_properties());
-  create_links(IO->pipe_properties(), IO->pump_properties(),
-               IO->valve_properties());
-  create_mesh_graph();
-}
-
 void pipenetwork::Mesh::find_iso_components_() {
   find_iso_nodes_();
   find_iso_links_();
@@ -62,38 +54,4 @@ void pipenetwork::Mesh::print_summary() {
             << " ;number of leaking junctions: " << leak_nids_.size()
             << " ;number of isolated junctions: " << iso_nodes_.size()
             << " ;number of isolated links: " << iso_links_.size() << std::endl;
-}
-
-void pipenetwork::Mesh::save_mesh(const std::string& output_path) {
-  std::ofstream outnode(output_path + name_ + "_nodes.csv");
-  std::ofstream outlink(output_path + name_ + "_links.csv");
-  outnode << "node_name"
-          << ","
-          << "head"
-          << ","
-          << "demand"
-          << "\n";
-  outlink << "link_name"
-          << ","
-          << "flowrate"
-          << "\n";
-
-  // junctions
-  auto junction_map = mesh_nodes_->junctions();
-  for (auto& index_junc : junction_map) {
-    auto nid = index_junc.first;
-    auto junction = index_junc.second;
-    auto junc_prop = junction->property();
-    outnode << std::setprecision(12) << junc_prop.name << "," << junction->head
-            << "," << junction->demand << "\n";
-  }
-
-  auto pipe_map = mesh_links_->pipes();
-  for (auto& index_pipe : pipe_map) {
-    auto nid = index_pipe.first;
-    auto pipe = index_pipe.second;
-    auto pipe_prop = pipe->property();
-    outlink << std::setprecision(12) << pipe_prop.name << "," << pipe->flowrate
-            << "\n";
-  }
 }
