@@ -16,6 +16,7 @@ struct LinkProp {
   std::string name{"None"};
   std::string node1_name{"None"};
   std::string node2_name{"None"};
+  LinkStatus status{LinkStatus::OPEN};
 };
 
 //! Link class

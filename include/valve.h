@@ -8,7 +8,6 @@ namespace pipenetwork {
 //! coefficient for TCV,
 struct ValveProp : LinkProp {
   ValveType type{ValveType::PRVALVE};
-  LinkStatus status{LinkStatus::OPEN};
   double setting{0};
   double diameter{VALVE_DIAMETER};
   double minor_loss_coeff{MINOR_LOSS_COEFF};

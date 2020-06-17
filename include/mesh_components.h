@@ -36,12 +36,12 @@ class MeshNodes {
   std::shared_ptr<Node> get_node(const std::string& node_name) const;
 
   //! Get junctions map
-  const tsl::ordered_map<Index, std::shared_ptr<Junction>>& junctions() {
+  tsl::ordered_map<Index, std::shared_ptr<Junction>>& junctions() {
     return junctions_;
   }
 
   //! Get reservoirs map
-  const tsl::ordered_map<Index, std::shared_ptr<Reservoir>>& reservoirs() {
+  tsl::ordered_map<Index, std::shared_ptr<Reservoir>>& reservoirs() {
     return reservoirs_;
   }
   //! Get nodes map
@@ -94,24 +94,19 @@ class MeshLinks {
   //! \param[in] pump_props pump properties
   //! \param[in] valve_props valve properties
   //! \param[in] mesh_nodes information of nodes inside the mesh
-  MeshLinks(std::vector<PipeProp>& pipe_props,
-            std::vector<PumpProp>& pump_props,
-            std::vector<ValveProp>& valve_props, const MeshNodes& mesh_nodes);
+  MeshLinks(const std::vector<PipeProp>& pipe_props,
+            const std::vector<PumpProp>& pump_props,
+            const std::vector<ValveProp>& valve_props,
+            const MeshNodes& mesh_nodes);
 
   //! Get pipes map
-  const tsl::ordered_map<Index, std::shared_ptr<Pipe>>& pipes() {
-    return pipes_;
-  }
+  tsl::ordered_map<Index, std::shared_ptr<Pipe>>& pipes() { return pipes_; }
 
   //! Get pumps map
-  const tsl::ordered_map<Index, std::shared_ptr<Pump>>& pumps() {
-    return pumps_;
-  }
+  tsl::ordered_map<Index, std::shared_ptr<Pump>>& pumps() { return pumps_; }
 
   //! Get valves map
-  const tsl::ordered_map<Index, std::shared_ptr<Valve>>& valves() {
-    return valves_;
-  }
+  tsl::ordered_map<Index, std::shared_ptr<Valve>>& valves() { return valves_; }
 
   //! Get links map
   const tsl::ordered_map<Index, std::shared_ptr<Link>>& links() {

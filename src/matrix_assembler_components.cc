@@ -449,8 +449,8 @@ void pipenetwork::linear_system::Residuals::assemble_headloss_residual_pump() {
       pump_residual = link_flow;
     } else if (pump_info.type == PumpType::HEADPUMP) {
       auto pump_headgain = get_pump_headgain(pump, link_flow);
-      pump_residual = pump_headgain - (variable_vec_[nodes.first->id()] -
-                                       variable_vec_[nodes.second->id()]);
+      pump_residual = pump_headgain - (variable_vec_[nodes.second->id()] -
+                                       variable_vec_[nodes.first->id()]);
 
     } else if (pump_info.type == PumpType::POWERPUMP) {
       auto head_diff_array =
@@ -458,7 +458,6 @@ void pipenetwork::linear_system::Residuals::assemble_headloss_residual_pump() {
       pump_residual =
           pump_info.power + (head_diff_array[lid]) * link_flow * G * 1000.0;
     }
-
     residual_vec_[2 * nnodes_ + lid] = pump_residual;
   }
 }

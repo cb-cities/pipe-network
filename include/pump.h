@@ -11,7 +11,6 @@ namespace pipenetwork {
 //! pattern pattern for speed setting
 struct PumpProp : LinkProp {
   PumpType type{PumpType::POWERPUMP};
-  LinkStatus status{LinkStatus::OPEN};
   int curve_id{-1};
   double power{PUMP_POWER};
   double speed{PUMP_SPEED};

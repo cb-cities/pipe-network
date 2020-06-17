@@ -108,39 +108,41 @@ TEST_CASE("HydraulicSimulation is checked", "[hydralic_sim]") {
 
   SECTION("DD SIM TEST CASE 1: MESH INPUT ") {
     bool pdd_mode = false;
-    bool debug = false;
+    bool debug = true;
     auto sim = std::make_shared<pipenetwork::Hydralic_sim>(mesh, curves_info,
                                                            pdd_mode, debug);
     REQUIRE(sim->run_simulation());
     REQUIRE(sim->sim_residual_norm() < tolerance);
     // pressure test for stability
     auto start = high_resolution_clock::now();
-    REQUIRE(!sim->run_simulation(1e-30, 1000));
+    REQUIRE(!sim->run_simulation(1e-30, 100));
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-
     std::cout << duration.count() << std::endl;
 
-    //    REQUIRE(sim->sim_residual_norm() < tolerance);
+    REQUIRE(sim->sim_residual_norm() < tolerance);
+    sim->update_mesh();
   }
 
-  //  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
-  //    bool pdd_mode = false;
-  //    bool debug = false;
-  //    std::string mesh_name = "testnet";
-  //    std::string solver_name = "mkl_pardiso";
-  //    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
-  //        "../test_files/test_net.inp", mesh_name, pdd_mode, solver_name,
-  //        debug);
-  //    auto start = high_resolution_clock::now();
-  //
-  //    sim->run_simulation(1e-8, 100);
-  //    auto stop = high_resolution_clock::now();
-  //    auto duration = duration_cast<seconds>(stop - start);
-  //
-  //    //    std::cout << duration.count() << std::endl;
-  //    REQUIRE(sim->sim_residual_norm() < tolerance);
-  //  }
+  SECTION("DD SIM TEST CASE 2: .INP FILE INPUT") {
+    bool pdd_mode = false;
+    bool debug = true;
+
+    auto IO = std::make_shared<pipenetwork::IO>();
+    IO->read_inp("../test_files/test_net.inp");
+    std::string mesh_name = "test_mesh_inp";
+
+    auto mesh_inp = std::make_shared<pipenetwork::Mesh>(mesh_name);
+    mesh_inp->create_mesh_from_io(IO);
+    mesh_inp->print_summary();
+    auto curves_info_io = IO->curve_info();
+    auto sim = std::make_shared<pipenetwork::Hydralic_sim>(
+        mesh_inp, curves_info_io, pdd_mode, debug);
+    sim->run_simulation(1e-8, 10);
+    REQUIRE(sim->sim_residual_norm() < tolerance);
+    sim->update_mesh();
+    mesh_inp->save_mesh("../benchmarks/");
+  }
   //
   //  SECTION("PDD SIM TEST CASE 1: MESH INPUT ") {
   //    bool pdd_mode = true;

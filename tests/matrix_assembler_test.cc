@@ -108,7 +108,7 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
   mesh->create_links(pipe_props, pump_props, valve_props);
   mesh->create_mesh_graph();
 
-  mesh->print_summary();
+  //  mesh->print_summary();
 
   SECTION("TEST VARIABLES") {
     auto variables = pipenetwork::linear_system::Variables(mesh);

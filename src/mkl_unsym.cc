@@ -31,7 +31,7 @@ pipenetwork::linear_system::Mkl_unsym::Mkl_unsym() : Solver() {
     iparm_[i] = 0;
   }
   iparm_[0] = 1; /* No solver default */
-  iparm_[1] = 0; /* Fill-in reordering from METIS */
+  iparm_[1] = 3; /* Fill-in reordering from METIS */
   /* Numbers of processors, value of OMP_NUM_THREADS */
   iparm_[2] = num_procs_;
   iparm_[3] = 0;   /* No iterative-direct algorithm */

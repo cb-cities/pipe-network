@@ -101,7 +101,6 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     mesh.create_nodes(junc_props, res_props);
     mesh.create_links(pipe_props, pump_props, valve_props);
     mesh.create_mesh_graph();
-    mesh.print_summary();
     // nodes
     auto mesh_nodes = mesh.nodes();
     REQUIRE(mesh_nodes->njunctions() == junc_props.size());
@@ -170,5 +169,18 @@ TEST_CASE("Mesh is checked", "[Mesh]") {
     // isolated links
     auto iso_links = mesh.iso_links();
     REQUIRE(iso_links.size() == 0);
+  }
+
+  SECTION("Mesh from IO") {
+    auto IO = std::make_shared<pipenetwork::IO>();
+    IO->read_inp("../test_files/test_net.inp");
+    std::string mesh_name = "test_mesh_inp";
+    auto mesh = pipenetwork::Mesh(mesh_name);
+    mesh.create_mesh_from_io(IO);
+    //    mesh.print_summary();
+
+    REQUIRE(mesh.nodes()->njunctions() == 9);
+    REQUIRE(mesh.nodes()->nreservoirs() == 2);
+    REQUIRE(mesh.links()->npipes() == 8);
   }
 }

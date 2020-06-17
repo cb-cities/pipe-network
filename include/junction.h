@@ -35,6 +35,8 @@ class Junction : public Node {
   double demand{0};
   //! Junction head, mutable
   double head{1e-3};
+  //! Junction leak discharge, mutable
+  double leak_discharge{0};
 
  private:
   //! junction information

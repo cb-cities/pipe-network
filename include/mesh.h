@@ -1,6 +1,9 @@
 #ifndef PIPE_NETWORK_MESH_H
 #define PIPE_NETWORK_MESH_H
+#include <fstream>
+#include <iomanip>
 
+#include "io.h"
 #include "mesh_components.h"
 namespace pipenetwork {
 
@@ -16,9 +19,9 @@ class Mesh {
   //! \retval name_ name of the mesh
   std::string name() const { return name_; }
 
-  //  //! Create mesh from input object
-  //  //! \param[in] IO pointer to the input object
-  //  void create_mesh_from_inp(std::shared_ptr<Input>& IO);
+  //! Create mesh from input object
+  //! \param[in] IO pointer to the input object
+  void create_mesh_from_io(const std::shared_ptr<IO>& IO);
 
   //! Create junction pointers
   //! \param[in] junc_props vector of junction properties
@@ -30,9 +33,9 @@ class Mesh {
 
   //! Create Reservoir pointers
   //! \param[in] res_props vector of reservoir properties
-  void create_links(std::vector<PipeProp>& pipe_props,
-                    std::vector<PumpProp>& pump_props,
-                    std::vector<ValveProp>& valve_props) {
+  void create_links(const std::vector<PipeProp>& pipe_props,
+                    const std::vector<PumpProp>& pump_props,
+                    const std::vector<ValveProp>& valve_props) {
     mesh_links_ = std::make_shared<MeshLinks>(pipe_props, pump_props,
                                               valve_props, *mesh_nodes_);
   };
@@ -58,6 +61,8 @@ class Mesh {
 
   //! Print summary for the mesh
   void print_summary();
+  //! save mesh information
+  void save_mesh(const std::string& output_path);
 
  private:
   //! mesh name

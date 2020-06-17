@@ -151,7 +151,7 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/solver_test.cc
           tests/hydraulic_sim_test.cc
           tests/input_test.cc
-#          tests/curve_test.cc
+          tests/curve_test.cc
 #          tests/hydraulic_sim_test.cc
 #          tests/sim_pressure_test.cc
           )

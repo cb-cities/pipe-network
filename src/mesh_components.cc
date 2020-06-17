@@ -44,9 +44,9 @@ void pipenetwork::MeshNodes::add_node(
 
 // Meshlinks constructor
 pipenetwork::MeshLinks::MeshLinks(
-    std::vector<pipenetwork::PipeProp>& pipe_props,
-    std::vector<pipenetwork::PumpProp>& pump_props,
-    std::vector<pipenetwork::ValveProp>& valve_props,
+    const std::vector<pipenetwork::PipeProp>& pipe_props,
+    const std::vector<pipenetwork::PumpProp>& pump_props,
+    const std::vector<pipenetwork::ValveProp>& valve_props,
     const MeshNodes& mesh_nodes) {
 
   add_links(pipe_props, mesh_nodes);
@@ -59,10 +59,12 @@ void pipenetwork::MeshLinks::add_links(
     const std::vector<Prop>& props, const pipenetwork::MeshNodes& mesh_nodes) {
   for (const auto& prop : props) {
     try {
-      Index lid = lid_manager_.create_index();
       auto node1 = mesh_nodes.get_node(prop.node1_name);
       auto node2 = mesh_nodes.get_node(prop.node2_name);
-      add_link(node1, node2, prop);
+      if (prop.status != LinkStatus::CLOSED) {
+        Index lid = lid_manager_.create_index();
+        add_link(node1, node2, prop);
+      }
     } catch (std::exception& e) {
       std::cout << "Failed to create link: " << prop.name << "\n";
       std::cout << "Exception: " << e.what() << "\n";

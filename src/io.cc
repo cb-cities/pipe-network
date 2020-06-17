@@ -238,6 +238,7 @@ void pipenetwork::IO::construct_valve_info() {
       valve_prop.node1_name = nid1;
       valve_prop.node2_name = nid2;
       valve_prop.diameter = IO_utils::to_si(diameter, "diameter");
+      valve_prop.status = LinkStatus::ACTIVE;
 
       if (type == "PRV") {
         valve_prop.type = ValveType::PRVALVE;

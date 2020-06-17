@@ -1,102 +1,12 @@
 #include "mesh.h"
 
-//
-// void pipenetwork::Mesh::create_pipes(std::vector<Pipe_prop>& pipe_props) {
-//  for (auto& pipe_prop : pipe_props) {
-//    auto node1id = pipe_prop.node1_id;
-//    auto node2id = pipe_prop.node2_id;
-//
-//    pipe_prop.node1 = nodes_.at(node1id);
-//    pipe_prop.node2 = nodes_.at(node2id);
-//
-//    links_.emplace_back(std::make_shared<pipenetwork::Pipe>(pipe_prop));
-//    ++npipes_;
-//  }
-//}
-//
-
-//
-// void pipenetwork::Mesh::create_pumps(
-//    std::vector<pipenetwork::Pump_prop>& pump_props) {
-//  for (auto& pump_prop : pump_props) {
-//    auto node1id = pump_prop.node1_id;
-//    auto node2id = pump_prop.node2_id;
-//
-//    pump_prop.node1 = nodes_.at(node1id);
-//    pump_prop.node2 = nodes_.at(node2id);
-//
-//    links_.emplace_back(std::make_shared<pipenetwork::Pump>(pump_prop));
-//    ++npumps_;
-//  }
-//}
-//
-// void pipenetwork::Mesh::create_valve(
-//    std::vector<pipenetwork::Valve_prop>& valve_props) {
-//  for (auto& valve_prop : valve_props) {
-//    auto node1id = valve_prop.node1_id;
-//    auto node2id = valve_prop.node2_id;
-//
-//    valve_prop.node1 = nodes_.at(node1id);
-//    valve_prop.node2 = nodes_.at(node2id);
-//
-//    links_.emplace_back(std::make_shared<pipenetwork::Valve>(valve_prop));
-//    ++nvalves_;
-//  }
-//}
-//
-// void pipenetwork::Mesh::create_mesh_from_inp(
-//    std::shared_ptr<pipenetwork::Input>& IO) {
-//  auto pipe_props = IO->pipe_properties();
-//  auto pump_props = IO->pump_properties();
-//  auto valve_props = IO->valve_properties();
-//
-//  // create nodes
-//  try {
-//    create_junctions(IO->junction_properties());
-//  } catch (std::exception& e) {
-//    std::cerr
-//        << "Failed to create junctions from the input file, error message "
-//        << e.what() << std::endl;
-//    std::abort();
-//  }
-//  try {
-//    create_reservoirs(IO->reservoir_properties());
-//  } catch (std::exception& e) {
-//    std::cerr
-//        << "Failed to create reservoirs from the input file, error message "
-//        << e.what() << std::endl;
-//    std::abort();
-//  }
-//  // create links
-//  try {
-//    create_pipes(pipe_props);
-//  } catch (std::exception& e) {
-//    std::cerr << "Failed to create pipes from the input file, error message "
-//              << e.what() << std::endl;
-//    std::abort();
-//  }
-//
-//  if (!pump_props.empty()) {
-//    try {
-//      create_pumps(pump_props);
-//    } catch (std::exception& e) {
-//      std::cerr << "Failed to create pumps from the input file, error message
-//      "
-//                << e.what() << std::endl;
-//      std::abort();
-//    }
-//  }
-//  if (!valve_props.empty()) {
-//    try {
-//      create_valve(valve_props);
-//    } catch (std::exception& e) {
-//      std::cerr << "Failed to create valves from the input file, error message
-//      "
-//                << e.what() << std::endl;
-//      std::abort();
-//    }
-//  }
-//}
+void pipenetwork::Mesh::create_mesh_from_io(
+    const std::shared_ptr<pipenetwork::IO>& IO) {
+  create_nodes(IO->junction_properties(), IO->reservoir_properties());
+  create_links(IO->pipe_properties(), IO->pump_properties(),
+               IO->valve_properties());
+  create_mesh_graph();
+}
 
 void pipenetwork::Mesh::find_iso_components_() {
   find_iso_nodes_();
@@ -149,22 +59,41 @@ void pipenetwork::Mesh::print_summary() {
             << " ;number of valves: " << mesh_links_->nvalves()
             << " ;number of junctions: " << mesh_nodes_->njunctions()
             << " ;number of sources: " << mesh_nodes_->nreservoirs()
-            << std::endl;
+            << " ;number of leaking junctions: " << leak_nids_.size()
+            << " ;number of isolated junctions: " << iso_nodes_.size()
+            << " ;number of isolated links: " << iso_links_.size() << std::endl;
+}
 
-  //  std::cout
-  //      << "======================= NODES INFO ======================="
-  //      << std::endl;
-  //
-  //  for (auto const& x : nodes_) {
-  //    std::cout << "node id: " << x.second->id() << std::endl;
-  //  }
-  //
-  //  std::cout << "======================= LINKS INFO
-  //  == == == == == == == == == == == = "
-  //            << std::endl;
-  //  for (auto const& x : links_) {
-  //    std::cout << "link id: " << x->id()
-  //              << "; node1 id: " << x->nodes().first->id()
-  //              << "; node2 id: " << x->nodes().second->id() << std::endl;
-  //  }
+void pipenetwork::Mesh::save_mesh(const std::string& output_path) {
+  std::ofstream outnode(output_path + name_ + "_nodes.csv");
+  std::ofstream outlink(output_path + name_ + "_links.csv");
+  outnode << "node_name"
+          << ","
+          << "head"
+          << ","
+          << "demand"
+          << "\n";
+  outlink << "link_name"
+          << ","
+          << "flowrate"
+          << "\n";
+
+  // junctions
+  auto junction_map = mesh_nodes_->junctions();
+  for (auto& index_junc : junction_map) {
+    auto nid = index_junc.first;
+    auto junction = index_junc.second;
+    auto junc_prop = junction->property();
+    outnode << std::setprecision(12) << junc_prop.name << "," << junction->head
+            << "," << junction->demand << "\n";
+  }
+
+  auto pipe_map = mesh_links_->pipes();
+  for (auto& index_pipe : pipe_map) {
+    auto nid = index_pipe.first;
+    auto pipe = index_pipe.second;
+    auto pipe_prop = pipe->property();
+    outlink << std::setprecision(12) << pipe_prop.name << "," << pipe->flowrate
+            << "\n";
+  }
 }

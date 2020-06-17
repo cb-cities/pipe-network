@@ -14,7 +14,6 @@ struct PipeProp : LinkProp {
   double diameter{std::numeric_limits<float>::max()};
   double roughness{std::numeric_limits<float>::max()};
   double minor_loss_coeff{MINOR_LOSS_COEFF};
-  LinkStatus status{LinkStatus::OPEN};
 };
 
 //! Pipe class
@@ -35,6 +34,9 @@ class Pipe : public Link {
 
   //! Return pipe property
   const PipeProp& property() const { return property_; }
+
+  //! flowrate
+  double flowrate{INIT_FLOWRATE};
 
  private:
   //! pipe properties
