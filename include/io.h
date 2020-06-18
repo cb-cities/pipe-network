@@ -14,27 +14,9 @@
 #include <vector>
 
 #include "curves.h"
-#include "mesh.h"
+#include "io_utils.h"
 
 namespace pipenetwork {
-namespace IO_utils {
-//! function to convert input value to standard unit for hydraulic simulation
-//! \param[in] val the value need to be converted
-//! \param[in] mode type of the input value (length, elevation, etc.)
-double to_si(double val, const std::string&);
-
-//! function to generate uniformly distributed random number
-//! \param[in] l min value boundary for the random number domain
-//! \param[in] r max value boundary for the random number domain
-double rand_number(double l, double h);
-
-//! function check the existance of a file
-//! \param[in] name path of the file
-inline bool file_exists(const std::string& name) {
-  std::ifstream f(name.c_str());
-  return f.good();
-}
-}  // namespace IO_utils
 
 //! Pipe network input output class
 //! \brief Base class for parsing input data using .inp file
@@ -42,7 +24,6 @@ class IO {
  public:
   //! Default constructor
   IO() = default;
-
   //! Read and create mesh from the .inp file
   //! \param[in] filename path of the .inp file
   void read_inp(const std::string& filename);
@@ -51,9 +32,17 @@ class IO {
   //! \param[in] n size of the network, number of nodes will be n^2
   void create_synthetic_net(Index n);
 
-  //! save mesh information
-  void save_mesh(const std::shared_ptr<Mesh>& mesh,
-                 const std::string& output_path);
+  //! save mesh information to a .inp file
+  //! \param[in] mesh mesh ptr for save
+  //! \param[in] output_path save path
+  void save_mesh_inp(const std::shared_ptr<Mesh>& mesh,
+                     const std::string& output_path);
+
+  //! save hydrualic simulation result of the mesh
+  //! \param[in] mesh mesh ptr for save
+  //! \param[in] output_path save path
+  void save_sim_result(const std::shared_ptr<Mesh>& mesh,
+                       const std::string& output_path);
 
   //! Return node information
   std::vector<pipenetwork::JunctionProp> junction_properties() const {

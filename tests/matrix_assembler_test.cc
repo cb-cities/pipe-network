@@ -286,10 +286,8 @@ TEST_CASE("MatrixAssembler is checked", "[MatrixAssembler]") {
 
       // sub jacobian D: demand/head equation with respect to head
       REQUIRE(jac_matrix.coeff(4, 0) == 0);
-      REQUIRE(jac_matrix.coeff(5, 1) ==
-              Approx(-0.0020480853).epsilon(tolerance));
-      REQUIRE(jac_matrix.coeff(6, 2) ==
-              Approx(-0.002019239).epsilon(tolerance));
+      REQUIRE(jac_matrix.coeff(5, 1) == Approx(0).epsilon(tolerance));
+      REQUIRE(jac_matrix.coeff(6, 2) == Approx(0).epsilon(tolerance));
       REQUIRE(jac_matrix.coeff(7, 3) == 1);
     }
   }

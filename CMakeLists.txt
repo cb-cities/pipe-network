@@ -28,9 +28,6 @@ endif()
 # so we provide an option similar to BUILD_TESTING, but just for CITYSCAPE.
 option(PIPE_NETWORK_TEST_BUILD_TESTING "enable testing for cityscape" ON)
 
-SET(USE_PARDISO  OFF)
-SET(USE_CUDA  OFF)
-
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -45,25 +42,13 @@ SET(pipe_network_src
         src/mkl_unsym.cc
         src/LU_solver.cc
         src/hydralic_sim.cc
-        src/io.cc)
-#        src/curves.cc
-#        src/hydralic_sim.cc
-#        src/input.cc
-#        src/matrix_assembler.cc
-#        src/mesh.cc
-#        src/output.cc
-#        src/mkl_unsym.cc
-#        src/pardiso_unsym.cc)
-
-
-
+        src/io.cc
+        src/io_utils.cc
+        )
 
 # Find dependencies for the library
 # Eigen
 find_package(Eigen3 REQUIRED)
-
-# Boost Archive
-find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 
 # Pthreads
@@ -89,32 +74,7 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 
-# Solver options
-if(USE_CUDA)
-  find_package(CUDA REQUIRED)
-  if (CUDA_FOUND)
-    SET(CUDA_LIB_USED ${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY})
-    SET(NVIDIA_HELPERS "/home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc")
-    # create library
-    add_library(lpipe_network SHARED ${pipe_network_src} src/cuda_unsym.cc)
-    target_include_directories(lpipe_network
-            PUBLIC
-            ${NVIDIA_HELPERS}
-            ${CUDA_INCLUDE_DIRS})
-    target_link_libraries(lpipe_network PUBLIC  ${CUDA_LIB_USED})
-  endif ()
-  else()
-  add_library(lpipe_network SHARED ${pipe_network_src})
-endif()
-
-# PARDISO6
-if(USE_PARDISO)
-  SET(PARDISO6 "${pipe_network_SOURCE_DIR}/external/libpardiso600-GNU720-X86-64.so")
-  target_link_libraries(lpipe_network PUBLIC ${PARDISO6})
-  else()
-  target_link_libraries(lpipe_network PUBLIC ${MKL_LIBRARIES})
-endif()
-
+add_library(lpipe_network SHARED ${pipe_network_src})
 # include directories
 target_include_directories(lpipe_network
         PUBLIC
@@ -133,12 +93,13 @@ target_link_libraries(lpipe_network
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
         ${Boost_LIBRARIES}
+        ${MKL_LIBRARIES}
         )
 
-#add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
-#target_link_libraries(pipe_network
-#        PUBLIC
-#        lpipe_network)
+add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
+target_link_libraries(pipe_network
+        PUBLIC
+        lpipe_network)
 
 # Testing
 if(PIPE_NETWORK_TEST_BUILD_TESTING)
@@ -151,10 +112,8 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/solver_test.cc
           tests/hydraulic_sim_test.cc
           tests/input_test.cc
-          tests/curve_test.cc
-#          tests/hydraulic_sim_test.cc
-#          tests/sim_pressure_test.cc
-          )
+          tests/curve_test.cc)
+
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)
   add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)

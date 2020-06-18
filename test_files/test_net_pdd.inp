@@ -18,7 +18,7 @@ wall reactions are included.
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
  41               	600         	                	;
- 42					700									;
+ 42					800									;
 
 [TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve

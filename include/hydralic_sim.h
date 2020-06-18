@@ -9,7 +9,6 @@
 #include "factory.h"
 #include "io.h"
 #include "matrix_assembler.h"
-#include "output.h"
 #include "settings.h"
 #include "solver.h"
 
@@ -63,15 +62,6 @@ class Hydralic_sim {
 
   //! update system variable with line search
   void line_search_update(const Eigen::VectorXd& x_diff);
-
-  //  //! Function to write the final result
-  //  //! \param[in] output_path the path for output
-  //  //! \param[in] var variables need to be written
-  //  void write_final_result(const std::string& output_path,
-  //                          const Eigen::VectorXd& var);
-  //  //! Function to write initial variables and jabobian matrix for
-  //  //! debug purpose
-  //  void write_debug_info();
 };
 
 }  // namespace pipenetwork

@@ -20,51 +20,6 @@ void pipenetwork::IO::read_inp(const std::string& filename) {
   }
 }
 
-void pipenetwork::IO::save_mesh(const std::shared_ptr<Mesh>& mesh,
-                                const std::string& output_path) {
-
-  std::ofstream outnode(output_path + mesh->name() + "_nodes.csv");
-  std::ofstream outlink(output_path + mesh->name() + "_links.csv");
-  outnode << "node_name"
-          << ","
-          << "head"
-          << ","
-          << "demand"
-          << "\n";
-  outlink << "link_name"
-          << ","
-          << "flowrate"
-          << "\n";
-
-  // junctions
-  auto junction_map = mesh->nodes()->junctions();
-  for (auto& index_junc : junction_map) {
-    auto nid = index_junc.first;
-    auto junction = index_junc.second;
-    auto junc_prop = junction->property();
-    outnode << std::setprecision(12) << junc_prop.name << "," << junction->head
-            << "," << junction->demand << "\n";
-  }
-  // reservoirs
-  auto res_map = mesh->nodes()->reservoirs();
-  for (auto& index_res : res_map) {
-    auto nid = index_res.first;
-    auto res = index_res.second;
-    auto res_prop = res->property();
-    outnode << std::setprecision(12) << res_prop.name << "," << res_prop.head
-            << "," << res->discharge << "\n";
-  }
-
-  auto pipe_map = mesh->links()->pipes();
-  for (auto& index_pipe : pipe_map) {
-    auto nid = index_pipe.first;
-    auto pipe = index_pipe.second;
-    auto pipe_prop = pipe->property();
-    outlink << std::setprecision(12) << pipe_prop.name << "," << pipe->flowrate
-            << "\n";
-  }
-}
-
 void pipenetwork::IO::create_synthetic_net(pipenetwork::Index n) {
   auto junction_nodes = construct_synthesis_junctions(n);
   construct_synthesis_pipes(junction_nodes);
@@ -237,7 +192,7 @@ void pipenetwork::IO::construct_pipe_info() {
 void pipenetwork::IO::construct_pump_info() {
   // get pump information
   std::string pid, nid1, nid2, type, curve_name;
-  double speed{1.0}, power{50};
+  double power{50};
   for (auto const& line : sections_.at("[PUMPS]")) {
     PumpProp pump_prop;
     // skip keys entries
@@ -455,24 +410,16 @@ void pipenetwork::IO::create_sources(int n) {
   }
 }
 
-double pipenetwork::IO_utils::rand_number(double l, double h) {
-  double r = l + static_cast<float>(std::rand()) /
-                     (static_cast<float>(RAND_MAX / (h - l)));
-  return r;
+void pipenetwork::IO::save_mesh_inp(
+    const std::shared_ptr<pipenetwork::Mesh>& mesh,
+    const std::string& output_path) {
+  auto out = IO_utils::Output(mesh);
+  out.save_mesh_inp(output_path);
 }
 
-double pipenetwork::IO_utils::to_si(double val, const std::string& mode) {
-  if (mode == "elevation" || mode == "length" || mode == "head") {
-    return val * 0.3048;  // ft to meter
-  } else if (mode == "demand" || mode == "flow") {
-    return val * 6.30901964e-05;  // GPM to si
-  } else if (mode == "diameter") {
-    return val * 0.0254;  // inch to meter
-  } else if (mode == "power") {
-    return val * 745.699872;  // hp to W (Nm/s)
-  } else if (mode == "pressure") {
-    return val * (0.3048 / 0.4333);  // psi * (m/ft / psi/ft)
-  } else {
-    throw std::runtime_error("Mode not recognized!");
-  }
+void pipenetwork::IO::save_sim_result(
+    const std::shared_ptr<pipenetwork::Mesh>& mesh,
+    const std::string& output_path) {
+  auto out = IO_utils::Output(mesh);
+  out.save_sim_result(output_path);
 }

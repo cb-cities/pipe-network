@@ -16,7 +16,7 @@ const double INIT_FLOWRATE{1E-3};
 const double MIN_PRESSURE{1e-4};
 const double NORMAL_PRESSURE{20};
 const double PDD_DELTA{0.2};
-const double PDD_SLOPE{1e-3};
+const double PDD_SLOPE{1e-11};
 
 //! link settings
 enum class PumpType { POWERPUMP, HEADPUMP };
