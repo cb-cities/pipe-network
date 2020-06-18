@@ -68,13 +68,13 @@ class Output {
   std::shared_ptr<Mesh> mesh_;
 
   //! Method for writing junctions
-  void write_junctions_inp();
+  void write_junctions_inp(std::ofstream& outfile);
 
   //! Method for writing reservoirs
-  void write_reservoirs_inp();
+  void write_reservoirs_inp(std::ofstream& outfile);
 
   //! Method for writing ouoes
-  void write_pipes_inp();
+  void write_pipes_inp(std::ofstream& outfile);
 };
 }  // namespace IO_utils
 }  // namespace pipenetwork

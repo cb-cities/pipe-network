@@ -63,13 +63,14 @@ void pipenetwork::IO_utils::Output::save_mesh_inp(
     const std::string& output_path) {
   create_new_folder(output_path);
   filepath_ = output_path + mesh_->name() + ".inp";
-  write_junctions_inp();
-  write_reservoirs_inp();
-  write_pipes_inp();
+  std::ofstream outfile{filepath_};
+  write_junctions_inp(outfile);
+  write_reservoirs_inp(outfile);
+  write_pipes_inp(outfile);
 }
 
-void pipenetwork::IO_utils::Output::write_junctions_inp() {
-  std::ofstream outfile{filepath_};
+void pipenetwork::IO_utils::Output::write_junctions_inp(
+    std::ofstream& outfile) {
   // write row info
   outfile << "[JUNCTIONS]"
           << "\n";
@@ -90,8 +91,8 @@ void pipenetwork::IO_utils::Output::write_junctions_inp() {
   }
 }
 
-void pipenetwork::IO_utils::Output::write_reservoirs_inp() {
-  std::ofstream outfile{filepath_};
+void pipenetwork::IO_utils::Output::write_reservoirs_inp(
+    std::ofstream& outfile) {
   outfile << "\n";
   outfile << "[RESERVOIRS]"
           << "\n";
@@ -113,8 +114,7 @@ void pipenetwork::IO_utils::Output::write_reservoirs_inp() {
   }
 }
 
-void pipenetwork::IO_utils::Output::write_pipes_inp() {
-  std::ofstream outfile{filepath_};
+void pipenetwork::IO_utils::Output::write_pipes_inp(std::ofstream& outfile) {
   outfile << "\n";
   outfile << "[PIPES]"
           << "\n";
@@ -129,7 +129,6 @@ void pipenetwork::IO_utils::Output::write_pipes_inp() {
           << "\n";
 
   auto pipes_map = mesh_->links()->pipes();
-  std::string status;
   for (const auto& link : pipes_map) {
     auto pipe = link.second;
     auto node1 = pipe->nodes().first->id();
@@ -140,10 +139,11 @@ void pipenetwork::IO_utils::Output::write_pipes_inp() {
             << "   " << node2 << "   " << from_si(pipe_prop.length, "length")
             << "   " << from_si(pipe_prop.diameter, "diameter") << "   "
             << pipe_prop.roughness << "   " << pipe_prop.minor_loss_coeff
-            << "   " << status << "   "
+            << "   "
+            << "Open"
+            << "   "
             << "        ;"
             << "\n";
-    break;
   }
 }
 

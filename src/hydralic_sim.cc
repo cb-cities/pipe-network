@@ -62,10 +62,12 @@ pipenetwork::Hydralic_sim::Hydralic_sim(
   if (nnodes < nthre_) {
     std::shared_ptr<linear_system::Solver> solve_ptr(
         Factory<linear_system::Solver>::instance()->create("LU"));
+    std::cout << "small network, using the LU Solver " << std::endl;
     solver_ = solve_ptr;
   } else {
     std::shared_ptr<linear_system::Solver> solve_ptr(
         Factory<linear_system::Solver>::instance()->create("mkl_pardiso"));
+    std::cout << "large network, using the mkl_pardiso Solver " << std::endl;
     solver_ = solve_ptr;
   }
 
