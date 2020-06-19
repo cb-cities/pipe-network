@@ -27,9 +27,9 @@ class Solver {
     matrix_assembler_ = matrix_assember;
 
     // pointers for sparse matrix info
-    ia_ = matrix_assembler_->jac_matrix().outerIndexPtr();
-    ja_ = matrix_assembler_->jac_matrix().innerIndexPtr();
-    a_ = matrix_assembler_->jac_matrix().valuePtr();
+    ia_ = const_cast<int*>(matrix_assembler_->jac_matrix().outerIndexPtr());
+    ja_ = const_cast<int*>(matrix_assembler_->jac_matrix().innerIndexPtr());
+    a_ = const_cast<double*>(matrix_assembler_->jac_matrix().valuePtr());
 
     // matrix a basic information
     rowsA_ = matrix_assembler_->jac_matrix().rows();
