@@ -60,7 +60,8 @@ pipenetwork::linear_system::Mkl_unsym::Mkl_unsym() : Solver() {
 Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
   // configure matrix
   int n = matrix_assembler_->residual_vector().size();
-  const double* vec_b = matrix_assembler_->residual_vector().data();
+  double* vec_b =
+      const_cast<double*>(matrix_assembler_->residual_vector().data());
   double x_diff[n];
   int nnz = ia_[n];
 
@@ -88,9 +89,6 @@ Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
     printf("\nERROR during symbolic factorization: %d", error_);
     exit(1);
   }
-  //    printf("\nReordering completed ... ");
-  //    printf("\nNumber of nonzeros in factors  = %d", iparm[17]);
-  //    printf("\nNumber of factorization MFLOPS = %d", iparm[18]);
 
   /* -------------------------------------------------------------------- */
   /* ..  Numerical factorization.                                         */
@@ -104,7 +102,6 @@ Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
     printf("\nERROR during numerical factorization: %d", error_);
     exit(2);
   }
-  //    printf("\nFactorization completed ...\n ");
 
   /* -------------------------------------------------------------------- */
   /* ..  Back substitution and iterative refinement.                      */
@@ -119,12 +116,6 @@ Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
     exit(3);
   }
 
-  //    printf("\nSolve completed ... ");
-  //    printf("\nThe solution of the system is: ");
-  //    for (i = 0; i < n; i++) {
-  //        printf("\n x [%d] = % f", i, x[i] );
-  //    }
-  //    printf ("\n");
   /* -------------------------------------------------------------------- */
   /* ..  Convert matrix back to 0-based C-notation.                       */
   /* -------------------------------------------------------------------- */
