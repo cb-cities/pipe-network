@@ -15,6 +15,9 @@ class Solver {
   //! Default constructor for noniterative solver
   Solver() = default;
 
+  //! Virtual Solver
+  virtual  ~Solver(){};
+
   //! Copy Matrix A, Vectors b and x
   //! \param[in] mat_a_ pointer to assembled A matrix
   //! \param[in] vec_x_ pointer to assembled x vector
