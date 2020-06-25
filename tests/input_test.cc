@@ -103,4 +103,16 @@ TEST_CASE("Input is checked", "[IO]") {
     auto junction_props = IO->junction_properties();
     REQUIRE(junction_props.size() == 100);
   }
+
+  SECTION("Check Parsed isolation valve info") {
+    auto IO = std::make_unique<pipenetwork::IO>();
+    IO->read_inp("../benchmarks/small/valves_test.inp");
+
+    // check iso valve
+    auto iso_valve_props = IO->iso_valve_properties();
+    REQUIRE(iso_valve_props.size() == 17);
+    REQUIRE(iso_valve_props[1].name == "V2");
+    REQUIRE(iso_valve_props[1].on_node == "4");
+    REQUIRE(iso_valve_props[1].on_pipe == "P3");
+  }
 }

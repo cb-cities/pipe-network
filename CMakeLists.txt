@@ -44,6 +44,7 @@ SET(pipe_network_src
         src/hydralic_sim.cc
         src/io.cc
         src/io_utils.cc
+        src/valve_graph.cc
         )
 
 # Find dependencies for the library
@@ -112,7 +113,9 @@ if(PIPE_NETWORK_TEST_BUILD_TESTING)
           tests/solver_test.cc
           tests/hydraulic_sim_test.cc
           tests/input_test.cc
-          tests/curve_test.cc)
+          tests/curve_test.cc
+          tests/valve_graph_test.cc
+          )
 
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)

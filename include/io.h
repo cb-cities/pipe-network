@@ -15,6 +15,7 @@
 
 #include "curves.h"
 #include "io_utils.h"
+#include "valve_graph.h"
 
 namespace pipenetwork {
 
@@ -61,6 +62,11 @@ class IO {
   //! Return valve information
   std::vector<ValveProp> valve_properties() const { return valve_props_; }
 
+  //! Return isolation valve information
+  std::vector<ISOVProp> iso_valve_properties() const {
+    return iso_valve_props_;
+  }
+
   //! Return curve information
   std::shared_ptr<Curves> curve_info() const { return curves_info_; }
 
@@ -72,7 +78,7 @@ class IO {
   //! Set of section key words
   std::set<std::string> section_keys_{
       "[JUNCTIONS]", "[RESERVOIRS]", "[TANKS]",  "[PIPES]", "[COORDINATES]",
-      "[PUMPS]",     "[CURVES]",     "[VALVES]", "[LEAKS]"};
+      "[PUMPS]",     "[CURVES]",     "[VALVES]", "[LEAKS]", "[ISOVALVES]"};
 
   //! Map of sections and its corresponding lines
   std::map<std::string, std::vector<std::string>> sections_;
@@ -91,6 +97,8 @@ class IO {
   std::vector<PumpProp> pump_props_;
   //! Vector of parsed valve properties
   std::vector<ValveProp> valve_props_;
+  //! Vector of parsed isolation valves properties
+  std::vector<ISOVProp> iso_valve_props_;
 
   //! Parse information to each section from the input file
   void parse_sections();
@@ -114,6 +122,8 @@ class IO {
   void construct_pump_info();
   //! Construct valve info that is used for pipeline-mesh
   void construct_valve_info();
+  //! Construct iso valve info that is used for segment usage
+  void construct_iso_valve_info();
 
   //! Construct synthesis junctions
   //! \param[in] n number of the mesh dimension (n*n)

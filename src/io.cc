@@ -13,6 +13,12 @@ void pipenetwork::IO::read_inp(const std::string& filename) {
     construct_curve_info();
     construct_pump_info();
     construct_valve_info();
+    // get isolation valves information
+    bool iso = sections_.find("[ISOVALVES]") != sections_.end();
+    if (iso) {
+      construct_iso_valve_info();
+    }
+
   } catch (std::exception& e) {
     std::cerr << "Failed to read input file, error message " << e.what()
               << std::endl;
@@ -254,6 +260,23 @@ void pipenetwork::IO::construct_valve_info() {
         valve_prop.minor_loss_coeff = minorloss;
       }
       valve_props_.emplace_back(valve_prop);
+    }
+  }
+}
+
+void pipenetwork::IO::construct_iso_valve_info() {
+  // get valve information
+  std::string vid, nid, pid;
+  for (auto const& line : sections_.at("[ISOVALVES]")) {
+    ISOVProp iso_valve_prop;
+    // skip keys entries
+    if (line[0] == '[' || line[0] == ';') continue;
+    std::istringstream iss(line);
+    if (iss >> vid >> nid >> pid) {
+      iso_valve_prop.name = vid;
+      iso_valve_prop.on_node = nid;
+      iso_valve_prop.on_pipe = pid;
+      iso_valve_props_.emplace_back(iso_valve_prop);
     }
   }
 }

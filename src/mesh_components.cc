@@ -11,7 +11,7 @@ pipenetwork::MeshNodes::MeshNodes(
 std::shared_ptr<pipenetwork::Node> pipenetwork::MeshNodes::get_node(
     const std::string& node_name) const {
   try {
-    Index nid = name2id_.at(node_name);
+    Index nid = name2nid_.at(node_name);
     return nodes_.at(nid);
   } catch (...) {
     throw std::runtime_error("Node does not exist: " + node_name + "\n");
@@ -21,7 +21,7 @@ template <typename Prop>
 void pipenetwork::MeshNodes::add_nodes(const std::vector<Prop>& props) {
   for (const auto& prop : props) {
     Index nid = nid_manager_.create_index();
-    name2id_.emplace(prop.name, nid);
+    name2nid_.emplace(prop.name, nid);
     add_node(prop);
   }
 }
@@ -54,6 +54,18 @@ pipenetwork::MeshLinks::MeshLinks(
   add_links(valve_props, mesh_nodes);
 }
 
+std::shared_ptr<pipenetwork::Link> pipenetwork::MeshLinks::get_link(
+    const std::string& link_name) const {
+  {
+    try {
+      Index nid = name2lid_.at(link_name);
+      return links_.at(nid);
+    } catch (...) {
+      throw std::runtime_error("Link does not exist: " + link_name + "\n");
+    }
+  }
+}
+
 template <typename Prop>
 void pipenetwork::MeshLinks::add_links(
     const std::vector<Prop>& props, const pipenetwork::MeshNodes& mesh_nodes) {
@@ -61,8 +73,10 @@ void pipenetwork::MeshLinks::add_links(
     try {
       auto node1 = mesh_nodes.get_node(prop.node1_name);
       auto node2 = mesh_nodes.get_node(prop.node2_name);
+      auto lname = prop.name;
       if (prop.status != LinkStatus::CLOSED) {
         Index lid = lid_manager_.create_index();
+        name2lid_[lname] = lid;
         add_link(node1, node2, prop);
       }
     } catch (std::exception& e) {

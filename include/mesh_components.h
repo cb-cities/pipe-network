@@ -62,7 +62,7 @@ class MeshNodes {
   //! Internal id manager
   IndexManager nid_manager_;
   //! node name to id map
-  tsl::ordered_map<std::string, Index> name2id_;
+  tsl::ordered_map<std::string, Index> name2nid_;
   //! Junction map with respect to internal index
   tsl::ordered_map<Index, std::shared_ptr<Junction>> junctions_;
   //! Reservoir map with respect to internal index
@@ -98,6 +98,11 @@ class MeshLinks {
             const std::vector<PumpProp>& pump_props,
             const std::vector<ValveProp>& valve_props,
             const MeshNodes& mesh_nodes);
+
+  //! Get link ptr with link name
+  //! \param[in] link_name link name
+  //! \return link link ptr
+  std::shared_ptr<Link> get_link(const std::string& link_name) const;
 
   //! Get pipes map
   tsl::ordered_map<Index, std::shared_ptr<Pipe>>& pipes() { return pipes_; }
@@ -136,6 +141,9 @@ class MeshLinks {
   tsl::ordered_map<Index, std::shared_ptr<Valve>> valves_;
   //! Link map with respect to internal index
   tsl::ordered_map<Index, std::shared_ptr<Link>> links_;
+  //! Link map from link names to lid
+  tsl::ordered_map<std::string, Index> name2lid_;
+
   //! Add list of links
   //! \param[in] props vector of link properties
   //! \param[in] mesh_nodes information of nodes inside the mesh
@@ -180,7 +188,7 @@ class MeshGraph {
   //! BFS
   Eigen::VectorXd bfs(Index nid);
 
- private:
+ protected:
   //! mesh nodes
   std::shared_ptr<MeshNodes> mesh_nodes_;
   //! mesh links

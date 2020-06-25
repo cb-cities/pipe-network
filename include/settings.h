@@ -20,7 +20,7 @@ const double PDD_SLOPE{1e-11};
 
 //! link settings
 enum class PumpType { POWERPUMP, HEADPUMP };
-enum class ValveType { PRVALVE, FCVALVE, TCVALVE };
+enum class ValveType { PRVALVE, FCVALVE, TCVALVE, ISOVALVE };
 enum class LinkStatus { OPEN, CLOSED, ACTIVE };
 const double PUMP_POWER{50};
 const double PUMP_SPEED{1};
