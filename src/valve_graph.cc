@@ -9,6 +9,7 @@ pipenetwork::ValveGraph::ValveGraph(
   construct_node_pipe_mtx();
   construct_valve_loc_mtx(iso_valve_props);
   construct_valve_def_mtx();
+  construct_idx_table();
 }
 
 void pipenetwork::ValveGraph::construct_node_pipe_mtx() {
@@ -47,4 +48,54 @@ void pipenetwork::ValveGraph::construct_valve_loc_mtx(
 
 void pipenetwork::ValveGraph::construct_valve_def_mtx() {
   valve_def_mtx_ = node_pipe_mtx_ - valve_loc_mtx_;
+}
+
+void pipenetwork::ValveGraph::construct_idx_table() {
+  valve_def_mtx_.makeCompressed();
+  for (int k = 0; k < valve_def_mtx_.outerSize(); ++k)
+    for (Eigen::SparseMatrix<int>::InnerIterator it(valve_def_mtx_, k); it;
+         ++it) {
+      auto row = it.row();  // row index
+      auto col = it.col();  // col index (here it is equal to k)
+      auto val = it.value();
+      if (val != 0) {
+        row2col_[row].emplace_back(col);
+        col2row_[col].emplace_back(row);
+      }
+    }
+}
+
+pipenetwork::IsoSeg pipenetwork::ValveGraph::get_iso_seg(
+    pipenetwork::Index pid) {
+  IsoSeg seg;
+  bool iso = col2row_.find(pid) == col2row_.end();
+  if (iso) {
+    seg.pids.insert(pid);
+    return seg;
+  }
+  std::set<Index> pids{pid};
+  while (!pids.empty()) {
+    // col search
+    auto searching_pid = *pids.begin();
+    pids.erase(pids.begin());
+    seg.pids.insert(searching_pid);
+    // adding new nids
+    auto new_nids = col2row_[pid];
+    // row search
+    while (!new_nids.empty()) {
+      auto searching_nid = new_nids.back();
+      new_nids.pop_back();
+      seg.nids.insert(searching_nid);
+      // adding new pids
+      auto new_pids = row2col_[searching_nid];
+      for (auto new_pid : new_pids) {
+        bool searched = std::find(seg.pids.begin(), seg.pids.end(), new_pid) !=
+                        seg.pids.end();
+        if (!searched) {
+          pids.insert(new_pid);
+        }
+      }
+    }
+  }
+  return seg;
 }

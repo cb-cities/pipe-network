@@ -103,4 +103,15 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
     REQUIRE(valve_loc_matrix.coeff(6, 2) == 0);
     REQUIRE(valve_loc_matrix.coeff(5, 2) == 0);
   }
+  SECTION("CHECK isolation segment search algorithm") {
+      pipenetwork::Index pid = 0;
+      auto seg0 = valve_graph.get_iso_seg (pid);
+
+      REQUIRE(seg0.pids.size() == 1);
+//      REQUIRE(seg0.pids[0] == 0);
+
+      REQUIRE(seg0.nids.size() == 2);
+//      REQUIRE(seg0.nids[0] == 1);
+//      REQUIRE(seg0.nids[1] == 0);
+  }
 }
