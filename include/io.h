@@ -63,7 +63,7 @@ class IO {
   std::vector<ValveProp> valve_properties() const { return valve_props_; }
 
   //! Return isolation valve information
-  std::vector<ISOVProp> iso_valve_properties() const {
+  std::vector<isolation::ISOVProp> iso_valve_properties() const {
     return iso_valve_props_;
   }
 
@@ -98,7 +98,7 @@ class IO {
   //! Vector of parsed valve properties
   std::vector<ValveProp> valve_props_;
   //! Vector of parsed isolation valves properties
-  std::vector<ISOVProp> iso_valve_props_;
+  std::vector<isolation::ISOVProp> iso_valve_props_;
 
   //! Parse information to each section from the input file
   void parse_sections();

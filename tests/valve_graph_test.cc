@@ -50,32 +50,32 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   std::vector<pipenetwork::PumpProp> pump_props;
   std::vector<pipenetwork::ValveProp> valve_props;
 
-  std::vector<pipenetwork::ISOVProp> iso_valve_props;
-  pipenetwork::ISOVProp v1_prop;
+  std::vector<pipenetwork::isolation::ISOVProp> iso_valve_props;
+  pipenetwork::isolation::ISOVProp v1_prop;
   v1_prop.on_node = "1";
   v1_prop.on_pipe = "1";
   v1_prop.name = "v1";
   iso_valve_props.emplace_back(v1_prop);
 
-  pipenetwork::ISOVProp v2_prop;
+  pipenetwork::isolation::ISOVProp v2_prop;
   v2_prop.on_node = "2";
   v2_prop.on_pipe = "1";
   v2_prop.name = "v2";
   // assume broken
 
-  pipenetwork::ISOVProp v3_prop;
+  pipenetwork::isolation::ISOVProp v3_prop;
   v3_prop.on_node = "2";
   v3_prop.on_pipe = "3";
   v3_prop.name = "v3";
   iso_valve_props.emplace_back(v3_prop);
 
-  pipenetwork::ISOVProp v4_prop;
+  pipenetwork::isolation::ISOVProp v4_prop;
   v4_prop.on_node = "3";
   v4_prop.on_pipe = "3";
   v4_prop.name = "v4";
   iso_valve_props.emplace_back(v4_prop);
 
-  pipenetwork::ISOVProp v5_prop;
+  pipenetwork::isolation::ISOVProp v5_prop;
   v5_prop.on_node = "4";
   v5_prop.on_pipe = "2";
   v5_prop.name = "v5";
@@ -111,14 +111,32 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   }
   SECTION("CHECK isolation segment search algorithm") {
 
-    auto segs = valve_graph.get_iso_segs();
-    REQUIRE(segs.size() == 2);
+    auto nsegs = valve_graph.nsegs();
+    REQUIRE(nsegs == 2);
 
     pipenetwork::Index pid = 0;
     auto seg0 = valve_graph.get_iso_seg(pid);
 
     REQUIRE(seg0.pids.size() == 2);
     REQUIRE(seg0.nids.size() == 1);
-    REQUIRE(seg0.vnames.size() == 3);
+    REQUIRE(seg0.vids.size() == 3);
+  }
+  SECTION("Check the Segment Valves Matrix") {
+    auto seg_valve_mtx = valve_graph.seg_valve_mtx();
+    //      std::cout << seg_valve_mtx << std::endl;
+    REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
+    REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
+    REQUIRE(seg_valve_mtx.coeff(0, 2) == 0);
+    REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
+    REQUIRE(seg_valve_mtx.coeff(1, 2) == 1);
+  }
+
+  SECTION("Check the Segment Valves ADJ Matrix") {
+    auto seg_valve_adj_mtx = valve_graph.seg_valve_adj_mtx();
+    //    std::cout << seg_valve_adj_mtx << std::endl;
+    REQUIRE(seg_valve_adj_mtx.coeff(0, 0) == 0);
+    REQUIRE(seg_valve_adj_mtx.coeff(0, 1) == 1);
+    REQUIRE(seg_valve_adj_mtx.coeff(1, 0) == 1);
+    REQUIRE(seg_valve_adj_mtx.coeff(1, 1) == 0);
   }
 }

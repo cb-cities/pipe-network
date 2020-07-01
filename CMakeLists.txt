@@ -45,6 +45,7 @@ SET(pipe_network_src
         src/io.cc
         src/io_utils.cc
         src/valve_graph.cc
+        src/valve_graph_components.cc
         )
 
 # Find dependencies for the library

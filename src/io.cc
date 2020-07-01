@@ -268,7 +268,7 @@ void pipenetwork::IO::construct_iso_valve_info() {
   // get valve information
   std::string vid, nid, pid;
   for (auto const& line : sections_.at("[ISOVALVES]")) {
-    ISOVProp iso_valve_prop;
+    isolation::ISOVProp iso_valve_prop;
     // skip keys entries
     if (line[0] == '[' || line[0] == ';') continue;
     std::istringstream iss(line);
