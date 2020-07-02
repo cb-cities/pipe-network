@@ -1,6 +1,8 @@
 #ifndef PIPE_NETWORK_VALVE_GRAPH_COMPONENTS_H
 #define PIPE_NETWORK_VALVE_GRAPH_COMPONENTS_H
 #include "mesh_components.h"
+#include <Spectra/MatOp/SparseSymMatProd.h>
+#include <Spectra/SymEigsSolver.h>
 
 namespace pipenetwork {
 namespace isolation {
@@ -29,6 +31,20 @@ struct IsoMtxHelper {
   std::map<Index, std::vector<Index>> valve_loc_col2row;
   //! Index lookup table for the valve location matrix (row2col)
   std::map<Index, std::vector<Index>> valve_loc_row2col;
+};
+
+struct IsoSegHelper {
+  static const unsigned EIGEN_THRE{100};
+  static Eigen::SparseMatrix<double> shrink_mtx(
+      Eigen::SparseMatrix<double>& matrix, unsigned int rowToRemove,
+      unsigned int colToRemove);
+
+  static Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> small_matrix_eigen_info(
+      Eigen::SparseMatrix<double>& matrix);
+
+  static Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
+                                Spectra::SparseSymMatProd<double>>
+      large_matrix_eigen_info(Eigen::SparseMatrix<double>& matrix);
 };
 
 class IsoValves {

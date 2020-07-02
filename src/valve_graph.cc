@@ -86,7 +86,7 @@ void pipenetwork::ValveGraph::construct_seg_valve_mtx() {
   auto segments = iso_segments_.iso_segment();
   auto valves = iso_valves_.iso_valves();
 
-  std::vector<Eigen::Triplet<int>> graph_triplet;
+  std::vector<Eigen::Triplet<double>> graph_triplet;
   int on_val = 1;
   for (const auto& sid_seg : segments) {
     auto sid = sid_seg.first;
@@ -101,20 +101,16 @@ void pipenetwork::ValveGraph::construct_seg_valve_mtx() {
 }
 
 void pipenetwork::ValveGraph::construct_seg_valve_adj_mtx() {
-  std::vector<Eigen::Triplet<int>> graph_triplet;
-  std::vector<Index> connected_segs;
-  for (int k = 0; k < seg_valve_mtx_.outerSize(); ++k) {
-    connected_segs.clear();
-    for (Eigen::SparseMatrix<int>::InnerIterator it(seg_valve_mtx_, k); it;
-         ++it) {
-      auto sid = it.row();  // row index
-      auto val = it.value();
-      if (val != 0) {
-        connected_segs.emplace_back(sid);
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+
+  auto ncols = seg_valve_mtx_.cols();
+  for (int k = 0; k < ncols; ++k) {
+    Eigen::VectorXd v_seg = seg_valve_mtx_.col(k);
+    std::vector<Index> connected_segs;
+    if (v_seg.sum() == 2) {
+      for (Eigen::Index i = 0; i < v_seg.size(); ++i) {
+        if (v_seg[i]) connected_segs.push_back(i);
       }
-    }
-    // one valve always connect to two segments
-    if (connected_segs.size() == 2) {
       graph_triplet.emplace_back(connected_segs[0], connected_segs[1], 1);
       graph_triplet.emplace_back(connected_segs[1], connected_segs[0], 1);
     }
@@ -122,4 +118,58 @@ void pipenetwork::ValveGraph::construct_seg_valve_adj_mtx() {
   seg_valve_adj_mtx_.resize(iso_segments_.nsegs(), iso_segments_.nsegs());
   seg_valve_adj_mtx_.setFromTriplets(graph_triplet.begin(),
                                      graph_triplet.end());
+}
+
+void pipenetwork::ValveGraph::find_segment_components(pipenetwork::Index sid) {
+
+  auto n = seg_valve_adj_mtx_.cols();
+  // isolate the segment to 0
+  for (int i = 0; i < n; i++) {
+    seg_valve_adj_mtx_.coeffRef(sid, i) = 0;
+    seg_valve_adj_mtx_.coeffRef(i, sid) = 0;
+  }
+
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+  for (int i = 0; i < iso_segments_.nsegs(); i++) {
+    auto ki = seg_valve_adj_mtx_.row(i).sum();
+    graph_triplet.emplace_back(i, i, ki);
+  }
+  Eigen::SparseMatrix<double> D;
+  D.resize(iso_segments_.nsegs(), iso_segments_.nsegs());
+  D.setFromTriplets(graph_triplet.begin(), graph_triplet.end());
+
+  Eigen::SparseMatrix<double> L = D - seg_valve_adj_mtx_;
+  std::cout << L << std::endl;
+  if (n > pipenetwork::isolation::IsoSegHelper::EIGEN_THRE) {
+    auto eigensolver =
+        pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(L);
+  } else {
+    auto eigensolver =
+        pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(L);
+    std::cout << "The eigenvalues of A are:\n"
+              << eigensolver.eigenvalues() << std::endl;
+    std::cout << "Here's a matrix whose columns are eigenvectors of A \n"
+              << "corresponding to these eigenvalues:\n"
+              << eigensolver.eigenvectors() << std::endl;
+  }
+}
+
+Eigen::SparseMatrix<double> pipenetwork::ValveGraph::merge_segments(
+    Index vid, Eigen::SparseMatrix<double> seg_valve_mtx) {
+  Eigen::VectorXd v_seg = seg_valve_mtx.col(vid);
+  std::vector<Index> merge_pair;
+  for (Eigen::Index i = 0; i < v_seg.size(); ++i) {
+    if (v_seg[i]) merge_pair.push_back(i);
+  }
+  if (merge_pair.size() != 2) {
+    return seg_valve_mtx;
+  }
+
+  for (int j = 0; j < seg_valve_mtx.cols(); j++) {
+    seg_valve_mtx.coeffRef(merge_pair[0], j) +=
+        seg_valve_mtx.coeffRef(merge_pair[1], j);
+  }
+  auto merged_seg_valve_mtx = pipenetwork::isolation::IsoSegHelper::shrink_mtx(
+      seg_valve_mtx, merge_pair[1], vid);
+  return merged_seg_valve_mtx;
 }

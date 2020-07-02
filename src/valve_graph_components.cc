@@ -100,3 +100,54 @@ std::set<pipenetwork::Index>
   }
   return vids;
 }
+
+Eigen::SparseMatrix<double> pipenetwork::isolation::IsoSegHelper::shrink_mtx(
+    Eigen::SparseMatrix<double>& matrix, unsigned int rowToRemove,
+    unsigned int colToRemove) {
+  Eigen::SparseMatrix<double> shrinked_mtx;
+  shrinked_mtx.resize(matrix.rows() - 1, matrix.cols() - 1);
+
+  for (int k = 0; k < matrix.outerSize(); ++k) {
+    for (Eigen::SparseMatrix<double>::InnerIterator it(matrix, k); it; ++it) {
+      auto row = it.row();  // row index
+      auto col = it.col();
+      auto val = it.value();
+
+      if (row != rowToRemove && col != colToRemove && val != 0) {
+        if (row > rowToRemove) {
+          row -= 1;
+        }
+        if (col > colToRemove) {
+          col -= 1;
+        }
+        shrinked_mtx.insert(row, col) = 1;
+      }
+    }
+  }
+  return shrinked_mtx;
+}
+
+Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>
+    pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(
+        Eigen::SparseMatrix<double>& matrix) {
+
+  auto dense_L = Eigen::MatrixXd(matrix);
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(dense_L);
+  if (eigensolver.info() != Eigen::Success) abort();
+  return eigensolver;
+}
+
+Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
+                       Spectra::SparseSymMatProd<double>>
+    pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(
+        Eigen::SparseMatrix<double>& matrix) {
+
+  Spectra::SparseSymMatProd<double> op(matrix);
+  Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
+                         Spectra::SparseSymMatProd<double>>
+      eigs(&op, EIGEN_THRE, 6);
+  eigs.init();
+  int nconv = eigs.compute();
+  if (eigs.info() != Spectra::SUCCESSFUL) abort();
+  return eigs;
+}

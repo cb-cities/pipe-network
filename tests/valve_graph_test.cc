@@ -2,6 +2,7 @@
 
 #include "io.h"
 #include "valve_graph.h"
+#include <Eigen/Eigenvalues>
 
 // Check mesh class
 TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
@@ -25,15 +26,14 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   }
 
   std::vector<pipenetwork::ReservoirProp> res_props;
-  std::vector<std::string> pipe_names{"1", "2", "3"};
-  // 1<->2<->3; 2<->4
+  std::vector<std::string> pipe_names{"1", "2", "3", "4"};
 
   std::vector<std::pair<std::string, std::string>> node_names{
       std::make_pair("1", "2"), std::make_pair("2", "4"),
-      std::make_pair("2", "3")};
-  const std::vector<double> length{100, 200, 300};
-  const std::vector<double> diameter{3, 4, 5};
-  const std::vector<double> roughness{0.2, .6, .9};
+      std::make_pair("2", "3"), std::make_pair("3", "4")};
+  const std::vector<double> length{100, 200, 300, 400};
+  const std::vector<double> diameter{3, 4, 5, 6};
+  const std::vector<double> roughness{0.2, .6, .9, 2};
 
   std::vector<pipenetwork::PipeProp> pipe_props;
   for (int i = 0; i < pipe_names.size(); ++i) {
@@ -81,6 +81,12 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   v5_prop.name = "v5";
   iso_valve_props.emplace_back(v5_prop);
 
+  pipenetwork::isolation::ISOVProp v6_prop;
+  v6_prop.on_node = "4";
+  v6_prop.on_pipe = "4";
+  v6_prop.name = "v6";
+  iso_valve_props.emplace_back(v6_prop);
+
   auto mesh_nodes =
       std::make_shared<pipenetwork::MeshNodes>(junc_props, res_props);
   auto mesh_links = std::make_shared<pipenetwork::MeshLinks>(
@@ -112,7 +118,7 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   SECTION("CHECK isolation segment search algorithm") {
 
     auto nsegs = valve_graph.nsegs();
-    REQUIRE(nsegs == 2);
+    REQUIRE(nsegs == 3);
 
     pipenetwork::Index pid = 0;
     auto seg0 = valve_graph.get_iso_seg(pid);
@@ -123,20 +129,32 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   }
   SECTION("Check the Segment Valves Matrix") {
     auto seg_valve_mtx = valve_graph.seg_valve_mtx();
-    //      std::cout << seg_valve_mtx << std::endl;
+
     REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
     REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
     REQUIRE(seg_valve_mtx.coeff(0, 2) == 0);
     REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
     REQUIRE(seg_valve_mtx.coeff(1, 2) == 1);
+
+    std::cout << seg_valve_mtx << std::endl;
+
+    auto new_seg_valve = valve_graph.merge_segments(1);
+    std::cout << new_seg_valve << std::endl;
+    //      seg_valve_mtx.col(2) += 3 * seg_valve_mtx.col(0);
+    //      std::cout << seg_valve_mtx << std::endl;
+    //    auto dense =   Eigen::MatrixXd(seg_valve_mtx);
+    //    pipenetwork::isolation::IsoSegHelper::removeRow(dense, 0);
+    //    std::cout
+    //        << seg_valve_mtx << std::endl;
   }
 
   SECTION("Check the Segment Valves ADJ Matrix") {
     auto seg_valve_adj_mtx = valve_graph.seg_valve_adj_mtx();
-    //    std::cout << seg_valve_adj_mtx << std::endl;
+    std::cout << seg_valve_adj_mtx << std::endl;
     REQUIRE(seg_valve_adj_mtx.coeff(0, 0) == 0);
     REQUIRE(seg_valve_adj_mtx.coeff(0, 1) == 1);
     REQUIRE(seg_valve_adj_mtx.coeff(1, 0) == 1);
     REQUIRE(seg_valve_adj_mtx.coeff(1, 1) == 0);
+    valve_graph.find_segment_components(1);
   }
 }
