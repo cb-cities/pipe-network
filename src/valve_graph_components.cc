@@ -1,5 +1,3 @@
-#include <valve_graph_components.h>
-
 #include "valve_graph_components.h"
 
 pipenetwork::isolation::IsoValves::IsoValves(
@@ -13,13 +11,18 @@ pipenetwork::isolation::IsoValves::IsoValves(
 const pipenetwork::isolation::IsoSeg
     pipenetwork::isolation::IsoSegments::get_iso_seg(pipenetwork::Index pid) {
   auto sid = pid2sid_[pid];
+
+  if (iso_segments_.find(sid) == iso_segments_.end()) {
+    sid = merged_sid_map_[sid];  // segement has been merged, redirect to the
+                                 // merged one
+  }
+
   return iso_segments_[sid];
 }
 
 void pipenetwork::isolation::IsoSegments::construct_iso_segs(
     const pipenetwork::isolation::IsoMtxHelper& mtx_helper,
-    const pipenetwork::isolation::IsoValves& iso_valves,
-    std::set<Index>& pids) {
+    pipenetwork::isolation::IsoValves& iso_valves, std::set<Index>& pids) {
   while (!pids.empty()) {
     auto searching_pid = *pids.begin();
     auto sid = sid_manager_.create_index();
@@ -32,6 +35,8 @@ void pipenetwork::isolation::IsoSegments::construct_iso_segs(
       pid2sid_[isolated_pid] = sid;
     }
   }
+  construct_seg_valve_mtx(iso_valves);
+  construct_seg_valve_adj_mtx();
 }
 
 pipenetwork::isolation::IsoSeg
@@ -101,27 +106,184 @@ std::set<pipenetwork::Index>
   return vids;
 }
 
-Eigen::SparseMatrix<double> pipenetwork::isolation::IsoSegHelper::shrink_mtx(
-    Eigen::SparseMatrix<double>& matrix, unsigned int rowToRemove,
-    unsigned int colToRemove) {
-  Eigen::SparseMatrix<double> shrinked_mtx;
-  shrinked_mtx.resize(matrix.rows() - 1, matrix.cols() - 1);
+void pipenetwork::isolation::IsoSegments::construct_seg_valve_mtx(
+    pipenetwork::isolation::IsoValves& iso_valves) {
+  auto valves = iso_valves.iso_valves();
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+  int on_val = 1;
+  for (const auto& sid_seg : iso_segments_) {
+    auto sid = sid_seg.first;
+    auto seg = sid_seg.second;
+    for (const auto& vid : seg.vids) {
+      graph_triplet.emplace_back(sid, vid, on_val);
+    }
+  }
+  seg_valve_mtx_.resize(iso_segments_.size(), iso_valves.nvalves());
+  seg_valve_mtx_.setFromTriplets(graph_triplet.begin(), graph_triplet.end());
+}
 
-  for (int k = 0; k < matrix.outerSize(); ++k) {
-    for (Eigen::SparseMatrix<double>::InnerIterator it(matrix, k); it; ++it) {
-      auto row = it.row();  // row index
-      auto col = it.col();
-      auto val = it.value();
-
-      if (row != rowToRemove && col != colToRemove && val != 0) {
-        if (row > rowToRemove) {
-          row -= 1;
-        }
-        if (col > colToRemove) {
-          col -= 1;
-        }
-        shrinked_mtx.insert(row, col) = 1;
+void pipenetwork::isolation::IsoSegments::construct_seg_valve_adj_mtx() {
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+  auto ncols = seg_valve_mtx_.cols();
+  for (int k = 0; k < ncols; ++k) {
+    Eigen::VectorXd v_seg = seg_valve_mtx_.col(k);
+    std::vector<Index> connected_segs;
+    if (v_seg.sum() == 2) {
+      for (Eigen::Index i = 0; i < v_seg.size(); ++i) {
+        if (v_seg[i]) connected_segs.push_back(i);
       }
+      graph_triplet.emplace_back(connected_segs[0], connected_segs[1], 1);
+      graph_triplet.emplace_back(connected_segs[1], connected_segs[0], 1);
+    }
+  }
+  seg_valve_adj_mtx_.resize(iso_segments_.size(), iso_segments_.size());
+  seg_valve_adj_mtx_.setFromTriplets(graph_triplet.begin(),
+                                     graph_triplet.end());
+}
+
+void pipenetwork::isolation::IsoSegments::merge_segments(
+    const std::vector<pipenetwork::Index>& broken_vids) {
+  std::vector<Index> sids_to_remove;
+  for (const auto broken_vid : broken_vids) {
+    auto sids = find_merging_sids(broken_vid);
+    if (sids.size() == 2) {
+      // one valve can only connect two segments
+      auto sid_from = sids[1];
+      auto sid_to = sids[0];
+      merge_two_segment(sid_from, sid_to);
+      sids_to_remove.emplace_back(sid_from);
+    }
+  }
+  update_seg_valve_mtx(sids_to_remove, broken_vids);
+}
+
+std::vector<pipenetwork::Index>
+    pipenetwork::isolation::IsoSegments::find_merging_sids(Index broken_vid) {
+  Eigen::VectorXd v_seg = seg_valve_mtx_.col(broken_vid);
+  std::vector<Index> segs_to_merge;
+  for (Eigen::Index i = 0; i < v_seg.size(); ++i) {
+    if (v_seg[i]) segs_to_merge.push_back(i);
+  }
+  return segs_to_merge;
+}
+
+void pipenetwork::isolation::IsoSegments::merge_two_segment(
+    pipenetwork::Index sid_from, pipenetwork::Index sid_to) {
+  auto& seg_from = iso_segments_[sid_from];
+  auto& seg_to = iso_segments_[sid_to];
+
+  seg_to.vids.insert(seg_from.vids.begin(), seg_from.vids.end());
+  seg_to.pids.insert(seg_from.pids.begin(), seg_from.pids.end());
+  seg_to.nids.insert(seg_from.nids.begin(), seg_from.nids.end());
+  for (int j = 0; j < seg_valve_mtx_.cols(); j++) {
+    seg_valve_mtx_.coeffRef(sid_to, j) += seg_valve_mtx_.coeffRef(sid_from, j);
+  }
+
+  // update states
+  iso_segments_.erase(sid_from);
+  merged_sid_map_[sid_from] = sid_to;
+}
+
+void pipenetwork::isolation::IsoSegments::update_seg_valve_mtx(
+    const std::vector<pipenetwork::Index>& sids_remove,
+    const std::vector<pipenetwork::Index>& vids_remove) {
+
+  auto updated_seg_valve = pipenetwork::isolation::IsoSegHelper::shrink_mtx(
+      seg_valve_mtx_, sids_remove, vids_remove);
+  seg_valve_mtx_ = updated_seg_valve;
+}
+
+std::vector<std::vector<pipenetwork::Index>>
+    pipenetwork::isolation::IsoSegments::get_segment_components(
+        const std::vector<pipenetwork::Index>& segs2iso) {
+
+  // isolate segments by setting corresponding connections to 0
+  auto n = seg_valve_adj_mtx_.cols();
+  for (int i = 0; i < n; i++) {
+    for (auto sid : segs2iso) {
+      seg_valve_adj_mtx_.coeffRef(sid, i) = 0;
+      seg_valve_adj_mtx_.coeffRef(i, sid) = 0;
+    }
+  }
+
+  // construct graph laplacian
+  Eigen::SparseMatrix<double> L =
+      isolation::IsoSegHelper::create_graph_laplacian(seg_valve_adj_mtx_);
+
+  Eigen::VectorXd eigen_vals;
+  Eigen::MatrixXd eigen_vecs;
+  if (n > pipenetwork::isolation::IsoSegHelper::EIGEN_THRE) {
+    auto eigensolver =
+        pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(L);
+    eigen_vals = eigensolver.eigenvalues();
+    eigen_vecs = eigensolver.eigenvectors();
+  } else {
+    auto eigensolver =
+        pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(L);
+    eigen_vals = eigensolver.eigenvalues();
+    eigen_vecs = eigensolver.eigenvectors();
+  }
+
+  auto valid_eids = isolation::IsoSegHelper::find_zero_eval_loc(eigen_vals);
+
+  std::vector<std::vector<pipenetwork::Index>> components;
+  for (auto valid_eid : valid_eids) {
+    Eigen::VectorXd evec = eigen_vecs.col(valid_eid);
+    auto eigen_ids = isolation::IsoSegHelper::find_non_zero_evac_loc(evec);
+    components.emplace_back(map2sid(eigen_ids));
+  }
+  return components;
+}
+
+std::vector<pipenetwork::Index> pipenetwork::isolation::IsoSegments::map2sid(
+    std::vector<pipenetwork::Index> eigen_ids) {
+  long i = 0;
+  std::vector<pipenetwork::Index> sids;
+  for (const auto& sid_seg : iso_segments_) {
+    if (std::find(eigen_ids.begin(), eigen_ids.end(), i) != eigen_ids.end()) {
+      sids.emplace_back(sid_seg.first);
+    }
+    i++;
+  }
+  return sids;
+}
+
+Eigen::SparseMatrix<double> pipenetwork::isolation::IsoSegHelper::shrink_mtx(
+    Eigen::SparseMatrix<double>& matrix,
+    const std::vector<pipenetwork::Index>& rowsToRemove,
+    const std::vector<pipenetwork::Index>& colsToRemove) {
+
+  Eigen::SparseMatrix<double> shrinked_mtx;
+  shrinked_mtx.resize(matrix.rows() - rowsToRemove.size(),
+                      matrix.cols() - colsToRemove.size());
+
+  std::map<Index, Index> row_idx_map;
+  for (int i = 0; i < matrix.innerSize(); ++i) {
+    int decrement = 0;
+    for (auto row2r : rowsToRemove) {
+      if (i > row2r) {
+        decrement -= 1;
+      }
+    }
+    auto new_row_idx = i + decrement;
+    row_idx_map[i] = new_row_idx;
+  }
+
+  Index col_new = 0;
+  for (int k = 0; k < matrix.outerSize(); ++k) {
+    if (std::find(colsToRemove.begin(), colsToRemove.end(), k) ==
+        colsToRemove.end()) {
+      for (Eigen::SparseMatrix<double>::InnerIterator it(matrix, k); it; ++it) {
+        auto row_old = it.row();  // row index
+        auto val = it.value();
+        if (std::find(rowsToRemove.begin(), rowsToRemove.end(), row_old) ==
+                rowsToRemove.end() &&
+            val != 0) {
+          auto row_new = row_idx_map[row_old];
+          shrinked_mtx.insert(row_new, col_new) = 1;
+        }
+      }
+      col_new += 1;
     }
   }
   return shrinked_mtx;
@@ -150,4 +312,47 @@ Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
   int nconv = eigs.compute();
   if (eigs.info() != Spectra::SUCCESSFUL) abort();
   return eigs;
+}
+
+Eigen::SparseMatrix<double>
+    pipenetwork::isolation::IsoSegHelper::create_graph_laplacian(
+        const Eigen::SparseMatrix<double>& adj_mtx) {
+  std::vector<Eigen::Triplet<double>> graph_triplet;
+  for (int i = 0; i < adj_mtx.innerSize(); i++) {
+    auto ki = adj_mtx.row(i).sum();
+    graph_triplet.emplace_back(i, i, ki);
+  }
+  Eigen::SparseMatrix<double> D;
+  D.resize(adj_mtx.outerSize(), adj_mtx.outerSize());
+  D.setFromTriplets(graph_triplet.begin(), graph_triplet.end());
+
+  Eigen::SparseMatrix<double> L = D - adj_mtx;
+  return L;
+}
+
+std::vector<pipenetwork::Index>
+    pipenetwork::isolation::IsoSegHelper::find_zero_eval_loc(
+        const Eigen::VectorXd& evals) {
+  std::vector<pipenetwork::Index> valid_eids;
+  for (int i = 0; i < evals.size(); i++) {
+    auto val = evals[i];
+    if (val < NON_ZERO_THRE) {
+      valid_eids.emplace_back(i);
+    }
+  }
+  return valid_eids;
+}
+
+std::vector<pipenetwork::Index>
+    pipenetwork::isolation::IsoSegHelper::find_non_zero_evac_loc(
+        const Eigen::VectorXd& evec) {
+
+  std::vector<pipenetwork::Index> non_zero_ids;
+  for (int i = 0; i < evec.size(); i++) {
+    auto val = evec[i];
+    if (val > NON_ZERO_THRE) {
+      non_zero_ids.emplace_back(i);
+    }
+  }
+  return non_zero_ids;
 }

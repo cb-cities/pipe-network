@@ -19,25 +19,9 @@ class ValveGraph : MeshGraph {
 
   Eigen::SparseMatrix<int>& valve_loc_mtx() { return valve_loc_mtx_; }
 
-  Eigen::SparseMatrix<double>& seg_valve_mtx() { return seg_valve_mtx_; }
+  isolation::IsoSegments& initial_segments() { return iso_segments_; }
 
-  Eigen::SparseMatrix<double>& seg_valve_adj_mtx() {
-    return seg_valve_adj_mtx_;
-  }
-
-  void find_segment_components(Index sid);
-
-  //! get the corresponding isolation segment from a pipe
-  const isolation::IsoSeg get_iso_seg(Index pid) {
-    return iso_segments_.get_iso_seg(pid);
-  }
-
-  //! get number of segments
-  const Index nsegs() { return iso_segments_.nsegs(); }
-
-  Eigen::SparseMatrix<double> merge_segments(Index vid) {
-    return merge_segments(vid, seg_valve_mtx_);
-  }
+  //  void find_segment_components(Index sid);
 
  private:
   //! Isolation valves in the valve graph
@@ -51,10 +35,6 @@ class ValveGraph : MeshGraph {
   Eigen::SparseMatrix<int> valve_loc_mtx_;
   //! valve deficiency matrix
   Eigen::SparseMatrix<int> valve_def_mtx_;
-  //! segment valve matrix
-  Eigen::SparseMatrix<double> seg_valve_mtx_;
-  //! Adjacency matrix for segments valve
-  Eigen::SparseMatrix<double> seg_valve_adj_mtx_;
   //! lookup tables for the stored matrices
   isolation::IsoMtxHelper mtx_helper;
 
@@ -73,12 +53,8 @@ class ValveGraph : MeshGraph {
   //! construct isolation segments for the network
   void construct_iso_segs();
 
-  void construct_seg_valve_mtx();
-
-  void construct_seg_valve_adj_mtx();
-
-  Eigen::SparseMatrix<double> merge_segments(
-      Index vid, Eigen::SparseMatrix<double> seg_valve_mtx);
+  //  Eigen::SparseMatrix<double> merge_segments(
+  //      Index vid, Eigen::SparseMatrix<double> seg_valve_mtx);
 };
 
 }  // namespace pipenetwork

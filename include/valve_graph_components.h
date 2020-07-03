@@ -35,9 +35,11 @@ struct IsoMtxHelper {
 
 struct IsoSegHelper {
   static const unsigned EIGEN_THRE{100};
+  static constexpr double NON_ZERO_THRE{1E-8};
   static Eigen::SparseMatrix<double> shrink_mtx(
-      Eigen::SparseMatrix<double>& matrix, unsigned int rowToRemove,
-      unsigned int colToRemove);
+      Eigen::SparseMatrix<double>& matrix,
+      const std::vector<pipenetwork::Index>& rowsToRemove,
+      const std::vector<pipenetwork::Index>& colToRemove);
 
   static Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> small_matrix_eigen_info(
       Eigen::SparseMatrix<double>& matrix);
@@ -45,6 +47,13 @@ struct IsoSegHelper {
   static Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
                                 Spectra::SparseSymMatProd<double>>
       large_matrix_eigen_info(Eigen::SparseMatrix<double>& matrix);
+
+  static Eigen::SparseMatrix<double> create_graph_laplacian(
+      const Eigen::SparseMatrix<double>& adj_mtx);
+
+  static std::vector<Index> find_zero_eval_loc(const Eigen::VectorXd& evals);
+
+  static std::vector<Index> find_non_zero_evac_loc(const Eigen::VectorXd& evec);
 };
 
 class IsoValves {
@@ -66,7 +75,7 @@ class IsoValves {
     loc2vid_[location] = vid;
   }
 
-  const Index nvalves() { return iso_valves_.size(); }
+  const Index nvalves() const { return iso_valves_.size(); }
 
  private:
   //! Internal valve id manager
@@ -82,32 +91,62 @@ class IsoSegments {
   IsoSegments() = default;
 
   void construct_iso_segs(const IsoMtxHelper& mtx_helper,
-                          const pipenetwork::isolation::IsoValves& iso_valves,
+                          pipenetwork::isolation::IsoValves& iso_valves,
                           std::set<Index>& pids);
 
   const isolation::IsoSeg get_iso_seg(Index pid);
 
-  const std::map<Index, IsoSeg>& iso_segment() { return iso_segments_; }
+  const tsl::ordered_map<Index, IsoSeg>& iso_segment() { return iso_segments_; }
 
   const Index nsegs() { return iso_segments_.size(); }
+
+  Eigen::SparseMatrix<double>& seg_valve_mtx() { return seg_valve_mtx_; }
+
+  Eigen::SparseMatrix<double>& seg_valve_adj_mtx() {
+    return seg_valve_adj_mtx_;
+  }
+
+  void merge_segments(const std::vector<pipenetwork::Index>& broken_vids);
+
+  std::vector<std::vector<Index>> get_segment_components(
+      const std::vector<pipenetwork::Index>& segs2iso);
 
  private:
   //! Internal segment id manager
   IndexManager sid_manager_;
   //! Segment map
-  std::map<Index, IsoSeg> iso_segments_;
+  tsl::ordered_map<Index, IsoSeg> iso_segments_;
   //! pid to sid
-  std::map<Index, Index> pid2sid_;
+  tsl::ordered_map<Index, Index> pid2sid_;
+  //! segment valve matrix
+  Eigen::SparseMatrix<double> seg_valve_mtx_;
+  //! Adjacency matrix for segments valve
+  Eigen::SparseMatrix<double> seg_valve_adj_mtx_;
+  //! merged segments. Key: from sid, value: to sid
+  std::map<Index, Index> merged_sid_map_;
+
+  void construct_seg_valve_mtx(pipenetwork::isolation::IsoValves& iso_valves);
+
+  void construct_seg_valve_adj_mtx();
 
   //! get the corresponding isolation segment from a pipe id
   IsoSeg get_single_seg(const IsoMtxHelper& mtx_helper, Index pid);
 
-  //! get the isolation valves that need to be closed from corresponding pids
-  //! and nids
+  //! get the isolation valves that need to be closed from the corresponding
+  //! segment pids and segment nids
   std::set<pipenetwork::Index> get_seg_valves(
       const pipenetwork::isolation::IsoMtxHelper& mtx_helper,
       const pipenetwork::isolation::IsoValves& iso_valves,
       const std::set<Index>& pids, const std::set<Index>& nids);
+
+  void merge_two_segment(Index sid_from, Index sid_to);
+
+  void update_seg_valve_mtx(const std::vector<pipenetwork::Index>& sids_remove,
+                            const std::vector<pipenetwork::Index>& vids_remove);
+
+  std::vector<Index> find_merging_sids(Index broken_vid);
+
+  std::vector<Index> map2sid(std::vector<Index> eigen_ids);
 };
 
 }  // namespace isolation
