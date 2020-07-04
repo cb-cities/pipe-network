@@ -75,6 +75,14 @@ class IsoValves {
     loc2vid_[location] = vid;
   }
 
+  Index vname2vid(const std::string& vname) {
+    try {
+      return vname2vid_.at(vname);
+    } catch (...) {
+      throw std::runtime_error("Invalid valve name! ");
+    }
+  };
+
   const Index nvalves() const { return iso_valves_.size(); }
 
  private:
@@ -82,8 +90,10 @@ class IsoValves {
   IndexManager vid_manager_;
   //! Valve properties map
   std::map<Index, ISOVProp> iso_valves_;
-  //! valve name map with the position in the valve location matrix as the key
+  //! valve id map with the position in the valve location matrix as the key
   std::map<std::pair<Index, Index>, Index> loc2vid_;
+  //! valve id map with the valve name as the key
+  std::map<std::string, Index> vname2vid_;
 };
 
 class IsoSegments {
@@ -94,7 +104,7 @@ class IsoSegments {
                           pipenetwork::isolation::IsoValves& iso_valves,
                           std::set<Index>& pids);
 
-  const isolation::IsoSeg get_iso_seg(Index pid);
+  const isolation::IsoSeg pid2seg(Index pid);
 
   const tsl::ordered_map<Index, IsoSeg>& iso_segment() { return iso_segments_; }
 
@@ -106,10 +116,10 @@ class IsoSegments {
     return seg_valve_adj_mtx_;
   }
 
-  void merge_segments(const std::vector<pipenetwork::Index>& broken_vids);
+  void merge_segments(Index broken_vid);
 
-  std::vector<std::vector<Index>> get_segment_components(
-      const std::vector<pipenetwork::Index>& segs2iso);
+  std::vector<std::vector<pipenetwork::isolation::IsoSeg>>
+      get_segment_components(const std::set<pipenetwork::Index>& segs2iso);
 
  private:
   //! Internal segment id manager
@@ -122,8 +132,8 @@ class IsoSegments {
   Eigen::SparseMatrix<double> seg_valve_mtx_;
   //! Adjacency matrix for segments valve
   Eigen::SparseMatrix<double> seg_valve_adj_mtx_;
-  //! merged segments. Key: from sid, value: to sid
-  std::map<Index, Index> merged_sid_map_;
+  //! Removed vids
+  std::vector<Index> removed_vids_;
 
   void construct_seg_valve_mtx(pipenetwork::isolation::IsoValves& iso_valves);
 
@@ -139,14 +149,18 @@ class IsoSegments {
       const pipenetwork::isolation::IsoValves& iso_valves,
       const std::set<Index>& pids, const std::set<Index>& nids);
 
-  void merge_two_segment(Index sid_from, Index sid_to);
+  void merge_two_segment(Index sid_from, Index sid_to, Index vid);
 
-  void update_seg_valve_mtx(const std::vector<pipenetwork::Index>& sids_remove,
-                            const std::vector<pipenetwork::Index>& vids_remove);
+  void update_seg_valve_mtx(const std::vector<pipenetwork::Index>& sids_remove);
 
   std::vector<Index> find_merging_sids(Index broken_vid);
 
-  std::vector<Index> map2sid(std::vector<Index> eigen_ids);
+  std::vector<std::vector<pipenetwork::isolation::IsoSeg>> einfo2components(
+      const Eigen::VectorXd& eigen_vals, const Eigen::MatrixXd& eigen_vecs);
+
+  void reindex();
+
+  void update_pid2sid();
 };
 
 }  // namespace isolation

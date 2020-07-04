@@ -27,8 +27,6 @@ class IndexManager {
   Index index_{0};
   //! Next value
   Index next_{0};
-  //! Mutex
-  std::mutex index_mutex_;
 };
 }  // namespace pipenetwork
 

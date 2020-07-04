@@ -26,7 +26,7 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   }
 
   std::vector<pipenetwork::ReservoirProp> res_props;
-  std::vector<std::string> pipe_names{"1", "2", "3", "4"};
+  std::vector<std::string> pipe_names{"p1", "p2", "p3", "p4"};
 
   std::vector<std::pair<std::string, std::string>> node_names{
       std::make_pair("1", "2"), std::make_pair("2", "4"),
@@ -53,39 +53,34 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   std::vector<pipenetwork::isolation::ISOVProp> iso_valve_props;
   pipenetwork::isolation::ISOVProp v1_prop;
   v1_prop.on_node = "1";
-  v1_prop.on_pipe = "1";
+  v1_prop.on_pipe = "p1";
   v1_prop.name = "v1";
   iso_valve_props.emplace_back(v1_prop);
 
   pipenetwork::isolation::ISOVProp v2_prop;
   v2_prop.on_node = "2";
-  v2_prop.on_pipe = "1";
+  v2_prop.on_pipe = "p1";
   v2_prop.name = "v2";
+  iso_valve_props.emplace_back(v2_prop);
   // assume broken
 
   pipenetwork::isolation::ISOVProp v3_prop;
   v3_prop.on_node = "2";
-  v3_prop.on_pipe = "3";
+  v3_prop.on_pipe = "p3";
   v3_prop.name = "v3";
   iso_valve_props.emplace_back(v3_prop);
 
   pipenetwork::isolation::ISOVProp v4_prop;
   v4_prop.on_node = "3";
-  v4_prop.on_pipe = "3";
+  v4_prop.on_pipe = "p3";
   v4_prop.name = "v4";
   iso_valve_props.emplace_back(v4_prop);
 
   pipenetwork::isolation::ISOVProp v5_prop;
   v5_prop.on_node = "4";
-  v5_prop.on_pipe = "2";
+  v5_prop.on_pipe = "p4";
   v5_prop.name = "v5";
   iso_valve_props.emplace_back(v5_prop);
-
-  pipenetwork::isolation::ISOVProp v6_prop;
-  v6_prop.on_node = "4";
-  v6_prop.on_pipe = "4";
-  v6_prop.name = "v6";
-  iso_valve_props.emplace_back(v6_prop);
 
   auto mesh_nodes =
       std::make_shared<pipenetwork::MeshNodes>(junc_props, res_props);
@@ -94,121 +89,162 @@ TEST_CASE("Valve Graph is checked", "[Valve Graph]") {
   auto valve_graph =
       pipenetwork::ValveGraph(mesh_nodes, mesh_links, iso_valve_props);
 
-  SECTION("CHECK The NODE PIPE MATRIX") {
-    auto node_pipe_matrix = valve_graph.node_pipe_mtx();
-    REQUIRE(node_pipe_matrix.coeff(0, 0) == 1);
-    REQUIRE(node_pipe_matrix.coeff(1, 0) == 1);
-    REQUIRE(node_pipe_matrix.coeff(1, 1) == 1);
-    REQUIRE(node_pipe_matrix.coeff(3, 1) == 1);
-    REQUIRE(node_pipe_matrix.coeff(1, 2) == 1);
-    REQUIRE(node_pipe_matrix.coeff(2, 2) == 1);
-    REQUIRE(node_pipe_matrix.coeff(5, 2) == 0);
-  }
-  SECTION("CHECK The Valve Location Matrix") {
-    auto valve_loc_matrix = valve_graph.valve_loc_mtx();
-    REQUIRE(valve_loc_matrix.coeff(0, 0) == 1);
-    REQUIRE(valve_loc_matrix.coeff(1, 0) == 0);  // assume broken
-    REQUIRE(valve_loc_matrix.coeff(1, 1) == 0);
-    REQUIRE(valve_loc_matrix.coeff(3, 1) == 1);
-    REQUIRE(valve_loc_matrix.coeff(1, 2) == 1);
-    REQUIRE(valve_loc_matrix.coeff(2, 2) == 1);
-    REQUIRE(valve_loc_matrix.coeff(5, 2) == 0);
-    //      std::cout<<valve_loc_matrix<<std::endl;
-  }
-  SECTION("CHECK isolation segment search algorithm") {
-    auto& initial_segments = valve_graph.initial_segments();
+  //  SECTION("CHECK The NODE PIPE MATRIX") {
+  //    auto node_pipe_matrix = valve_graph.node_pipe_mtx();
+  //    REQUIRE(node_pipe_matrix.coeff(0, 0) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(1, 0) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(1, 1) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(3, 1) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(1, 2) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(2, 2) == 1);
+  //    REQUIRE(node_pipe_matrix.coeff(5, 2) == 0);
+  //  }
+  //  SECTION("CHECK The Valve Location Matrix") {
+  //    auto valve_loc_matrix = valve_graph.valve_loc_mtx();
+  //    //    std::cout << valve_loc_matrix << std::endl;
+  //    REQUIRE(valve_loc_matrix.coeff(0, 0) == 1);
+  //    REQUIRE(valve_loc_matrix.coeff(1, 0) == 1);
+  //    REQUIRE(valve_loc_matrix.coeff(1, 1) == 0);
+  //    REQUIRE(valve_loc_matrix.coeff(3, 1) == 0);
+  //    REQUIRE(valve_loc_matrix.coeff(1, 2) == 1);
+  //    REQUIRE(valve_loc_matrix.coeff(2, 2) == 1);
+  //    REQUIRE(valve_loc_matrix.coeff(3, 2) == 0);
+  //    REQUIRE(valve_loc_matrix.coeff(3, 3) == 1);
+  //  }
+  //  SECTION("CHECK isolation segment search algorithm") {
+  //    auto& initial_segments = valve_graph.segments();
+  //
+  //    auto nsegs = initial_segments.nsegs();
+  //    REQUIRE(nsegs == 4);
+  //
+  //    pipenetwork::Index pid = 0;
+  //    auto seg0 = initial_segments.pid2seg(pid);
+  //
+  //    REQUIRE(seg0.pids.size() == 1);
+  //    REQUIRE(seg0.nids.size() == 0);
+  //    REQUIRE(seg0.vids.size() == 2);
+  //
+  //    auto seg3 = initial_segments.pid2seg(3);
+  //    REQUIRE(seg3.pids.size() == 1);
+  //    REQUIRE(seg3.nids.size() == 1);
+  //    REQUIRE(seg3.vids.size() == 2);
+  //  }
+  //  SECTION("Check the Segment Valves Matrix") {
+  //    auto& initial_segments = valve_graph.segments();
+  //    auto seg_valve_mtx = initial_segments.seg_valve_mtx();
+  //    std::cout << seg_valve_mtx << std::endl;
+  //    REQUIRE(seg_valve_mtx.innerSize() == 4);
+  //    REQUIRE(seg_valve_mtx.outerSize() == 5);
+  //
+  //    REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 2) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 1) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 2) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 4) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 0) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 2) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 3) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(3, 1) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(3, 3) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(3, 4) == 1);
+  //
+  //    SECTION("Check the shrink matrix tool") {
+  //      std::vector<pipenetwork::Index> rows_to_remove{0, 2};
+  //      std::vector<pipenetwork::Index> cols_to_remove{1, 3};
+  //      auto shrinked_mtx = pipenetwork::isolation::IsoSegHelper::shrink_mtx(
+  //          seg_valve_mtx, rows_to_remove, cols_to_remove);
+  //      REQUIRE(shrinked_mtx.innerSize() == 2);
+  //      REQUIRE(shrinked_mtx.outerSize() == 3);
+  //      REQUIRE(shrinked_mtx.coeff(0, 0) == 0);
+  //      REQUIRE(shrinked_mtx.coeff(0, 1) == 1);
+  //      REQUIRE(shrinked_mtx.coeff(0, 2) == 1);
+  //      REQUIRE(shrinked_mtx.coeff(1, 0) == 0);
+  //      REQUIRE(shrinked_mtx.coeff(1, 1) == 0);
+  //      REQUIRE(shrinked_mtx.coeff(1, 2) == 1);
+  //    }
+  //  }
+  //  SECTION("Check the Segment Valves ADJ Matrix") {
+  //    auto& initial_segments = valve_graph.segments();
+  //    auto seg_valve_adj_mtx = initial_segments.seg_valve_adj_mtx();
+  //    std::cout << seg_valve_adj_mtx << std::endl;
+  //    REQUIRE(seg_valve_adj_mtx.coeff(0, 0) == 0);
+  //    REQUIRE(seg_valve_adj_mtx.coeff(0, 1) == 1);
+  //    REQUIRE(seg_valve_adj_mtx.coeff(1, 0) == 1);
+  //    REQUIRE(seg_valve_adj_mtx.coeff(1, 1) == 0);
+  //  }
+  //  SECTION("Check components finding algorithm") {
+  //    auto& segments = valve_graph.segments();
+  //    std::set<pipenetwork::Index> iso_sid{1};
+  //    auto components = segments.get_segment_components(iso_sid);
+  //    REQUIRE(components.size() == 3);
+  //    REQUIRE(components[0].size() == 1);
+  //    REQUIRE(components[1].size() == 1);
+  //    REQUIRE(components[2].size() == 2);
+  //  }
+  //  SECTION("Check merge segments by remove valves") {
+  //    auto& segments = valve_graph.segments();
+  //    segments.merge_segments(1);
+  //    auto seg_valve_mtx = segments.seg_valve_mtx();
+  //    //    std::cout << seg_valve_mtx << std::endl;
+  //    REQUIRE(seg_valve_mtx.innerSize() == 3);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 2) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(0, 3) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 1) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 2) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(1, 3) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 0) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 1) == 0);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 2) == 1);
+  //    REQUIRE(seg_valve_mtx.coeff(2, 3) == 1);
+  //
+  //    auto segment = segments.pid2seg(1);
+  //    REQUIRE(segment.sid == 0);
+  //    REQUIRE(segment.pids.size() == 2);
+  //
+  //    SECTION("Check components finding algorithm after merging") {
+  //      std::set<pipenetwork::Index> iso_sid{2};
+  //      auto components = segments.get_segment_components(iso_sid);
+  //      REQUIRE(components.size() == 2);
+  //      REQUIRE(components[0].size() == 2);
+  //      REQUIRE(components[1].size() == 1);
+  //    }
+  //    SECTION("Continous failure case") {
+  //      segments.merge_segments(4);
+  //      auto seg_valve_mtx = segments.seg_valve_mtx();
+  //      std::cout << seg_valve_mtx << std::endl;
+  //      REQUIRE(seg_valve_mtx.innerSize() == 2);
+  //
+  //      auto seg_valve_adj_mtx = segments.seg_valve_adj_mtx();
+  //      std::cout << seg_valve_adj_mtx << std::endl;
+  //
+  //      auto components = segments.get_segment_components({1});
+  //      REQUIRE(components.size() == 2);
+  //      REQUIRE(components[0].size() == 1);
+  //      REQUIRE(components[1].size() == 1);
+  //    }
+  //  }
 
-    auto nsegs = initial_segments.nsegs();
-    REQUIRE(nsegs == 3);
+  SECTION("Check wrappers in the valve graph class") {
+    valve_graph.initialize_iso_segs();  // reinitialize
+    REQUIRE(valve_graph.nsegs() == 4);
 
-    pipenetwork::Index pid = 0;
-    auto seg0 = initial_segments.get_iso_seg(pid);
+    auto seg0 = valve_graph.pname2segment("p1");
+    REQUIRE(seg0.pids.size() == 1);
+    REQUIRE(seg0.nids.size() == 0);
+    REQUIRE(seg0.vids.size() == 2);
 
-    REQUIRE(seg0.pids.size() == 2);
-    REQUIRE(seg0.nids.size() == 1);
-    REQUIRE(seg0.vids.size() == 3);
-  }
-  SECTION("Check the Segment Valves Matrix") {
-    auto& initial_segments = valve_graph.initial_segments();
-    auto seg_valve_mtx = initial_segments.seg_valve_mtx();
+    auto seg_components_init = valve_graph.segment_components({"p1", "p2"});
+    REQUIRE(seg_components_init.size() == 3);
 
-    REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
-    REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
-    REQUIRE(seg_valve_mtx.coeff(0, 2) == 0);
-    REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
-    REQUIRE(seg_valve_mtx.coeff(1, 2) == 1);
+    valve_graph.fail_valves({"v2", "v5"});
+    REQUIRE(valve_graph.nsegs() == 2);
 
-    std::cout << seg_valve_mtx << std::endl;
-    SECTION("Check the shrink matrix tool") {
-      std::vector<pipenetwork::Index> rows_to_remove{0, 1};
-      std::vector<pipenetwork::Index> cols_to_remove{1};
-      auto shrinked_mtx = pipenetwork::isolation::IsoSegHelper::shrink_mtx(
-          seg_valve_mtx, rows_to_remove, cols_to_remove);
-      REQUIRE(shrinked_mtx.innerSize() == 1);
-      REQUIRE(shrinked_mtx.coeff(0, 0) == 0);
-      REQUIRE(shrinked_mtx.coeff(0, 1) == 1);
-      REQUIRE(shrinked_mtx.coeff(0, 3) == 1);
-    }
-  }
-
-  SECTION("Check the Segment Valves ADJ Matrix") {
-    auto& initial_segments = valve_graph.initial_segments();
-    auto seg_valve_adj_mtx = initial_segments.seg_valve_adj_mtx();
-    std::cout << seg_valve_adj_mtx << std::endl;
-    REQUIRE(seg_valve_adj_mtx.coeff(0, 0) == 0);
-    REQUIRE(seg_valve_adj_mtx.coeff(0, 1) == 1);
-    REQUIRE(seg_valve_adj_mtx.coeff(1, 0) == 1);
-    REQUIRE(seg_valve_adj_mtx.coeff(1, 1) == 0);
-  }
-  SECTION("Check components finding algorithm") {
-    auto& segments = valve_graph.initial_segments();
-    std::vector<pipenetwork::Index> iso_sid{0};
-    auto components = segments.get_segment_components(iso_sid);
-    REQUIRE(components.size() == 2);
-    REQUIRE(components[0].size() == 1);
-    REQUIRE(components[1].size() == 2);
-    //      for (auto i = components[0].begin(); i != components[0].end(); ++i)
-    //          std::cout << *i << ' ';
-    //      std::cout << std::endl;
-    //
-    //      for (auto i = components[1].begin(); i != components[1].end(); ++i)
-    //          std::cout << *i << ' ';
-    //      std::cout << std::endl;
-  }
-  SECTION("Check merge segments by remove valves") {
-    auto& segments = valve_graph.initial_segments();
-    std::vector<pipenetwork::Index> vids{1};
-    segments.merge_segments(vids);
-
-    auto seg_valve_mtx = segments.seg_valve_mtx();
-    REQUIRE(seg_valve_mtx.innerSize() == 2);
-    REQUIRE(seg_valve_mtx.coeff(0, 0) == 1);
-    REQUIRE(seg_valve_mtx.coeff(0, 1) == 1);
-    REQUIRE(seg_valve_mtx.coeff(0, 2) == 1);
-    REQUIRE(seg_valve_mtx.coeff(1, 0) == 0);
-    REQUIRE(seg_valve_mtx.coeff(1, 1) == 1);
-    REQUIRE(seg_valve_mtx.coeff(1, 2) == 0);
-    std::cout << seg_valve_mtx << std::endl;
-
-    auto segment = segments.get_iso_seg(2);
-    REQUIRE(segment.sid == 0);
-    REQUIRE(segment.pids.size() == 3);
-
-    SECTION("Check components finding algorithm after merging") {
-      std::vector<pipenetwork::Index> iso_sid{0};
-      auto components = segments.get_segment_components(iso_sid);
-      REQUIRE(components.size() == 2);
-      REQUIRE(components[0].size() == 1);
-      REQUIRE(components[1].size() == 1);
-      //          for (auto i = components[0].begin(); i != components[0].end();
-      //          ++i)
-      //              std::cout << *i << ' ';
-      //          std::cout << std::endl;
-      //
-      //          for (auto i = components[1].begin(); i != components[1].end();
-      //          ++i)
-      //              std::cout << *i << ' ';
-      //          std::cout << std::endl;
-    }
+    auto seg_components_after = valve_graph.segment_components({"p1", "p2"});
+    REQUIRE(seg_components_after.size() == 2);
   }
 }

@@ -9,7 +9,7 @@ pipenetwork::ValveGraph::ValveGraph(
   construct_node_pipe_mtx();
   construct_valve_loc_mtx();
   construct_valve_def_mtx();
-  construct_iso_segs();
+  initialize_iso_segs();
 }
 
 void pipenetwork::ValveGraph::construct_node_pipe_mtx() {
@@ -71,67 +71,37 @@ void pipenetwork::ValveGraph::construct_vdef_idx_table() {
     }
 }
 
-void pipenetwork::ValveGraph::construct_iso_segs() {
+void pipenetwork::ValveGraph::initialize_iso_segs() {
   std::set<Index> unexplored_pids;
   for (const auto& index_link : mesh_links_->links()) {
     auto lid = index_link.first;
     unexplored_pids.insert(lid);
   }
+  iso_segments_ = isolation::IsoSegments();  // reinitialize for clear state
   iso_segments_.construct_iso_segs(mtx_helper, iso_valves_, unexplored_pids);
 }
 
-// void pipenetwork::ValveGraph::find_segment_components(pipenetwork::Index sid)
-// {
-//
-//  auto n = seg_valve_adj_mtx_.cols();
-//  // isolate the segment to 0
-//  for (int i = 0; i < n; i++) {
-//    seg_valve_adj_mtx_.coeffRef(sid, i) = 0;
-//    seg_valve_adj_mtx_.coeffRef(i, sid) = 0;
-//  }
-//
-//  std::vector<Eigen::Triplet<double>> graph_triplet;
-//  for (int i = 0; i < iso_segments_.nsegs(); i++) {
-//    auto ki = seg_valve_adj_mtx_.row(i).sum();
-//    graph_triplet.emplace_back(i, i, ki);
-//  }
-//  Eigen::SparseMatrix<double> D;
-//  D.resize(iso_segments_.nsegs(), iso_segments_.nsegs());
-//  D.setFromTriplets(graph_triplet.begin(), graph_triplet.end());
-//
-//  Eigen::SparseMatrix<double> L = D - seg_valve_adj_mtx_;
-//  std::cout << L << std::endl;
-//  if (n > pipenetwork::isolation::IsoSegHelper::EIGEN_THRE) {
-//    auto eigensolver =
-//        pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(L);
-//  } else {
-//    auto eigensolver =
-//        pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(L);
-//    std::cout << "The eigenvalues of A are:\n"
-//              << eigensolver.eigenvalues() << std::endl;
-//    std::cout << "Here's a matrix whose columns are eigenvectors of A \n"
-//              << "corresponding to these eigenvalues:\n"
-//              << eigensolver.eigenvectors() << std::endl;
-//  }
-//}
-//
-// Eigen::SparseMatrix<double> pipenetwork::ValveGraph::merge_segments(
-//    Index vid, Eigen::SparseMatrix<double> seg_valve_mtx) {
-//  Eigen::VectorXd v_seg = seg_valve_mtx.col(vid);
-//  std::vector<Index> merge_pair;
-//  for (Eigen::Index i = 0; i < v_seg.size(); ++i) {
-//    if (v_seg[i]) merge_pair.push_back(i);
-//  }
-//  if (merge_pair.size() != 2) {
-//    return seg_valve_mtx;
-//  }
-//
-//  for (int j = 0; j < seg_valve_mtx.cols(); j++) {
-//    seg_valve_mtx.coeffRef(merge_pair[0], j) +=
-//        seg_valve_mtx.coeffRef(merge_pair[1], j);
-//  }
-//  auto merged_seg_valve_mtx =
-//  pipenetwork::isolation::IsoSegHelper::shrink_mtx(
-//      seg_valve_mtx, merge_pair[1], vid);
-//  return merged_seg_valve_mtx;
-//}
+pipenetwork::isolation::IsoSeg pipenetwork::ValveGraph::pname2segment(
+    const std::string& p_name) {
+  auto pid = lname2id(p_name);
+  return iso_segments_.pid2seg(pid);
+}
+
+std::vector<std::vector<pipenetwork::isolation::IsoSeg>>
+    pipenetwork::ValveGraph::segment_components(
+        const std::vector<std::string>& pipe2iso) {
+  std::set<Index> sids;
+  for (auto pname : pipe2iso) {
+    auto seg = pname2segment(pname);
+    sids.insert(seg.sid);
+  }
+  return iso_segments_.get_segment_components(sids);
+}
+
+void pipenetwork::ValveGraph::fail_valves(
+    const std::vector<std::string>& broken_valves) {
+  for (auto& vname : broken_valves) {
+    auto vid = iso_valves_.vname2vid(vname);
+    iso_segments_.merge_segments(vid);
+  }
+}

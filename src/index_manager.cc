@@ -15,7 +15,6 @@ pipenetwork::Index pipenetwork::IndexManager::max() const {
 
 //! Generate index
 pipenetwork::Index pipenetwork::IndexManager::create_index() {
-  std::lock_guard<std::mutex> guard(index_mutex_);
   // Get the next value of index
   // (at init both index and next will be the same)
   index_ = next_;

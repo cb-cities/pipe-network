@@ -187,6 +187,14 @@ class MeshGraph {
   std::vector<unsigned> ndegree() const { return ndegree_; }
   //! BFS
   Eigen::VectorXd bfs(Index nid);
+  //! link name to id
+  Index lname2id(const std::string& link_name) const {
+    return mesh_links_->get_link(link_name)->id();
+  }
+  //! node name to id
+  Index nname2id(const std::string& node_name) const {
+    return mesh_nodes_->get_node(node_name)->id();
+  }
 
  protected:
   //! mesh nodes
