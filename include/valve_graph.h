@@ -4,9 +4,6 @@
 #include "mesh_components.h"
 #include "valve_graph_components.h"
 
-#include <Spectra/MatOp/SparseSymMatProd.h>
-#include <Spectra/SymEigsSolver.h>
-
 namespace pipenetwork {
 
 class ValveGraph : MeshGraph {
