@@ -196,8 +196,8 @@ void pipenetwork::isolation::IsoSegments::update_seg_valve_mtx(
   auto updated_seg_valve = pipenetwork::isolation::IsoSegHelper::shrink_mtx(
       seg_valve_mtx_, sids_remove, {});
   seg_valve_mtx_ = updated_seg_valve;
-  std::cout << "Seg Valve mtx after!" << std::endl;
-  std::cout << seg_valve_mtx_ << std::endl;
+//  std::cout << "Seg Valve mtx after!" << std::endl;
+//  std::cout << seg_valve_mtx_ << std::endl;
   construct_seg_valve_adj_mtx();
 }
 

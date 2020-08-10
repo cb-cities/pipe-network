@@ -157,6 +157,8 @@ void pipenetwork::IO_utils::Output::save_sim_result(
           << "head"
           << ","
           << "demand"
+          << ","
+          << "leak_discharge"
           << "\n";
   outlink << "link_name"
           << ","
@@ -170,7 +172,7 @@ void pipenetwork::IO_utils::Output::save_sim_result(
     auto junction = index_junc.second;
     auto junc_prop = junction->property();
     outnode << std::setprecision(12) << junc_prop.name << "," << junction->head
-            << "," << junction->demand << "\n";
+            << "," << junction->demand<< "," << junction->leak_discharge << "\n";
   }
   // reservoirs
   auto res_map = mesh_->nodes()->reservoirs();
@@ -179,7 +181,7 @@ void pipenetwork::IO_utils::Output::save_sim_result(
     auto res = index_res.second;
     auto res_prop = res->property();
     outnode << std::setprecision(12) << res_prop.name << "," << res_prop.head
-            << "," << res->discharge << "\n";
+            << "," << res->discharge << "," << 0 << "\n";
   }
 
   auto pipe_map = mesh_->links()->pipes();
