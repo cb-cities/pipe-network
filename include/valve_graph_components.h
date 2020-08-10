@@ -1,8 +1,6 @@
 #ifndef PIPE_NETWORK_VALVE_GRAPH_COMPONENTS_H
 #define PIPE_NETWORK_VALVE_GRAPH_COMPONENTS_H
 #include "mesh_components.h"
-#include <Spectra/MatOp/SparseSymMatProd.h>
-#include <Spectra/SymEigsSolver.h>
 
 namespace pipenetwork {
 namespace isolation {
@@ -43,10 +41,6 @@ struct IsoSegHelper {
 
   static Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> small_matrix_eigen_info(
       Eigen::SparseMatrix<double>& matrix);
-
-  static Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
-                                Spectra::SparseSymMatProd<double>>
-      large_matrix_eigen_info(Eigen::SparseMatrix<double>& matrix);
 
   static Eigen::SparseMatrix<double> create_graph_laplacian(
       const Eigen::SparseMatrix<double>& adj_mtx);
@@ -97,6 +91,7 @@ class IsoValves {
 };
 
 class IsoSegments {
+  // TODO: Replace eigenvalue decomposition to simple BFS
  public:
   IsoSegments() = default;
 

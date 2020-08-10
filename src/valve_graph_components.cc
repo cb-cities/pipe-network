@@ -220,17 +220,10 @@ std::vector<std::vector<pipenetwork::isolation::IsoSeg>>
   // solve for eigen information
   Eigen::VectorXd eigen_vals;
   Eigen::MatrixXd eigen_vecs;
-  if (n > pipenetwork::isolation::IsoSegHelper::EIGEN_THRE) {
-    auto eigensolver =
-        pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(L);
-    eigen_vals = eigensolver.eigenvalues();
-    eigen_vecs = eigensolver.eigenvectors();
-  } else {
-    auto eigensolver =
-        pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(L);
-    eigen_vals = eigensolver.eigenvalues();
-    eigen_vecs = eigensolver.eigenvectors();
-  }
+  auto eigensolver =
+      pipenetwork::isolation::IsoSegHelper::small_matrix_eigen_info(L);
+  eigen_vals = eigensolver.eigenvalues();
+  eigen_vecs = eigensolver.eigenvectors();
 
   return einfo2components(eigen_vals, eigen_vecs);
 }
@@ -323,21 +316,6 @@ Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(dense_L);
   if (eigensolver.info() != Eigen::Success) abort();
   return eigensolver;
-}
-
-Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
-                       Spectra::SparseSymMatProd<double>>
-    pipenetwork::isolation::IsoSegHelper::large_matrix_eigen_info(
-        Eigen::SparseMatrix<double>& matrix) {
-
-  Spectra::SparseSymMatProd<double> op(matrix);
-  Spectra::SymEigsSolver<double, Spectra::SMALLEST_MAGN,
-                         Spectra::SparseSymMatProd<double>>
-      eigs(&op, EIGEN_THRE, 6);
-  eigs.init();
-  int nconv = eigs.compute();
-  if (eigs.info() != Spectra::SUCCESSFUL) abort();
-  return eigs;
 }
 
 Eigen::SparseMatrix<double>
