@@ -5,49 +5,42 @@
 
 namespace pipenetwork {
 //! Pipe Property
-//! node1 ptr for end node
-//! node2 ptr for end node
 //! length, length of the pipe
 //! diameter, diameter of the pipe
 //! roughness, roughness of the pipe
 //! status, status of the pipe (open or close)
-struct Pipe_prop {
-  std::string id;
-  std::shared_ptr<pipenetwork::Node> node1{NULL};
-  std::shared_ptr<pipenetwork::Node> node2{NULL};
+struct PipeProp : LinkProp {
   double length{std::numeric_limits<float>::max()};
   double diameter{std::numeric_limits<float>::max()};
   double roughness{std::numeric_limits<float>::max()};
-  double minor_loss_coeff{0};
-  Link_status status{OPEN};
-  std::string node1_id{"None"};
-  std::string node2_id{"None"};
+  double minor_loss_coeff{MINOR_LOSS_COEFF};
 };
 
+//! Pipe class
+//! \brief Class that stores the information about pipes
 class Pipe : public Link {
  public:
-  //! Constructor with two end nodes, length, diameter roughness and pipe status
+  //! Constructor for a pipe
+  //! \param[in] link_id link id
+  //! \param[in] node1 one end node
+  //! \param[in] node2 the other end node
   //! \param[in] pipe_prop struct with properties for the pipe
-  Pipe(const Pipe_prop& pipe_prop)
-      : Link(pipe_prop.id, pipe_prop.node1, pipe_prop.node2, pipe_prop.status) {
-    pipe_info_["type"] = PIPE;
-    pipe_info_["length"] = pipe_prop.length;
-    pipe_info_["diameter"] = pipe_prop.diameter;
-    pipe_info_["roughness"] = pipe_prop.roughness;
-    pipe_info_["minor_loss"] = pipe_prop.minor_loss_coeff;
-  };
+  Pipe(Index link_id, const Node& node1, const Node& node2,
+       const PipeProp& pipe_prop)
+      : Link(link_id, node1, node2), property_{pipe_prop} {};
 
   //! Virtual destructor
   ~Pipe() override{};
 
-  //! Return link info
-  std::map<std::string, double> link_info() const override {
-    return pipe_info_;
-  }
+  //! Return pipe property
+  const PipeProp& property() const { return property_; }
+
+  //! flowrate
+  double flowrate{INIT_FLOWRATE};
 
  private:
-  // node information, has key : type, elevation, demand, leak_area
-  std::map<std::string, double> pipe_info_;
+  //! pipe properties
+  PipeProp property_;
 };
 
 }  // namespace pipenetwork

@@ -11,6 +11,7 @@
 #include "solver.h"
 
 namespace pipenetwork {
+namespace linear_system {
 
 //! Pipe network mkl unsymmetirc matrix solver class
 //! \brief unsymmetric solver class using Intel MKL
@@ -23,12 +24,6 @@ class Mkl_unsym : public Solver {
   Eigen::VectorXd solve() override;
 
  protected:
-  //! Vector x
-  using Solver::vec_x_;
-  //! Vector b
-  using Solver::vec_b_;
-  //! Matrix A
-  using Solver::mat_a_;
   //! Row index for csr format matrix
   using Solver::ia_;
   //! Column index for csr format matrix
@@ -37,7 +32,7 @@ class Mkl_unsym : public Solver {
   using Solver::a_;
   //! Return the type of assembler for Factory
   //! \retval assembler_type Eigen assembler
-  std::string assembler_type() const override { return "Pardiso_Unsym"; }
+  std::string assembler_type() const override { return "MKL Pardiso"; }
 
  private:
   int mtype_ = 11; /* Real unsymmetric matrix */
@@ -56,6 +51,7 @@ class Mkl_unsym : public Solver {
   double ddum_; /* Double dummy */
   int idum_;    /* Integer dummy. */
 };
+}  // namespace linear_system
 }  // namespace pipenetwork
 
 #endif  // PIPE_NETWORK_MKL_UNSYM_H

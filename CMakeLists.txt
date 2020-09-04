@@ -1,7 +1,7 @@
 project(pipe_network LANGUAGES CXX)
 
-# Require C++14-compliant compiler; only available for CMake v. 3.1 and up
-set(CMAKE_CXX_STANDARD 14)
+# Require C++17-compliant compiler; only available for CMake v. 3.1 and up
+set(CMAKE_CXX_STANDARD 17)
 
 cmake_minimum_required(VERSION 3.1)
 
@@ -28,40 +28,30 @@ endif()
 # so we provide an option similar to BUILD_TESTING, but just for CITYSCAPE.
 option(PIPE_NETWORK_TEST_BUILD_TESTING "enable testing for cityscape" ON)
 
-SET(USE_PARDISO  OFF)
-SET(USE_CUDA  OFF)
-
 # CMake Modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # pipe_network executable
 SET(pipe_network_src
-        src/curves.cc
-        src/hydralic_sim.cc
-        src/input.cc
-        src/matrix_assembler.cc
+        src/index_manager.cc
+        src/mesh_components.cc
         src/mesh.cc
-        src/output.cc
+        src/matrix_assembler_components.cc
+        src/matrix_assembler.cc
+        src/curves.cc
         src/mkl_unsym.cc
-        src/pardiso_unsym.cc)
-
-
-
+        src/LU_solver.cc
+        src/hydralic_sim.cc
+        src/io.cc
+        src/io_utils.cc
+        src/valve_graph.cc
+        src/valve_graph_components.cc
+        )
 
 # Find dependencies for the library
 # Eigen
 find_package(Eigen3 REQUIRED)
 
-# Boost Archive
-#find_package(Boost REQUIRED COMPONENTS system serialization)
-#include_directories(${BOOST_INCLUDE_DIRS})
-#link_libraries(${Boost_SERIALIZATION_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-
-# TBB
-#find_package(TBB REQUIRED)
-#add_definitions(${TBB_DEFINITIONS})
-#include_directories(${TBB_INCLUDE_DIRS})
-#link_libraries(${TBB_LIBRARIES})
 
 # Pthreads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -86,32 +76,7 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 
-# Solver options
-if(USE_CUDA)
-  find_package(CUDA REQUIRED)
-  if (CUDA_FOUND)
-    SET(CUDA_LIB_USED ${CUDA_CUDART_LIBRARY} ${CUDA_cusolver_LIBRARY} ${CUDA_cusparse_LIBRARY})
-    SET(NVIDIA_HELPERS "/home/rewu/Documents/research/NVIDIA_CUDA-10.0_Samples/common/inc")
-    # create library
-    add_library(lpipe_network SHARED ${pipe_network_src} src/cuda_unsym.cc)
-    target_include_directories(lpipe_network
-            PUBLIC
-            ${NVIDIA_HELPERS}
-            ${CUDA_INCLUDE_DIRS})
-    target_link_libraries(lpipe_network PUBLIC  ${CUDA_LIB_USED})
-  endif ()
-  else()
-  add_library(lpipe_network SHARED ${pipe_network_src})
-endif()
-
-# PARDISO6
-if(USE_PARDISO)
-  SET(PARDISO6 "${pipe_network_SOURCE_DIR}/external/libpardiso600-GNU720-X86-64.so")
-  target_link_libraries(lpipe_network PUBLIC ${PARDISO6})
-  else()
-  target_link_libraries(lpipe_network PUBLIC ${MKL_LIBRARIES})
-endif()
-
+add_library(lpipe_network SHARED ${pipe_network_src})
 # include directories
 target_include_directories(lpipe_network
         PUBLIC
@@ -119,6 +84,8 @@ target_include_directories(lpipe_network
         ${pipe_network_SOURCE_DIR}/external/
         ${EIGEN3_INCLUDE_DIR}
         ${MKL_INCLUDE_DIR}
+        ${BOOST_INCLUDE_DIRS}
+
         )
 
 # link libs
@@ -127,6 +94,8 @@ target_link_libraries(lpipe_network
         ${CMAKE_THREAD_LIBS_INIT}
         ${BLAS_LIBRARIES}
         ${LAPACK_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${MKL_LIBRARIES}
         )
 
 add_executable(pipe_network ${pipe_network_SOURCE_DIR}/src/main.cc)
@@ -138,16 +107,17 @@ target_link_libraries(pipe_network
 if(PIPE_NETWORK_TEST_BUILD_TESTING)
   # Unit test
   SET(pipe_network_test_src
-          tests/mesh_test.cc
           tests/node_test.cc
           tests/link_test.cc
+          tests/mesh_test.cc
           tests/matrix_assembler_test.cc
           tests/solver_test.cc
+          tests/hydraulic_sim_test.cc
           tests/input_test.cc
           tests/curve_test.cc
-          tests/hydraulic_sim_test.cc
-#          tests/sim_pressure_test.cc
+          tests/valve_graph_test.cc
           )
+
   add_executable(pipe_network_test tests/main_test.cc ${pipe_network_test_src})
   target_link_libraries(pipe_network_test lpipe_network)
   add_test(NAME pipe_network_test COMMAND $<TARGET_FILE:pipe_network_test>)

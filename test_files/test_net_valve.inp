@@ -35,10 +35,10 @@ wall reactions are included.
  113             	13              	23              	5280        	8           	100         	0           	Open  	;
  121             	21              	31              	5280        	8           	100         	0           	Open  	;
  122             	22              	32              	5280        	6           	100         	0           	Open  	;
- 123             	41              	10              	5280        	6           	100         	0           	Open  	;
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
+ 124				41					10					POWER 50  ;
 
 [VALVES]
 ;ID              	Node1           	Node2           	Diameter    	Type	Setting     	MinorLoss   
@@ -58,10 +58,15 @@ wall reactions are included.
 ;ID              	Multipliers
 ;Demand Pattern
 
+[LEAKS]
+;JID              	Diameter
+11                  2
 
 [CURVES]
 ;ID              	X-Value     	Y-Value
    
+
+
 
 [CONTROLS]
 

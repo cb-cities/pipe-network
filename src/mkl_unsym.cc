@@ -1,10 +1,11 @@
 #include "mkl_unsym.h"
 #include "factory.h"
 
-static Register<pipenetwork::Solver, pipenetwork::Mkl_unsym> registry(
-    "mkl_pardiso");
+static Register<pipenetwork::linear_system::Solver,
+                pipenetwork::linear_system::Mkl_unsym>
+    registry("mkl_pardiso");
 
-pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
+pipenetwork::linear_system::Mkl_unsym::Mkl_unsym() : Solver() {
   // configure pardiso
   /* Auxiliary variables. */
   char* var;
@@ -23,7 +24,6 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   else {
     num_procs_ = 2;
   }
-
   /* -------------------------------------------------------------------- */
   /* .. Setup Pardiso control parameters. */
   /* -------------------------------------------------------------------- */
@@ -31,7 +31,7 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
     iparm_[i] = 0;
   }
   iparm_[0] = 1; /* No solver default */
-  iparm_[1] = 0; /* Fill-in reordering from METIS */
+  iparm_[1] = 3; /* Fill-in reordering from METIS */
   /* Numbers of processors, value of OMP_NUM_THREADS */
   iparm_[2] = num_procs_;
   iparm_[3] = 0;   /* No iterative-direct algorithm */
@@ -40,7 +40,7 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   iparm_[6] = 0;   /* Not in use */
   iparm_[7] = 2;   /* Max numbers of iterative refinement steps */
   iparm_[8] = 0;   /* Not in use */
-  iparm_[9] = 8;   /* Perturb the pivot elements with 1E-8 */
+  iparm_[9] = 6;   /* Perturb the pivot elements with 1E-6 */
   iparm_[10] = 1;  /* Use nonsymmetric permutation and scaling MPS */
   iparm_[11] = 0;  /* Not in use */
   iparm_[12] = 0;  /* Not in use */
@@ -57,10 +57,11 @@ pipenetwork::Mkl_unsym::Mkl_unsym() : Solver() {
   error_ = 0;      /* Initialize error flag */
 }
 
-Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
+Eigen::VectorXd pipenetwork::linear_system::Mkl_unsym::solve() {
   // configure matrix
-  int n = vec_b_->size();
-  double* vec_b = vec_b_->data();
+  int n = matrix_assembler_->residual_vector().size();
+  double* vec_b =
+      const_cast<double*>(matrix_assembler_->residual_vector().data());
   double x_diff[n];
   int nnz = ia_[n];
 
@@ -76,43 +77,6 @@ Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
   }
 
   /* -------------------------------------------------------------------- */
-  /*  .. pardiso_chk_matrix(...)                                          */
-  /*     Checks the consistency of the given matrix.                      */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkmatrix(&mtype, &n, a, ia, ja, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR in consistency of matrix: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* ..  pardiso_chkvec(...)                                              */
-  /*     Checks the given vectors for infinite and NaN values             */
-  /*     Input parameters (see PARDISO user manual for a description):    */
-  /*     Use this functionality only for debugging purposes               */
-  /* -------------------------------------------------------------------- */
-
-  //  pardiso_chkvec(&n, &nrhs, vec_b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR  in right hand side: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
-  /* .. pardiso_printstats(...)                                           */
-  /*    prints information on the matrix to STDOUT.                       */
-  /*    Use this functionality only for debugging purposes                */
-  /* -------------------------------------------------------------------- */
-
-  //    pardiso_printstats (&mtype, &n, a, ia, ja, &nrhs, b, &error);
-  //  if (error != 0) {
-  //    printf("\nERROR right hand side: %d", error);
-  //    exit(1);
-  //  }
-
-  /* -------------------------------------------------------------------- */
   /* ..  Reordering and Symbolic Factorization.  This step also allocates */
   /*     all memory that is necessary for the factorization.              */
   /* -------------------------------------------------------------------- */
@@ -125,9 +89,6 @@ Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
     printf("\nERROR during symbolic factorization: %d", error_);
     exit(1);
   }
-  //    printf("\nReordering completed ... ");
-  //    printf("\nNumber of nonzeros in factors  = %d", iparm[17]);
-  //    printf("\nNumber of factorization MFLOPS = %d", iparm[18]);
 
   /* -------------------------------------------------------------------- */
   /* ..  Numerical factorization.                                         */
@@ -141,7 +102,6 @@ Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
     printf("\nERROR during numerical factorization: %d", error_);
     exit(2);
   }
-  //    printf("\nFactorization completed ...\n ");
 
   /* -------------------------------------------------------------------- */
   /* ..  Back substitution and iterative refinement.                      */
@@ -156,12 +116,6 @@ Eigen::VectorXd pipenetwork::Mkl_unsym::solve() {
     exit(3);
   }
 
-  //    printf("\nSolve completed ... ");
-  //    printf("\nThe solution of the system is: ");
-  //    for (i = 0; i < n; i++) {
-  //        printf("\n x [%d] = % f", i, x[i] );
-  //    }
-  //    printf ("\n");
   /* -------------------------------------------------------------------- */
   /* ..  Convert matrix back to 0-based C-notation.                       */
   /* -------------------------------------------------------------------- */

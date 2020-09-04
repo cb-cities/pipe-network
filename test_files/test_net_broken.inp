@@ -40,8 +40,8 @@ wall reactions are included.
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
- 124               	41               	10              	HEAD 2	;
- 125				42					12					POWER 50  ;		
+ 124               	41               	10              	HEAD 1	;
+ 125				42					12					POWER 50  ;
 
 
 [VALVES]

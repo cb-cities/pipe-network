@@ -18,8 +18,8 @@
 ### Prerequisite packages
 > The following prerequisite packages can be found in the docker image:
 
-* [Boost](http://www.boost.org/)
 * [Eigen](http://eigen.tuxfamily.org/)
+* [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/math-kernel-library.html)
 
 ## Compile and Run
 > See https://pipe-network-doc.cb-cities.com/ for more detailed instructions. 
@@ -31,3 +31,21 @@
 ### Run tests
 
 0. Run `./pipe-network-test -s` (for a verbose output) or `ctest -VV`.
+
+### Run hydraulic simulation 
+Run ./pipe-network with the following flags 
+
+-f <filename>,  --file <filename>
+     .inp file path for the WDN system
+
+-t <save path>,  --to <save path>
+     folder to save the simulation results
+
+-d,  --debug
+     debug mode: output intermediate results (residuals)
+     
+-n <meshname>,  --name <meshname>
+     Name for the WDN
+     
+-h,  --help
+     Displays usage information and exits.
