@@ -1,6 +1,0 @@
-Node_id,Node_coord1,Node_coord2,Node_coord3,Node_head,Node_discharge
-0,1,3,0,100,-100
-1,0,2,0,99,10
-2,2,2,0,98,20
-3,0,0,0,97,30
-4,2,0,0,NA,40

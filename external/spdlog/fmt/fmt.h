@@ -20,9 +20,8 @@
 #endif
 #include <spdlog/fmt/bundled/format.h>
 
-#else //external fmtlib
+#else // external fmtlib
 
 #include <fmt/format.h>
 
 #endif
-

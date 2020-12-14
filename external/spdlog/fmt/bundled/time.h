@@ -15,8 +15,8 @@
 
 namespace fmt {
 template <typename ArgFormatter>
-void format(BasicFormatter<char, ArgFormatter> &f,
-            const char *&format_str, const std::tm &tm) {
+void format(BasicFormatter<char, ArgFormatter> &f, const char *&format_str,
+            const std::tm &tm) {
   if (*format_str == ':')
     ++format_str;
   const char *end = format_str;
@@ -48,6 +48,6 @@ void format(BasicFormatter<char, ArgFormatter> &f,
   }
   format_str = end + 1;
 }
-}
+} // namespace fmt
 
-#endif  // FMT_TIME_H_
+#endif // FMT_TIME_H_

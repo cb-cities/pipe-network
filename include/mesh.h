@@ -1,90 +1,91 @@
-#ifndef PIPE_NETWORK_MESH_H_
-#define PIPE_NETWORK_MESH_H_
+#ifndef PIPE_NETWORK_MESH_H
+#define PIPE_NETWORK_MESH_H
+#include <fstream>
+#include <iomanip>
 
-#include <cmath>
-
-#include <array>
-#include <exception>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include "node.h"
-#include "pipe.h"
-#include "settings.h"
-
+#include "mesh_components.h"
 namespace pipenetwork {
 
-//! Mesh class
-//! \brief Class for mesh that contains node and pipe pointers
+////! Mesh class
+////! \brief Class for mesh that contains node and pipe pointers
 class Mesh {
-
  public:
-  // Constructor with id
+  //! Constructor with id
   //! \param[in] id mesh id
-  explicit Mesh(unsigned id) : id_{id} {};
+  explicit Mesh(std::string& name) : name_{name} {};
 
-  //! Destructor
-  ~Mesh() = default;
+  //! Return name
+  //! \retval name_ name of the mesh
+  std::string name() const { return name_; }
 
-  //! Return id
-  //! \retval id_ id of the mesh
-  unsigned id() const { return id_; }
+  //  //! Create mesh from input object
+  //  //! \param[in] IO pointer to the input object
+  //  void create_mesh_from_io(const std::shared_ptr<IO>& IO);
 
-  //! Create nodal pointers and assign indices based on coordinates
-  //! \param[in] coords vector of the coordinates of the nodes
-  void create_nodes(const std::vector<Eigen::Vector3d>& coords);
+  //! Create junction pointers
+  //! \param[in] junc_props vector of junction properties
+  void create_nodes(const std::vector<JunctionProp>& junc_props,
+                    const std::vector<ReservoirProp>& res_props) {
+    mesh_nodes_ = std::make_shared<MeshNodes>(junc_props, res_props);
+    find_leak_nids();
+  };
 
-  //! Create a pipe pointers and assign indices based on the nodes at its ends
-  //! \param[in] nodeid1 and nodeid2 indices of the nodes at pipe ends
-  //! \retval status to check whether all input pipe created successfully
-  bool create_pipes(const std::vector<std::pair<Index, Index>>& nodeids,
-                    const std::vector<double>& diameter,
-                    const std::vector<double>& roughness,
-                    const std::vector<bool>& pipe_status);
+  //! Create Reservoir pointers
+  //! \param[in] res_props vector of reservoir properties
+  void create_links(const std::vector<PipeProp>& pipe_props,
+                    const std::vector<PumpProp>& pump_props,
+                    const std::vector<ValveProp>& valve_props) {
+    mesh_links_ = std::make_shared<MeshLinks>(pipe_props, pump_props,
+                                              valve_props, *mesh_nodes_);
+  };
 
-  //! Return the number of nodes in the mesh
-  //! \retval nodes_.size() number of nodes
-  unsigned nnodes() const { return nodes_.size(); }
+  //! Create graph for mesh
+  void create_mesh_graph() {
+    mesh_graph_ = std::make_shared<MeshGraph>(mesh_nodes_, mesh_links_);
+    find_iso_components_();
+  }
 
-  //! Return the number of pipes in the mesh
-  //! \retval pipes_.size() number of pipes
-  unsigned npipes() const { return pipes_.size(); }
+  //! get nodes
+  std::shared_ptr<MeshNodes> nodes() const { return mesh_nodes_; }
+  //! get links
+  std::shared_ptr<MeshLinks> links() const { return mesh_links_; }
+  //! get links
+  std::shared_ptr<MeshGraph> mesh_graph() const { return mesh_graph_; }
+  //! get isolated nodes
+  const std::vector<Index>& iso_nodes() const { return iso_nodes_; }
+  //! get isolated links
+  const std::vector<Index>& iso_links() const { return iso_links_; }
+  //! get leak nids
+  const std::vector<Index>& leak_nids() const { return leak_nids_; }
 
-  //! Remove unconnected nodes from the mesh
-  void remove_unconnected_nodes();
-
-  //! Initialize discharges in pipes
-  void initialize_pipe_discharge(
-      const std::vector<std::pair<Index, double>>& init_discharge =
-          std::vector<std::pair<Index, double>>());
-  void initialize_pipe_discharge(double init_discharge);
-
-  //! Assign initial heads/elevation for nodes
-  //! \param[in] node_head vector of pair of nodal index and initial nodal head
-  void assign_node_head(const std::vector<std::pair<Index, double>>& node_head);
-  void assign_node_elevation(
-      const std::vector<std::pair<Index, double>>& node_head);
-
-  //! Assign initial demand for nodes that have known discharge
-  //! \param[in] node_discharge vector of pair of nodal index and initial
-  //! discharge
-  void assign_node_demand(
-      const std::vector<std::pair<Index, double>>& node_discharge);
-
-  //! Make MatrixAssembler a friend class of mesh
-  friend class MatrixAssembler;
+  //! Print summary for the mesh
+  void print_summary();
 
  private:
-  //! mesh id
-  unsigned id_{std::numeric_limits<unsigned>::max()};
-  //! nodal id and corresponding nodal pointer
-  std::map<Index, std::shared_ptr<pipenetwork::Node>> nodes_;
-  //! pipe id and corresponding pipe pointer
-  std::map<Index, std::shared_ptr<pipenetwork::Pipe>> pipes_;
+  //! mesh name
+  std::string name_;
+  //! mesh nodes
+  std::shared_ptr<MeshNodes> mesh_nodes_;
+  //! mesh links
+  std::shared_ptr<MeshLinks> mesh_links_;
+  //! graph
+  std::shared_ptr<MeshGraph> mesh_graph_;
+  //! isolated nodes ids
+  std::vector<Index> iso_nodes_;
+  //! isolated link ids
+  std::vector<Index> iso_links_;
+  //! leak nids
+  std::vector<Index> leak_nids_;
+  //! Find isolated junctions and links for the mesh
+  void find_iso_components_();
+  //! find isolated nodes
+  void find_iso_nodes_();
+  //! find isolated links
+  void find_iso_links_();
+  //! find leak node lids
+  void find_leak_nids();
 };
 
 }  // namespace pipenetwork
 
-#endif  // PIPE_NETWORK_MESH_H_
+#endif  // PIPE_NETWORK_MESH_H

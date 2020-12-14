@@ -12,73 +12,73 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 // Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
-# undef __STRICT_ANSI__
+#undef __STRICT_ANSI__
 #endif
 
 #include <errno.h>
-#include <fcntl.h>   // for O_RDONLY
-#include <locale.h>  // for locale_t
+#include <fcntl.h>  // for O_RDONLY
+#include <locale.h> // for locale_t
 #include <stdio.h>
-#include <stdlib.h>  // for strtod_l
+#include <stdlib.h> // for strtod_l
 
 #include <cstddef>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
-# include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
+#include <xlocale.h> // for LC_NUMERIC_MASK on OS X
 #endif
 
 #include "format.h"
 
 #ifndef FMT_POSIX
-# if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX(call) _##call
-# else
-#  define FMT_POSIX(call) call
-# endif
+#define FMT_POSIX(call) _##call
+#else
+#define FMT_POSIX(call) call
+#endif
 #endif
 
 // Calls to system functions are wrapped in FMT_SYSTEM for testability.
 #ifdef FMT_SYSTEM
-# define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
+#define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-# define FMT_SYSTEM(call) call
-# ifdef _WIN32
+#define FMT_SYSTEM(call) call
+#ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX_CALL(call) ::_##call
-# else
-#  define FMT_POSIX_CALL(call) ::call
-# endif
+#define FMT_POSIX_CALL(call) ::_##call
+#else
+#define FMT_POSIX_CALL(call) ::call
+#endif
 #endif
 
 #if FMT_GCC_VERSION >= 407
-# define FMT_UNUSED __attribute__((unused))
+#define FMT_UNUSED __attribute__((unused))
 #else
-# define FMT_UNUSED
+#define FMT_UNUSED
 #endif
 
 #ifndef FMT_USE_STATIC_ASSERT
-# define FMT_USE_STATIC_ASSERT 0
+#define FMT_USE_STATIC_ASSERT 0
 #endif
 
-#if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) || \
-  (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600
-# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
+#if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) ||             \
+    (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600
+#define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
 #else
-# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
-# define FMT_STATIC_ASSERT(cond, message) \
+#define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
+#define FMT_STATIC_ASSERT(cond, message)                                       \
   typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
 #endif
 
 // Retries the expression while it evaluates to error_result and errno
 // equals to EINTR.
 #ifndef _WIN32
-# define FMT_RETRY_VAL(result, expression, error_result) \
-  do { \
-    result = (expression); \
+#define FMT_RETRY_VAL(result, expression, error_result)                        \
+  do {                                                                         \
+    result = (expression);                                                     \
   } while (result == error_result && errno == EINTR)
 #else
-# define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
+#define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
 #endif
 
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
@@ -87,10 +87,10 @@ namespace fmt {
 
 // An error code.
 class ErrorCode {
- private:
+private:
   int value_;
 
- public:
+public:
   explicit ErrorCode(int value = 0) FMT_NOEXCEPT : value_(value) {}
 
   int get() const FMT_NOEXCEPT { return value_; }
@@ -98,14 +98,14 @@ class ErrorCode {
 
 // A buffered file.
 class BufferedFile {
- private:
+private:
   FILE *file_;
 
   friend class File;
 
   explicit BufferedFile(FILE *f) : file_(f) {}
 
- public:
+public:
   // Constructs a BufferedFile object which doesn't represent any file.
   BufferedFile() FMT_NOEXCEPT : file_(0) {}
 
@@ -116,7 +116,7 @@ class BufferedFile {
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
- private:
+private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
@@ -128,9 +128,7 @@ public:
   BufferedFile(Proxy p) FMT_NOEXCEPT : file_(p.file) {}
 
   // A "move constructor" for moving from an lvalue.
-  BufferedFile(BufferedFile &f) FMT_NOEXCEPT : file_(f.file_) {
-    f.file_ = 0;
-  }
+  BufferedFile(BufferedFile &f) FMT_NOEXCEPT : file_(f.file_) { f.file_ = 0; }
 
   // A "move assignment operator" for moving from a temporary.
   BufferedFile &operator=(Proxy p) {
@@ -156,15 +154,15 @@ public:
   }
 
 #else
- private:
+private:
   FMT_DISALLOW_COPY_AND_ASSIGN(BufferedFile);
 
- public:
+public:
   BufferedFile(BufferedFile &&other) FMT_NOEXCEPT : file_(other.file_) {
     other.file_ = 0;
   }
 
-  BufferedFile& operator=(BufferedFile &&other) {
+  BufferedFile &operator=(BufferedFile &&other) {
     close();
     file_ = other.file_;
     other.file_ = 0;
@@ -183,7 +181,7 @@ public:
 
   // We place parentheses around fileno to workaround a bug in some versions
   // of MinGW that define fileno as a macro.
-  int (fileno)() const;
+  int(fileno)() const;
 
   void print(CStringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);
@@ -198,18 +196,18 @@ public:
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
 class File {
- private:
-  int fd_;  // File descriptor.
+private:
+  int fd_; // File descriptor.
 
   // Constructs a File object with a given descriptor.
   explicit File(int fd) : fd_(fd) {}
 
- public:
+public:
   // Possible values for the oflag argument to the constructor.
   enum {
     RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
     WRONLY = FMT_POSIX(O_WRONLY), // Open for writing only.
-    RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
+    RDWR = FMT_POSIX(O_RDWR)      // Open for reading and writing.
   };
 
   // Constructs a File object which doesn't represent any file.
@@ -222,21 +220,19 @@ class File {
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
- private:
+private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
     int fd;
   };
 
- public:
+public:
   // A "move constructor" for moving from a temporary.
   File(Proxy p) FMT_NOEXCEPT : fd_(p.fd) {}
 
   // A "move constructor" for moving from an lvalue.
-  File(File &other) FMT_NOEXCEPT : fd_(other.fd_) {
-    other.fd_ = -1;
-  }
+  File(File &other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
   // A "move assignment operator" for moving from a temporary.
   File &operator=(Proxy p) {
@@ -262,15 +258,13 @@ class File {
   }
 
 #else
- private:
+private:
   FMT_DISALLOW_COPY_AND_ASSIGN(File);
 
- public:
-  File(File &&other) FMT_NOEXCEPT : fd_(other.fd_) {
-    other.fd_ = -1;
-  }
+public:
+  File(File &&other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
-  File& operator=(File &&other) {
+  File &operator=(File &&other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -321,16 +315,16 @@ class File {
 // Returns the memory page size.
 long getpagesize();
 
-#if (defined(LC_NUMERIC_MASK) || defined(_MSC_VER)) && \
+#if (defined(LC_NUMERIC_MASK) || defined(_MSC_VER)) &&                         \
     !defined(__ANDROID__) && !defined(__CYGWIN__)
-# define FMT_LOCALE
+#define FMT_LOCALE
 #endif
 
 #ifdef FMT_LOCALE
 // A "C" numeric locale.
 class Locale {
- private:
-# ifdef _MSC_VER
+private:
+#ifdef _MSC_VER
   typedef _locale_t locale_t;
 
   enum { LC_NUMERIC_MASK = LC_NUMERIC };
@@ -339,20 +333,18 @@ class Locale {
     return _create_locale(category_mask, locale);
   }
 
-  static void freelocale(locale_t locale) {
-    _free_locale(locale);
-  }
+  static void freelocale(locale_t locale) { _free_locale(locale); }
 
   static double strtod_l(const char *nptr, char **endptr, _locale_t locale) {
     return _strtod_l(nptr, endptr, locale);
   }
-# endif
+#endif
 
   locale_t locale_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(Locale);
 
- public:
+public:
   typedef locale_t Type;
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", NULL)) {
@@ -372,15 +364,15 @@ class Locale {
     return result;
   }
 };
-#endif  // FMT_LOCALE
-}  // namespace fmt
+#endif // FMT_LOCALE
+} // namespace fmt
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {
 // For compatibility with C++98.
 inline fmt::BufferedFile &move(fmt::BufferedFile &f) { return f; }
 inline fmt::File &move(fmt::File &f) { return f; }
-}
+} // namespace std
 #endif
 
-#endif  // FMT_POSIX_H_
+#endif // FMT_POSIX_H_

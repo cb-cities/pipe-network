@@ -1,111 +1,63 @@
-#ifndef PIPE_NETWORK_MATRIX_ASSEMBLER_H_
-#define PIPE_NETWORK_MATRIX_ASSEMBLER_H_
+#ifndef PIPE_NETWORK_MATRIX_ASSEMBLER_H
+#define PIPE_NETWORK_MATRIX_ASSEMBLER_H
 
-#include <Eigen/Sparse>
-#include <array>
-#include <cmath>
-#include <exception>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include "mesh.h"
-#include "node.h"
-#include "pipe.h"
-#include "settings.h"
+#include "matrix_assembler_components.h"
 
 namespace pipenetwork {
-
+namespace linear_system {
 //! Mtrix assembler class
 //! \brief Class for assembling matrix for solving
 class MatrixAssembler {
 
  public:
   //! Constructor
-  explicit MatrixAssembler(bool pdd_mode = false);
+  //! \param[in] mesh the mesh pointer
+  //! \param[in] curves_info the curve information pointer
+  //! \param[in] pdd_mode if simulation type is pressure demand driven or
+  //! demand driven
+  MatrixAssembler(const std::shared_ptr<Mesh>& mesh,
+                  std::shared_ptr<Curves>& curves_info, bool pdd_mode = false);
 
   //! Destructor
   ~MatrixAssembler() = default;
 
-  //! Obtain global nodal and pipe indices and pointers from meshes
-  //! \param[in] mesh meshes that form the pipe network
-  void global_nodal_pipe_indices(const std::shared_ptr<Mesh>& mesh);
-
-  //! Return number of nodes in the network
-  //! \retval nnode_ number of nodes in the network
-  unsigned nnodes() { return nnode_; }
-
-  //! Return number of pipes in the network
-  //! \retval nnode_ number of pipes in the network
-  unsigned npipes() { return npipe_; }
-
-  //! Initialize variable vector
-  void assemble_variable_vector();
-
-  //! Assemble Jacobian matrix for nodal head, demand and pipe discharge as
-  //! variables
-  void assemble_jacobian();
-
-  //! Apply variables (head, demand and discharge) to nodes and pipes
-  void apply_variables();
-
-  //! Initialize variable vector (unknown variables only)
-  void assemble_residual_vector();
-
-  //! Return variable vector
-  //! \retval variable_vec_ pointer to variable vector
-  std::shared_ptr<Eigen::VectorXd> variable_vec() const {
-    return variable_vec_;
+  //! get the variable vector
+  Eigen::VectorXd& variable_vector() { return vars_->variables_vec(); }
+  //! Method to assemble residual from the variable vector
+  void assemble_residual();
+  //! Method to get residual vector
+  const Eigen::VectorXd& residual_vector() const {
+    return res_->residual_vec();
+  }
+  //! Method to update jacobian matrix from the variable vector
+  void update_jacobian();
+  //! Method to get jacobian matrix
+  const Eigen::SparseMatrix<double, Eigen::RowMajor>& jac_matrix() const {
+    return jac_->jac_matrix();
   }
 
-  //! Return residual vector
-  //! \retval residual_vec_ pointer to residual vector
-  std::shared_ptr<Eigen::VectorXd> residual_vec() const {
-    return residual_vec_;
+  //! Method for system update after variable changes
+  void system_update() {
+    assemble_residual();
+    update_jacobian();
   }
-
-  //! Return Jacobian matrix
-  //! \retval jac_ pointer to Jacobian matrix
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac() const { return jac_; }
 
  private:
-  //! global nodal id and corresponding nodal pointer
-  std::map<Index, std::shared_ptr<pipenetwork::Node>> global_nodes_;
-  //! global pipe id and corresponding pipe pointer
-  std::map<Index, std::shared_ptr<pipenetwork::Pipe>> global_pipes_;
-  //! number of nodes in the network
-  unsigned nnode_{0};
-  //! number of pipes in the network
-  unsigned npipe_{0};
-  //! pdd mode
+  //! the mesh ptr
+  std::shared_ptr<Mesh> mesh_;
+  //! the curves info ptr
+  std::shared_ptr<Curves> curves_info_;
+  //! if it is pressure demand simulation mode
   bool pdd_{false};
-  //! variable vector
-  std::shared_ptr<Eigen::VectorXd> variable_vec_;
-  //! residual vector
-  std::shared_ptr<Eigen::VectorXd> residual_vec_;
-  //! Jacobian matrix
-  std::shared_ptr<Eigen::SparseMatrix<double>> jac_;
-
-  //! Assemble pressure demand part of the jacobian matrix
-  //! \param[in] n the corresponding node pointer
-  //! \param[in] index the position of the corresponding node in variable vector
-  //! jacobian matrix
-  std::vector<Eigen::Triplet<double>> construct_demand_jac(
-      const std::shared_ptr<pipenetwork::Node>& n, Index index);
-
-  //! Method to get the corresponding value of jacobian for head-pressure
-  //! equations \param[in] node pointer for the desired node \retval The value
-  //! for the corresponding jacobian entry
-  double get_pressure_head_jacob(
-      const std::shared_ptr<pipenetwork::Node>& node);
-
-  //! Method to assemble residuals for demand equation in pressure-demand mode
-  //! \param[in] node pointer for the desired node
-  //! \param[in]  ndex the position of the corresponding node in variable vector
-  void assemble_pdd_residual(const std::shared_ptr<pipenetwork::Node>& node,
-                             Index index);
+  //! Variable object
+  std::shared_ptr<Variables> vars_;
+  //! Residual object
+  std::shared_ptr<Residuals> res_;
+  //! Jacobian object
+  std::shared_ptr<Jacobian> jac_;
+  //! Update curves info
+  void update_curves_info_();
 };
+}  // namespace linear_system
 }  // namespace pipenetwork
-
-#endif  // PIPE_NETWORK_MATRIX_ASSEMBLER_H_
+#endif  // PIPE_NETWORK_MATRIX_ASSEMBLER_H
